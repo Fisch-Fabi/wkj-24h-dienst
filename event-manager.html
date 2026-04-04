@@ -1,0 +1,3513 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>24h-Dienst</title>
+<style>
+:root{
+  --bg:#f0f2f5;--bg2:#fff;--bg3:#fafafa;--text:#222;--text2:#666;--border:#e0e0e0;
+  --sidebar:#1F3864;--topbar:#fff;--input-bg:#fff;--input-border:#ccc;
+  --badge-bg:#f0f0f0;--badge-text:#555;
+}
+body.dark{
+  --bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--text:#e0e0e0;--text2:#aaa;--border:#2a2a4a;
+  --sidebar:#0f1f3d;--topbar:#16213e;--input-bg:#1e2a45;--input-border:#2a3a5a;
+  --badge-bg:#2a3a5a;--badge-text:#aaa;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;transition:background 0.2s,color 0.2s;}
+
+/* ── Sidebar ── */
+.sidebar{width:230px;min-height:100vh;background:#1a3260;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;transition:width 0.2s,transform 0.2s;}
+.sidebar.collapsed{width:0;overflow:hidden;}
+.sidebar-logo{padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h1{font-size:14px;font-weight:600;color:#fff;line-height:1.3;}
+.sidebar-logo p{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;}
+.sidebar-nav{padding:0.5rem 0;flex:1;overflow-y:auto;}
+
+/* Solo nav items (Dashboard, Freizeit) */
+.nav-item{display:flex;align-items:center;gap:0;padding:0;font-size:13px;color:rgba(255,255,255,0.9);cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;background:rgba(255,255,255,0.06);}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,0.11);}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.14);border-left-color:#fff;}
+.nav-item .icon{width:16px;height:16px;opacity:0.75;flex-shrink:0;}
+.nav-item.active .icon{opacity:1;}
+
+/* Icon column fixed width for alignment */
+.nav-icon-col{width:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0.6rem 0;}
+.nav-label{flex:1;padding:0.6rem 0.5rem 0.6rem 0;font-size:13px;font-weight:400;}
+
+/* Group headers */
+.nav-group{margin-top:2px;}
+.nav-group-header{display:flex;align-items:center;padding:0;cursor:pointer;user-select:none;border-left:3px solid transparent;transition:all 0.15s;color:rgba(255,255,255,0.9);background:rgba(255,255,255,0.06);}
+.nav-group-header:hover{background:rgba(255,255,255,0.11);color:#fff;}
+.nav-group-header.open{background:rgba(255,255,255,0.1);border-left-color:rgba(255,255,255,0.4);}
+.nav-group-icon-col{width:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0.65rem 0;}
+.nav-group-label{flex:1;font-size:13px;font-weight:400;padding:0.65rem 0.5rem 0.65rem 0;}
+.nav-group-chevron{margin-right:12px;opacity:0.6;transition:transform 0.2s;flex-shrink:0;}
+.nav-group-header.open .nav-group-chevron{transform:rotate(180deg);}
+
+/* Group items */
+.nav-group-items{overflow:hidden;max-height:0;transition:max-height 0.25s ease;background:rgba(0,0,0,0.15);}
+.nav-group-items.open{max-height:400px;}
+.nav-item.nav-sub{border-left:3px solid transparent;}
+.nav-item.nav-sub .nav-icon-col{width:44px;opacity:0.7;}
+.nav-item.nav-sub .nav-label{font-size:12.5px;color:rgba(255,255,255,0.65);}
+.nav-item.nav-sub:hover .nav-label{color:#fff;}
+.nav-item.nav-sub.active .nav-label{color:#fff;font-weight:400;}
+.nav-item.nav-sub.active .nav-icon-col{opacity:1;}
+
+/* Separator between sections */
+.nav-separator{height:1px;background:rgba(255,255,255,0.07);margin:4px 0;}
+
+.sidebar-footer{padding:1rem 1rem;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.3);}
+
+/* ── Main ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{background:var(--topbar);border-bottom:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-size:16px;font-weight:500;color:#1F3864;}
+.content{padding:1.5rem;flex:1;}
+
+/* ── Pages ── */
+.page{display:none;}.page.active{display:block;}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.card-title{font-weight:500;font-size:15px;}
+
+/* ── Buttons ── */
+.btn{cursor:pointer;padding:6px 14px;font-size:13px;border:1px solid #ccc;border-radius:8px;background:transparent;color:#222;font-family:inherit;transition:background 0.1s;}
+.btn:hover{background:#f0f0f0;}
+.btn-primary{background:#1F3864;color:#fff;border-color:#1F3864;}
+.btn-primary:hover{background:#162a4e;}
+.btn-danger{color:#a32d2d;border-color:#f09595;}
+.btn-danger:hover{background:#fff0f0;}
+.btn-sm{padding:3px 10px;font-size:12px;}
+
+/* ── Inputs ── */
+input[type=text],input[type=time],input[type=date],select,textarea{padding:6px 9px;font-size:13px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text);font-family:inherit;width:100%;}
+textarea{resize:vertical;min-height:60px;}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#1F3864;}
+
+/* ── Table ── */
+table{width:100%;border-collapse:collapse;}
+th,td{font-size:13px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);}
+th{font-weight:500;color:var(--text2);background:var(--bg3);}
+
+/* ── Badge ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
+
+/* ── Checklist ── */
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+.check-item:last-child{border-bottom:none;}
+.check-item.done span{text-decoration:line-through;color:#aaa;}
+
+/* ── Modal ── */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
+.modal-backdrop.open{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:1rem;}
+.form-row{margin-bottom:12px;}
+.form-row label{display:block;font-size:12px;color:#666;margin-bottom:4px;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Dienstplan ── */
+.turnus-card{border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;}
+.turnus-header{background:#f5f5f5;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:500;}
+.turnus-body{padding:10px 12px;}
+.person-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;margin:3px;border:1px solid #ddd;background:#f9f9f9;cursor:pointer;}
+.person-chip.assigned{background:#1F3864;color:#fff;border-color:#1F3864;}
+
+/* ── Mobile ── */
+.menu-toggle{background:none;border:none;cursor:pointer;padding:0.5rem;}
+.print-tile{background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:background 0.15s;}
+.print-tile:hover{background:var(--bg2);}
+.info-sb-row{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:0.5px solid var(--border);}
+.info-sb-icon{width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-sb-key{font-size:12px;color:var(--text2);width:120px;flex-shrink:0;padding-top:2px;}
+.info-sb-val{font-size:14px;font-weight:500;color:var(--text);}
+@media print{
+  .sidebar,.topbar,.btn,.btn-primary,.btn-danger,.nav-item,.search-bar,.no-print,button{display:none!important;}
+  body{background:#fff!important;color:#000!important;display:block;}
+  .main{width:100%;}
+  .content{padding:0;}
+  .page{display:none!important;}
+  .page.print-active{display:block!important;}
+  .card{border:1px solid #ccc;border-radius:0;break-inside:avoid;margin-bottom:12px;}
+  canvas{max-width:100%;}
+  #print-header{display:block!important;margin-bottom:16px;}
+  .turnus-card{break-inside:avoid;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{border:1px solid #ccc;padding:5px 8px;font-size:12px;}
+}
+@media(max-width:700px){
+  .sidebar{position:fixed;left:-220px;z-index:150;transition:left 0.2s;}
+  .sidebar.open{left:0;}
+  .sidebar.collapsed{left:-220px!important;width:220px!important;}
+  .content{padding:1rem 0.75rem;}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h1>24h-Dienst</h1>
+    <p>Verwaltungs-Tool</p>
+  </div>
+  <nav class="sidebar-nav">
+
+    <!-- Dashboard solo -->
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      <span class="nav-label">Dashboard</span>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Gruppe: Allgemein -->
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleNavGroup('allgemein')">
+        <div class="nav-group-icon-col"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <span class="nav-group-label">Allgemein</span>
+        <svg class="nav-group-chevron" id="chev-allgemein" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-group-items" id="group-allgemein">
+        <div class="nav-item nav-sub" onclick="showPage('infos',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <span class="nav-label">Infos</span>
+        </div>
+        <div class="nav-item nav-sub" onclick="showPage('todos',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <span class="nav-label">To-Do-Liste</span>
+        </div>
+        <div class="nav-item nav-sub" onclick="showPage('bereiche',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <span class="nav-label">Zuständigkeitsbereiche</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Freizeit solo -->
+    <div class="nav-item" onclick="showPage('freizeit',this)">
+      <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <span class="nav-label">Freizeit</span>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Gruppe: Einsatz -->
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleNavGroup('einsatz')">
+        <div class="nav-group-icon-col"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+        <span class="nav-group-label">Einsatz</span>
+        <svg class="nav-group-chevron" id="chev-einsatz" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-group-items" id="group-einsatz">
+        <div class="nav-item nav-sub" onclick="showPage('einsaetze',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+          <span class="nav-label">Einsätze</span>
+        </div>
+        <div class="nav-item nav-sub" onclick="showPage('rud',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <span class="nav-label">RUD</span>
+        </div>
+        <div class="nav-item nav-sub" onclick="showPage('dienstplan',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <span class="nav-label">Dienstplan</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Teilnehmer solo -->
+    <div class="nav-item" onclick="showPage('teilnehmer',this)">
+      <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <span class="nav-label">Teilnehmer</span>
+    </div>
+
+    <div class="nav-separator"></div>
+
+    <!-- Gruppe: Sonstiges -->
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleNavGroup('sonstiges')">
+        <div class="nav-group-icon-col"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></div>
+        <span class="nav-group-label">Sonstiges</span>
+        <svg class="nav-group-chevron" id="chev-sonstiges" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-group-items" id="group-sonstiges">
+        <div class="nav-item nav-sub" onclick="showPage('drucken',this)">
+          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></div>
+          <span class="nav-label">Drucken / PDF</span>
+        </div>
+      </div>
+    </div>
+
+  </nav>
+  <div class="sidebar-footer">
+    <div onclick="showPage('einstellungen', {classList:{add:()=>{},remove:()=>{}}})" style="cursor:pointer;display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.5);padding:4px 0;transition:color 0.15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Einstellungen
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="menu-toggle" id="menu-toggle-btn" onclick="toggleSidebar()" style="display:block;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F3864" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="text-align:right;">
+        <div id="topbar-time" style="font-size:14px;font-weight:500;color:var(--text);"></div>
+        <div id="topbar-date" style="font-size:11px;color:var(--text2);"></div>
+      </div>
+      <div style="position:relative;">
+        <div onclick="toggleUserMenu()" id="user-icon" style="width:36px;height:36px;border-radius:50%;background:#1F3864;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.6)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'" title="Benutzermenü">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div id="user-menu" style="display:none;position:absolute;right:0;top:44px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;min-width:240px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:300;overflow:hidden;">
+          <div style="padding:14px;border-bottom:1px solid var(--border);background:var(--bg3);">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:38px;height:38px;border-radius:50%;background:#1F3864;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <div id="um-username" style="font-weight:500;font-size:13px;color:var(--text);">Gast</div>
+                <div id="um-eventname" style="font-size:11px;color:var(--text2);margin-top:1px;">24h-Dienst</div>
+              </div>
+            </div>
+          </div>
+          <div onclick="abmelden()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:#A32D2D;border-top:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Abmelden
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ EINSAETZE ══ -->
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <!-- Simulations-Leiste -->
+      <div id="sim-bar" style="display:none;background:#FFF4E5;border:1px solid #f5c57a;border-radius:10px;padding:10px 14px;margin-bottom:1rem;display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:12px;font-weight:500;color:#7a4800;">🎬 Simulation</span>
+        <input type="time" id="sim-time" value="10:00" oninput="renderDashboard()" style="width:110px;font-size:13px;padding:4px 8px;border:1px solid #f5c57a;border-radius:6px;background:#fff;">
+        <span id="sim-label" style="font-size:12px;color:#7a4800;"></span>
+        <button class="btn btn-sm" onclick="toggleSim()" style="margin-left:auto;font-size:12px;">✕ Beenden</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1rem;">
+        <div onclick="navTo('einsaetze')" style="background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Einsätze</div>
+          <div id="dash-einsaetze" style="font-size:28px;font-weight:500;color:#1F3864;">0</div>
+        </div>
+        <div onclick="navTo('einsaetze')" style="background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Fahrzeuge</div>
+          <div id="dash-fahrzeuge" style="font-size:28px;font-weight:500;color:#1F3864;">0</div>
+        </div>
+        <div onclick="navTo('teilnehmer')" style="background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Teilnehmer</div>
+          <div id="dash-teilnehmer" style="font-size:28px;font-weight:500;color:#1F3864;">0</div>
+        </div>
+        <div onclick="navTo('todos')" style="background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Offene To-Do-Listen</div>
+          <div id="dash-todos" style="font-size:28px;font-weight:500;color:#1F3864;">0</div>
+        </div>
+        <div onclick="toggleSim()" style="background:var(--bg3);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Simulation</div>
+          <div id="dash-sim-btn" style="font-size:22px;">🎬</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🟢 Aktuell laufende Einsätze</span></div>
+        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
+        <tbody id="dash-aktiv"></tbody></table>
+        <div id="dash-aktiv-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine laufenden Einsätze</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🕐 Anstehende Einsätze</span></div>
+        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
+        <tbody id="dash-anstehend"></tbody></table>
+        <div id="dash-anstehend-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine anstehenden Einsätze</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">⚫ Abgeschlossen</span></div>
+        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
+        <tbody id="dash-beendet"></tbody></table>
+        <div id="dash-beendet-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine abgeschlossenen Einsätze</div>
+      </div>
+    </div>
+
+    <!-- ══ ALLGEMEINE INFOS ══ -->
+    <div class="page" id="page-infos">
+      <!-- Steckbrief Ansicht -->
+      <div class="card" id="infos-view" style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;">
+          <div>
+            <div id="view-name" style="font-size:20px;font-weight:500;color:var(--text);">–</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:3px;">Allgemeine Eventinformationen</div>
+          </div>
+          <button class="btn btn-sm" onclick="toggleInfoEdit(true)">Bearbeiten</button>
+        </div>
+        <div class="info-sb-row">
+          <div class="info-sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></div>
+          <div class="info-sb-key">Datum &amp; Zeitraum</div>
+          <div class="info-sb-val">
+            <span id="view-datum-val" style="display:block;">–</span>
+            <span id="view-datum-bis-val" style="font-weight:400;color:var(--text2);font-size:13px;display:block;margin-top:2px;"></span>
+          </div>
+        </div>
+        <div class="info-sb-row">
+          <div class="info-sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 0 0-8-8z"/></svg></div>
+          <div class="info-sb-key">Ort</div><div class="info-sb-val" id="view-ort-val">–</div>
+        </div>
+        <div class="info-sb-row">
+          <div class="info-sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="info-sb-key">Verantwortlich</div><div class="info-sb-val" id="view-verantwortlich-val">–</div>
+        </div>
+        <div class="info-sb-row" style="border-bottom:none;">
+          <div class="info-sb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="info-sb-key">Notizen</div><div class="info-sb-val" id="view-notizen-val" style="font-weight:400;color:var(--text2);">–</div>
+        </div>
+      </div>
+
+      <!-- Bearbeiten Formular -->
+      <div class="card" id="infos-edit" style="display:none;">
+        <div class="card-header"><span class="card-title">Bearbeiten</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" onclick="toggleInfoEdit(false)">Abbrechen</button>
+            <button class="btn btn-primary btn-sm" onclick="saveInfos()">Speichern</button>
+          </div>
+        </div>
+        <div class="form-row"><label>Eventname</label><input type="text" id="info-name" placeholder="z.B. 24h-Dienst 2025"></div>
+        <div class="form-row">
+          <label>Von</label>
+          <div style="display:flex;gap:8px;">
+            <input type="date" id="info-datum" style="flex:1;">
+            <input type="time" id="info-start" value="10:00" style="width:110px;">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Bis</label>
+          <div style="display:flex;gap:8px;">
+            <input type="date" id="info-datum-end" style="flex:1;">
+            <input type="time" id="info-end" value="10:00" style="width:110px;">
+          </div>
+        </div>
+        <div class="form-row"><label>Ort</label><input type="text" id="info-ort" placeholder="z.B. Hauptplatz"></div>
+        <div class="form-row"><label>Verantwortliche Person</label><input type="text" id="info-verantwortlich" placeholder="Name"></div>
+        <div class="form-row"><label>Notizen</label><textarea id="info-notizen" placeholder="Allgemeine Anmerkungen..."></textarea></div>
+      </div>
+
+    </div>
+
+    <!-- ══ ZUSTÄNDIGKEITSBEREICHE ══ -->
+    <div class="page" id="page-bereiche">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Zuständigkeitsbereiche</span>
+          <button class="btn btn-primary btn-sm" onclick="addBereich()">+ Bereich</button>
+        </div>
+        <div id="bereiche-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+        <div id="bereiche-empty" style="text-align:center;padding:2rem;color:var(--text2);font-size:13px;display:none;">Noch keine Bereiche angelegt.</div>
+      </div>
+    </div>
+
+    <!-- ══ FREIZEIT ══ -->
+    <div class="page" id="page-freizeit">
+      <div class="card" style="padding:0.75rem 1rem;">
+        <div class="card-header">
+          <span class="card-title">Timeline</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div id="freizeit-legend" style="display:flex;gap:14px;flex-wrap:wrap;"></div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;"><canvas id="freizeit-gantt"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🏕️ Freizeitplanung</span>
+          <button class="btn btn-primary btn-sm" onclick="openFreizeitModal()">+ Planung</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr>
+            <th>Bezeichnung</th><th>Von</th><th>Bis</th><th>Beschreibung</th><th></th>
+          </tr></thead><tbody id="freizeit-body"></tbody></table>
+        </div>
+        <div id="freizeit-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine Freizeitplanungen</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🍽️ Essenszeiten</span>
+          <button class="btn btn-primary btn-sm" onclick="openEssenModal()">+ Essenszeit</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr>
+            <th>Mahlzeit</th><th>Von</th><th>Bis</th><th>Beschreibung</th><th></th>
+          </tr></thead><tbody id="essen-body"></tbody></table>
+        </div>
+        <div id="essen-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine Essenszeiten</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👤 Aufsichtspersonen</span>
+          <button class="btn btn-primary btn-sm" onclick="openAufsichtModal()">+ Aufsicht</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr>
+            <th>Person</th><th>Von</th><th>Bis</th><th>Bereich</th><th></th>
+          </tr></thead><tbody id="aufsicht-body"></tbody></table>
+        </div>
+        <div id="aufsicht-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine Aufsichtspersonen</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-einsaetze">
+      <div class="card" style="padding:0.75rem 1rem;">
+        <div class="card-header"><span class="card-title">Timeline</span><div id="gantt-legend" style="display:flex;gap:16px;flex-wrap:wrap;"></div></div>
+        <div style="overflow-x:auto;"><canvas id="gantt"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Einsätze</span><button class="btn btn-primary btn-sm" onclick="openEinsatzModal()">+ Einsatz</button></div>
+        <div style="overflow-x:auto;"><table><thead><tr><th>Fahrzeug</th><th>Status</th><th>Start</th><th>Ende</th><th>Dauer</th><th>Ort</th><th>Einsatzart</th><th>Beschreibung</th><th>ASP</th><th></th></tr></thead><tbody id="einsatz-body"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ RUD ══ -->
+    <div class="page" id="page-rud">
+      <div class="card" style="padding:0.75rem 1rem;">
+        <div class="card-header">
+          <span class="card-title">Timeline</span>
+          <div id="rud-legend" style="display:flex;gap:14px;flex-wrap:wrap;"></div>
+        </div>
+        <div style="overflow-x:auto;"><canvas id="rud-gantt"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎭 RUD-Einsatzplanung</span>
+          <button class="btn btn-sm" onclick="exportRudPDF()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
+        </div>
+        <div id="rud-list"></div>
+        <div id="rud-empty" style="text-align:center;padding:1.5rem;font-size:13px;color:var(--text2);">Keine Einsätze vorhanden. Einsätze zuerst auf der Einsätze-Seite anlegen.</div>
+      </div>
+    </div>
+
+    <!-- ══ TO-DOS ══ -->
+    <div class="page" id="page-todos">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Checklisten</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="exportChecklists()">↓ Exportieren</button>
+            <button class="btn btn-primary btn-sm" onclick="addChecklist()">+ Liste</button>
+          </div>
+        </div>
+        <div id="checklists"></div>
+      </div>
+    </div>
+
+    <!-- ══ DIENSTPLAN ══ -->
+    <div class="page" id="page-dienstplan">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Fahrzeuge</span><button class="btn btn-primary btn-sm" onclick="addVehicle()">+ Fahrzeug</button></div>
+        <div id="vehicle-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Dienstplan</span><button class="btn btn-primary btn-sm" onclick="addTurnusGlobal()">+ Dienstplan</button></div>
+        <div id="turnus-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ TEILNEHMER ══ -->
+    <div class="page" id="page-teilnehmer">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Teilnehmerliste</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="openExcelImport()">📥 Excel Import</button>
+            <button class="btn btn-primary btn-sm" onclick="addPerson()">+ Person</button>
+          </div>
+        </div>
+        <table><thead><tr><th>Nachname</th><th>Vorname</th><th>Rolle</th><th>Kontakt</th><th>Notizen</th><th></th></tr></thead><tbody id="person-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ══ DRUCKEN ══ -->
+    <div class="page" id="page-drucken">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Drucken / PDF Export</span></div>
+
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Planung</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+          <div class="print-tile" onclick="printSection('infos')"><div style="font-size:22px;margin-bottom:5px;">ℹ️</div><div style="font-weight:500;font-size:13px;">Allgemeine Infos</div><div style="font-size:11px;color:var(--text2);">Eventinformationen</div></div>
+          <div class="print-tile" onclick="printSection('todos')"><div style="font-size:22px;margin-bottom:5px;">✅</div><div style="font-weight:500;font-size:13px;">Checklisten</div><div style="font-size:11px;color:var(--text2);">To-Do-Liste</div></div>
+          <div class="print-tile" onclick="printSection('bereiche')"><div style="font-size:22px;margin-bottom:5px;">🏠</div><div style="font-weight:500;font-size:13px;">Zuständigkeitsbereiche</div><div style="font-size:11px;color:var(--text2);">Bereiche & Checklisten</div></div>
+          <div class="print-tile" onclick="printSection('freizeit')"><div style="font-size:22px;margin-bottom:5px;">🏕️</div><div style="font-weight:500;font-size:13px;">Freizeit</div><div style="font-size:11px;color:var(--text2);">Freizeitplanung & Essen</div></div>
+        </div>
+
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Einsatz</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+          <div class="print-tile" onclick="printSection('einsaetze')"><div style="font-size:22px;margin-bottom:5px;">📋</div><div style="font-weight:500;font-size:13px;">Einsatzliste</div><div style="font-size:11px;color:var(--text2);">Alle Einsätze & Timeline</div></div>
+          <div class="print-tile" onclick="printSection('rud')"><div style="font-size:22px;margin-bottom:5px;">🎭</div><div style="font-weight:500;font-size:13px;">RUD</div><div style="font-size:11px;color:var(--text2);">Patientenplanung</div></div>
+          <div class="print-tile" onclick="printSection('dienstplan')"><div style="font-size:22px;margin-bottom:5px;">👥</div><div style="font-weight:500;font-size:13px;">Dienstplan</div><div style="font-size:11px;color:var(--text2);">Dienstpläne & Zuteilungen</div></div>
+          <div class="print-tile" onclick="printSection('teilnehmer')"><div style="font-size:22px;margin-bottom:5px;">🙋</div><div style="font-weight:500;font-size:13px;">Teilnehmerliste</div><div style="font-size:11px;color:var(--text2);">Alle Personen & Rollen</div></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:16px;">
+          <div class="print-tile" onclick="printSection('all')" style="background:var(--bg2);border:2px solid #1F3864;border-radius:10px;padding:1rem;text-align:center;cursor:pointer;">
+            <div style="font-size:28px;margin-bottom:6px;">🖨️</div>
+            <div style="font-weight:600;font-size:14px;color:#1F3864;">Alles drucken</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;">Vollständiger Bericht aller Bereiche</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EINSTELLUNGEN ══ -->
+    <div class="page" id="page-einstellungen">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Daten</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Daten exportieren</div>
+              <div style="font-size:12px;color:var(--text2);">Alle Daten als JSON-Datei speichern</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="exportData()">↓ Exportieren</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Daten importieren</div>
+              <div style="font-size:12px;color:var(--text2);">Gespeicherte JSON-Datei laden</div>
+            </div>
+            <label class="btn btn-sm" style="cursor:pointer;">↑ Importieren<input type="file" accept=".json" onchange="importData(this.files[0])" style="display:none;"></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Dunkelmodus</div>
+              <div style="font-size:12px;color:var(--text2);">Dunkles Farbschema aktivieren</div>
+            </div>
+            <button onclick="toggleDark()" class="btn btn-sm" id="dark-toggle-btn">🌙 Dunkel</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Seitenmenü</div>
+              <div style="font-size:12px;color:var(--text2);">Fixiert: Menü bleibt immer sichtbar. Nicht fixiert: Menü verschwindet beim Seitenwechsel.</div>
+            </div>
+            <button id="sidebar-fixed-btn" onclick="toggleSidebarFixed()" class="btn btn-sm">📌 Fixieren</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Dashboard – Anstehende Einsätze</div>
+              <div style="font-size:12px;color:var(--text2);">Transporte in der Liste der anstehenden Einsätze anzeigen.</div>
+            </div>
+            <button id="transport-filter-btn" onclick="toggleTransportFilter()" class="btn btn-sm">Ausblenden</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
+            <div>
+              <div style="font-size:14px;font-weight:500;color:#A32D2D;">Alle Daten löschen</div>
+              <div style="font-size:12px;color:var(--text2);">Setzt das Tool auf den Ausgangszustand zurück</div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="resetAllData()">⚠️ Zurücksetzen</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔄 PocketBase Synchronisierung</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Server-URL</div>
+              <div style="font-size:12px;color:var(--text2);">z.B. http://192.168.1.100:8090</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="pb-url" placeholder="http://..." style="width:200px;font-size:12px;" value="">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Admin E-Mail</div>
+              <div style="font-size:12px;color:var(--text2);">PocketBase Superuser E-Mail</div>
+            </div>
+            <input type="email" id="pb-email" placeholder="admin@example.com" style="width:200px;font-size:12px;">
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Passwort</div>
+              <div style="font-size:12px;color:var(--text2);">PocketBase Superuser Passwort</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="password" id="pb-pass" placeholder="••••••••" style="width:200px;font-size:12px;">
+              <button class="btn btn-sm btn-primary" onclick="pbConnect()">Verbinden</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
+            <div>
+              <div style="font-size:14px;font-weight:500;">Status</div>
+              <div id="pb-status-text" style="font-size:12px;color:var(--text2);">Nicht verbunden</div>
+            </div>
+            <div id="pb-status-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Über das Tool</span></div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <div><strong>Name:</strong> 24h-Dienst Verwaltungs-Tool</div>
+          <div><strong>Version:</strong> <span id="settings-version"></span></div>
+          <div id="pb-data-info"><strong>Daten:</strong> Lokal im Browser gespeichert</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const COLORS=['#185FA5','#B8691C','#0F6E56','#993556','#534AB7','#3B6D11','#A32D2D','#854F0B'];
+const COLORS_L=['#D6E8F7','#F7E6D0','#E1F5EE','#FBEAF0','#EEEDFE','#EAF3DE','#FCEBEB','#FAEEDA'];
+const PAGE_TITLES={dashboard:'Dashboard',infos:'Infos',todos:'To-Do-Liste',bereiche:'Zuständigkeitsbereiche',freizeit:'Freizeit',einsaetze:'Einsätze',rud:'RUD',dienstplan:'Dienstplan',teilnehmer:'Teilnehmer',drucken:'Drucken / PDF',einstellungen:'Einstellungen'};
+
+let selectedEinsatzId = null;
+const CURRENT_VERSION = 1;
+
+let S={
+  version: CURRENT_VERSION,
+  vehicles:[],
+  einsaetze:[],
+  checklists:[],
+  dienstplaene:{},
+  persons:[],
+  nextId:1,
+  bereiche:[],
+  freizeitPlanungen:[],
+  rudEinsaetze:[],
+  essenszeiten:[],
+  aufsichten:[],
+  infos:{name:'',datum:'',ort:'',start:'10:00',end:'10:00',verantwortlich:'',notizen:''}
+};
+
+function migrate(data){
+  const v = data.version || 0;
+  // Version 0 → 1: fehlende Felder ergänzen
+  if(v < 1){
+    data.version = 1;
+    if(!data.bereiche) data.bereiche=[];
+      if(!data.freizeitPlanungen) data.freizeitPlanungen=[];
+      if(!data.rudEinsaetze) data.rudEinsaetze=[];
+      if(!data.essenszeiten) data.essenszeiten=[];
+      if(!data.aufsichten) data.aufsichten=[];
+    if(!data.vehicles) data.vehicles=[];
+    if(!data.einsaetze) data.einsaetze=[];
+    if(!data.checklists) data.checklists=[];
+    if(!data.dienstplaene||typeof data.dienstplaene!=='object'){
+      data.dienstplaene={};
+      if(data.turnusse){
+        data.turnusse.forEach(t=>{
+          const v=t.fahrzeug||'';
+          if(v){
+            if(!data.dienstplaene[v]) data.dienstplaene[v]=[];
+            data.dienstplaene[v].push(t);
+          }
+        });
+      }
+    }
+    if(!data.persons) data.persons=[];
+    if(!data.nextId) data.nextId=100;
+    data.einsaetze.forEach(e=>{
+      if(!e.status) e.status='geplant';
+      if(!['in_planung','geplant','aktiv','abgeschlossen','abgebrochen'].includes(e.status)) e.status='geplant';
+      if(!e.ort) e.ort='';
+      if(!e.adresse) e.adresse='';
+      if(!e.art) e.art='';
+      if(!e.desc) e.desc='';
+      if(!e.asp) e.asp='';
+      if(!e.alarm_k) e.alarm_k='';
+      if(!e.alarm_c) e.alarm_c='';
+      if(!e.alarm_r) e.alarm_r='';
+    });
+    data.turnusse.forEach(t=>{
+      if(!t.assignments) t.assignments={};
+    });
+    data.persons.forEach(p=>{
+      if(!p.vorname&&!p.nachname&&p.name){
+        const parts=(p.name||'').trim().split(' ');
+        p.vorname=parts[0]||''; p.nachname=parts.slice(1).join(' ')||'';
+      }
+      if(!p.vorname) p.vorname='';
+      if(!p.nachname) p.nachname='';
+      if(!p.rolle) p.rolle='';
+      if(!p.kontakt) p.kontakt='';
+      if(!p.notizen) p.notizen='';
+    });
+  }
+  // Zukünftige Versionen hier ergänzen:
+  // if(v < 2){ data.version=2; ... }
+  return data;
+}
+
+function load(){
+  try{
+    const d=localStorage.getItem('eventmgr');
+    if(d){
+      let data=JSON.parse(d);
+      if(!data.version || data.version < CURRENT_VERSION){
+        data=migrate(data);
+        localStorage.setItem('eventmgr',JSON.stringify(data));
+      }
+      S=data;
+    }
+  }catch(e){ console.error('Ladefehler:',e); }
+  if(localStorage.getItem('darkmode')==='1'){
+    document.body.classList.add('dark');
+  }
+  if(localStorage.getItem('sidebar-fixed')==='1' && window.innerWidth>700){
+    document.getElementById('sidebar').classList.remove('collapsed');
+  } else if(localStorage.getItem('sidebar-collapsed')==='1' && window.innerWidth>700){
+    document.getElementById('sidebar').classList.add('collapsed');
+  }
+  updateClock();
+  renderAll();
+}
+function save(){
+  try{
+    localStorage.setItem('eventmgr',JSON.stringify(S));
+  }catch(e){}
+  pbSave();
+}
+
+function exportData(){
+  const json=JSON.stringify(S, null, 2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const date=new Date();
+  const stamp=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  a.href=url; a.download='24h-dienst-daten-'+stamp+'.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importData(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      let data=JSON.parse(e.target.result);
+      if(!data.vehicles||!data.einsaetze) throw new Error('Ungültige Datei');
+      if(!data.version || data.version < CURRENT_VERSION){
+        data=migrate(data);
+      }
+      S=data;
+      localStorage.setItem('eventmgr',JSON.stringify(S));
+      renderAll();
+      alert('Daten erfolgreich geladen!');
+    }catch(err){ alert('Fehler beim Laden: Ungültige Datei'); }
+  };
+  reader.readAsText(file);
+}
+
+
+
+/* ══ POCKETBASE SYNC ══ */
+let _pbUrl = localStorage.getItem('pb-url') || '';
+let _pbRecordId = localStorage.getItem('pb-record-id') || '';
+let _pbToken = localStorage.getItem('pb-token') || '';
+let _pbEs = null;
+let _pbSyncing = false;
+
+function pbSetStatus(state, text){
+  const dot = document.getElementById('pb-status-dot');
+  const txt = document.getElementById('pb-status-text');
+  const info = document.getElementById('pb-data-info');
+  const colors = {ok:'#27a85e', error:'#A32D2D', connecting:'#E6A817', off:'#ccc'};
+  if(dot) dot.style.background = colors[state]||'#ccc';
+  if(txt) txt.textContent = text;
+  if(info){
+    if(state==='ok') info.innerHTML = '<strong>Daten:</strong> PocketBase – '+escHtml(_pbUrl);
+    else info.innerHTML = '<strong>Daten:</strong> Lokal im Browser gespeichert';
+  }
+}
+
+function pbHeaders(){
+  return {'Content-Type':'application/json', ...(_pbToken?{'Authorization':_pbToken}:{})};
+}
+
+async function pbConnect(){
+  const urlInput = document.getElementById('pb-url');
+  const emailInput = document.getElementById('pb-email');
+  const passInput = document.getElementById('pb-pass');
+  const url = (urlInput ? urlInput.value.trim() : _pbUrl).replace(/\/+$/,'');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const pass = passInput ? passInput.value : '';
+  if(!url){alert('Bitte Server-URL eingeben.');return;}
+  pbSetStatus('connecting','Verbinde...');
+
+  try{
+    // Authenticate as superuser
+    if(email && pass){
+      const authRes = await fetch(url+'/api/collections/_superusers/auth-with-password',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({identity:email, password:pass})
+      });
+      if(!authRes.ok){
+        const err = await authRes.json();
+        throw new Error('Login fehlgeschlagen: '+(err.message||authRes.status));
+      }
+      const authData = await authRes.json();
+      _pbToken = authData.token;
+      _pbUrl = url;
+      localStorage.setItem('pb-url', url);
+      localStorage.setItem('pb-token', _pbToken);
+      if(passInput) passInput.value=''; // clear password from UI
+    } else if(_pbToken){
+      _pbUrl = url;
+    } else {
+      throw new Error('Bitte E-Mail und Passwort eingeben.');
+    }
+
+    // Get or create record
+    const res = await fetch(url+'/api/collections/eventmgr/records?perPage=1',{headers:pbHeaders()});
+    if(!res.ok) throw new Error('Collection "eventmgr" nicht gefunden. Bitte anlegen.');
+    const list = await res.json();
+    if(list.items && list.items.length > 0){
+      _pbRecordId = list.items[0].id;
+      localStorage.setItem('pb-record-id', _pbRecordId);
+      const serverData = typeof list.items[0].data==='string'?JSON.parse(list.items[0].data||'{}'):list.items[0].data||{};
+      if(serverData.vehicles){
+        S = serverData;
+        localStorage.setItem('eventmgr', JSON.stringify(S));
+        renderAll();
+      }
+    } else {
+      const cr = await fetch(url+'/api/collections/eventmgr/records',{
+        method:'POST',
+        headers:pbHeaders(),
+        body: JSON.stringify({data: S})
+      });
+      if(!cr.ok) throw new Error('Konnte keinen Eintrag erstellen.');
+      const rec = await cr.json();
+      _pbRecordId = rec.id;
+      localStorage.setItem('pb-record-id', _pbRecordId);
+    }
+    pbSetStatus('ok','Verbunden ✓ · Echtzeit-Sync aktiv');
+    if(urlInput) urlInput.value = url;
+    pbSubscribe();
+  } catch(err){
+    pbSetStatus('error','Fehler: '+err.message);
+    console.error('PocketBase Fehler:',err);
+  }
+}
+
+async function pbSave(){
+  if(!_pbUrl || !_pbRecordId) return;
+  if(_pbSyncing) return;
+  _pbSyncing = true;
+  try{
+    await fetch(_pbUrl+'/api/collections/eventmgr/records/'+_pbRecordId,{
+      method:'PATCH',
+      headers:pbHeaders(),
+      body: JSON.stringify({data: S})
+    });
+  } catch(err){ console.error('PocketBase save error:',err); }
+  finally{ _pbSyncing = false; }
+}
+
+function pbSubscribe(){
+  if(_pbEs){ _pbEs.close(); _pbEs=null; }
+  if(!_pbUrl || !_pbRecordId) return;
+  try{
+    _pbEs = new EventSource(_pbUrl+'/api/realtime');
+    _pbEs.onopen = ()=>{
+      // Subscribe to this record
+      fetch(_pbUrl+'/api/realtime',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({clientId:'', subscriptions:['eventmgr/'+_pbRecordId]})
+      }).catch(()=>{});
+    };
+    _pbEs.addEventListener('eventmgr/'+_pbRecordId, e=>{
+      try{
+        const msg = JSON.parse(e.data);
+        if(msg.record && msg.record.data){
+          const incoming = typeof msg.record.data==='string'?JSON.parse(msg.record.data):msg.record.data;
+          if(incoming.vehicles && !_pbSyncing){
+            S = incoming;
+            localStorage.setItem('eventmgr', JSON.stringify(S));
+            renderAll();
+          }
+        }
+      } catch(err){}
+    });
+    _pbEs.onerror = ()=>{ pbSetStatus('error','Verbindung unterbrochen – versuche erneut...'); setTimeout(pbSubscribe,5000); };
+  } catch(err){ console.error('SSE error:',err); }
+}
+
+// Auto-reconnect on load if URL was saved
+function pbAutoConnect(){
+  const url = localStorage.getItem('pb-url');
+  const recId = localStorage.getItem('pb-record-id');
+  const token = localStorage.getItem('pb-token');
+  const urlInput = document.getElementById('pb-url');
+  if(urlInput && url) urlInput.value = url;
+  if(url && recId && token){
+    _pbUrl = url;
+    _pbRecordId = recId;
+    _pbToken = token;
+    pbSetStatus('connecting','Verbinde...');
+    pbSubscribe();
+    fetch(url+'/api/collections/eventmgr/records/'+recId, {headers:pbHeaders()})
+      .then(r=>r.json())
+      .then(rec=>{
+        if(rec.data){
+          const serverData = typeof rec.data==='string'?JSON.parse(rec.data):rec.data||{};
+          if(serverData.vehicles){
+            S = serverData;
+            localStorage.setItem('eventmgr', JSON.stringify(S));
+            renderAll();
+          }
+        }
+        pbSetStatus('ok','Verbunden ✓ · Echtzeit-Sync aktiv');
+      })
+      .catch(()=>pbSetStatus('error','Server nicht erreichbar'));
+  }
+}
+
+function renderAll(){renderDashboard();renderVehicles();renderEinsaetze();renderGantt();renderTodos();renderDienstplan();renderPersons();renderInfos();renderBereiche();renderFreizeit();renderRud();}
+
+// Nav group state
+const _navGroupOpen={allgemein:false,einsatz:false,sonstiges:false};
+function toggleNavGroup(group){
+  _navGroupOpen[group]=!_navGroupOpen[group];
+  const items=document.getElementById('group-'+group);
+  const chev=document.getElementById('chev-'+group);
+  const header=items&&items.previousElementSibling;
+  if(items)items.classList.toggle('open',_navGroupOpen[group]);
+  if(chev)chev.style.transform=_navGroupOpen[group]?'rotate(180deg)':'';
+  if(header)header.classList.toggle('open',_navGroupOpen[group]);
+}
+function applyNavGroups(){
+  Object.entries(_navGroupOpen).forEach(([g,open])=>{
+    const items=document.getElementById('group-'+g);
+    const chev=document.getElementById('chev-'+g);
+    const header=items&&items.previousElementSibling;
+    if(items){items.classList.toggle('open',open);}
+    if(chev){chev.style.transform=open?'rotate(180deg)':'';}
+    if(header){header.classList.toggle('open',open);}
+  });
+}
+// Map page id to group
+const _pageGroup={infos:'allgemein',todos:'allgemein',bereiche:'allgemein',einsaetze:'einsatz',rud:'einsatz',dienstplan:'einsatz',drucken:'sonstiges'};
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[id];
+  // Auto-open the group containing this page
+  if(_pageGroup[id]){_navGroupOpen[_pageGroup[id]]=true;applyNavGroups();}
+  const sidebar=document.getElementById('sidebar');
+  const isMobile=window.innerWidth<=700;
+  if(isMobile){
+    sidebar.classList.remove('open');
+  } else if(localStorage.getItem('sidebar-fixed')!=='1'){
+    sidebar.classList.add('collapsed');
+    localStorage.setItem('sidebar-collapsed','1');
+  }
+  if(id==='einsaetze')setTimeout(renderGantt,50);
+  if(id==='freizeit'){renderFreizeit();setTimeout(renderFreizeitGantt,50);}
+  if(id==='rud'){renderRud();setTimeout(renderRudGantt,50);}
+  if(id==='dashboard')renderDashboard();
+  if(id==='infos'){renderInfos();}
+  if(id==='bereiche'){renderBereiche();}
+  if(id==='einstellungen'){
+    document.getElementById('settings-version').textContent='1.'+CURRENT_VERSION;
+    const dtBtn=document.getElementById('dark-toggle-btn');
+    if(dtBtn) dtBtn.textContent=document.body.classList.contains('dark')?'☀️ Hell':'🌙 Dunkel';
+    renderSidebarSetting();
+    renderTransportFilterBtn();
+  }
+}
+
+function cOf(v){const i=S.vehicles.indexOf(v);return i>=0?COLORS[i%8]:'#888';}
+function clOf(v){const i=S.vehicles.indexOf(v);return i>=0?COLORS_L[i%8]:'#eee';}
+function toOff(t,base=10){const[h,m]=t.split(':').map(Number);let v=h+m/60-base;if(v<0)v+=24;return v;}
+function durStr(s,e){let so=toOff(s),eo=toOff(e);if(eo<=so)eo+=24;const d=eo-so,h=Math.floor(d),m=Math.round((d-h)*60);return m>0?h+'h '+m+'m':h+'h';}
+function uid(){return++S.nextId;}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtmlPlain(s){return String(s);}
+
+function statusBadge(s){
+  const map={
+    in_planung:   {bg:'#FFF0E0',col:'#B85C00',lbl:'🟠 In Planung'},
+    geplant:      {bg:'#EAF3DE',col:'#27500A',lbl:'🟢 Geplant'},
+    aktiv:        {bg:'#E6F1FB',col:'#0C447C',lbl:'🔵 Aktiv'},
+    abgeschlossen:{bg:'#f0f0f0',col:'#444',   lbl:'⚫ Abgeschlossen'},
+    abgebrochen:  {bg:'#FCEBEB',col:'#A32D2D',lbl:'🔴 Abgebrochen'},
+  };
+  const d=map[s||'geplant']||map.geplant;
+  return '<span class="badge" style="background:'+d.bg+';color:'+d.col+';">'+d.lbl+'</span>';
+}
+function statusDropdown(id, s){
+  const map={
+    in_planung:   {bg:'#FFF0E0',col:'#B85C00'},
+    geplant:      {bg:'#EAF3DE',col:'#27500A'},
+    aktiv:        {bg:'#E6F1FB',col:'#0C447C'},
+    abgeschlossen:{bg:'#f0f0f0',col:'#444'},
+    abgebrochen:  {bg:'#FCEBEB',col:'#A32D2D'},
+  };
+  const c=map[s||'geplant']||map.geplant;
+  const opts=[
+    ['in_planung','🟠 In Planung'],
+    ['geplant','🟢 Geplant'],
+    ['aktiv','🔵 Aktiv'],
+    ['abgeschlossen','⚫ Abgeschlossen'],
+    ['abgebrochen','🔴 Abgebrochen'],
+  ].map(([v,l])=>'<option value="'+v+'"'+(v===(s||'geplant')?' selected':'')+'>'+l+'</option>').join('');
+  return '<select onchange="setEinsatzStatus('+id+',this.value)" onclick="event.stopPropagation()" '+
+    'style="background:'+c.bg+';color:'+c.col+';border:none;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;cursor:pointer;outline:none;appearance:auto;">'+
+    opts+'</select>';
+}
+
+function toggleTransportFilter(){
+  const hidden=localStorage.getItem('hide-transport')==='1';
+  localStorage.setItem('hide-transport', hidden?'0':'1');
+  renderTransportFilterBtn();
+  renderDashboard();
+}
+function renderTransportFilterBtn(){
+  const btn=document.getElementById('transport-filter-btn');
+  if(!btn) return;
+  const hidden=localStorage.getItem('hide-transport')==='1';
+  btn.textContent=hidden?'Einblenden':'Ausblenden';
+  btn.style.borderColor=hidden?'#A32D2D':'';
+  btn.style.color=hidden?'#A32D2D':'';
+}
+function toggleDark(){
+  const isDark=document.body.classList.contains('dark');
+  const btn=document.getElementById('dark-btn');
+  if(btn) btn.textContent=isDark?'☀️':'🌙';
+  const dtBtn=document.getElementById('dark-toggle-btn');
+  if(dtBtn) dtBtn.textContent=isDark?'☀️ Hell':'🌙 Dunkel';
+  localStorage.setItem('darkmode',isDark?'1':'0');
+}
+
+function resetAllData(){
+  openModal('<h2>Alle Daten löschen?</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;">Diese Aktion kann nicht rückgängig gemacht werden. Alle Einsätze, Dienstpläne, Teilnehmer und Einstellungen werden gelöscht.</p>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-danger" onclick="confirmResetAllData()">Ja, alles löschen</button></div>');
+}
+function confirmResetAllData(){
+  localStorage.removeItem('eventmgr');
+  location.reload();
+applyNavGroups();
+setTimeout(pbAutoConnect, 300);
+}
+
+let userMenuOpen=false;
+function toggleUserMenu(){
+  userMenuOpen=!userMenuOpen;
+  const menu=document.getElementById('user-menu');
+  menu.style.display=userMenuOpen?'block':'none';
+  if(userMenuOpen) updateUserMenu();
+}
+function updateUserMenu(){
+  const name=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  const user=localStorage.getItem('username')||'Gast';
+  const el=document.getElementById('um-eventname');
+  const uEl=document.getElementById('um-username');
+  if(el) el.textContent=name;
+  if(uEl) uEl.textContent=user;
+}
+function updateClock(){
+  const now=new Date();
+  const timeEl=document.getElementById('topbar-time');
+  const dateEl=document.getElementById('topbar-date');
+  if(timeEl) timeEl.textContent=now.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'});
+  if(dateEl) dateEl.textContent=now.toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function abmelden(){
+  toggleUserMenu();
+  const name=prompt('Benutzername eingeben (wird lokal gespeichert):',localStorage.getItem('username')||'');
+  if(name!==null) localStorage.setItem('username',name.trim()||'Gast');
+  updateUserMenu();
+}
+function navTo(page){
+  const navItem=[...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"));
+  if(navItem) navItem.click();
+}
+
+function goToSettings(){
+  const navItem=[...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'einstellungen'"));
+  if(navItem) navItem.click();
+  else showPage('einstellungen',{classList:{add:()=>{},remove:()=>{}}});
+}
+document.addEventListener('click',e=>{
+  const menu=document.getElementById('user-menu');
+  const icon=document.getElementById('user-icon');
+  if(userMenuOpen && menu && !menu.contains(e.target) && e.target!==icon && !icon.contains(e.target)){
+    userMenuOpen=false; menu.style.display='none';
+  }
+});
+setInterval(updateClock,1000);
+
+function toggleSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const isMobile=window.innerWidth<=700;
+  if(isMobile){
+    sidebar.classList.toggle('open');
+  } else {
+    sidebar.classList.toggle('collapsed');
+    localStorage.setItem('sidebar-collapsed',sidebar.classList.contains('collapsed')?'1':'0');
+  }
+}
+
+function toggleSidebarFixed(){
+  const isFixed=localStorage.getItem('sidebar-fixed')==='1';
+  if(isFixed){
+    localStorage.setItem('sidebar-fixed','0');
+    document.getElementById('sidebar').classList.add('collapsed');
+    localStorage.setItem('sidebar-collapsed','1');
+  } else {
+    localStorage.setItem('sidebar-fixed','1');
+    document.getElementById('sidebar').classList.remove('collapsed');
+    localStorage.setItem('sidebar-collapsed','0');
+  }
+  renderSidebarSetting();
+}
+
+function renderSidebarSetting(){
+  const btn=document.getElementById('sidebar-fixed-btn');
+  if(!btn) return;
+  const isFixed=localStorage.getItem('sidebar-fixed')==='1';
+  btn.textContent=isFixed?'📌 Fixiert (klicken zum Lösen)':'📌 Fixieren';
+  btn.style.background=isFixed?'#1F3864':'';
+  btn.style.color=isFixed?'#fff':'';
+  btn.style.borderColor=isFixed?'#1F3864':'';
+}
+
+function openModal(html){
+  const mc=document.getElementById('modal-content');
+  mc.innerHTML=html;
+  document.getElementById('modal-backdrop').classList.add('open');
+  mc._keyHandler=function(e){
+    if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'&&e.target.tagName!=='SELECT'){
+      e.preventDefault();
+      const primary=mc.querySelector('.btn-primary');
+      if(primary) primary.click();
+    }
+  };
+  mc.addEventListener('keydown',mc._keyHandler);
+}
+function closeModal(e){
+  if(e===true||e.target===document.getElementById('modal-backdrop')){
+    const mc=document.getElementById('modal-content');
+    if(mc._keyHandler) mc.removeEventListener('keydown',mc._keyHandler);
+    document.getElementById('modal-backdrop').classList.remove('open');
+  }
+}
+function confirmModal(message, onConfirm){
+  openModal(
+    '<div style="text-align:center;padding:0.5rem 0 0.25rem;">' +
+    '<div style="width:48px;height:48px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">' +
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+    '</div>' +
+    '<div style="font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px;">Wirklich löschen?</div>' +
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;">' + message + '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:center;">' +
+    '<button class="btn" style="min-width:90px;" onclick="closeModal(true)">Abbrechen</button>' +
+    '<button class="btn btn-danger" style="min-width:90px;background:#A32D2D;color:#fff;border-color:#A32D2D;" id="confirm-delete-btn">Löschen</button>' +
+    '</div></div>'
+  );
+  // Callback direkt auf Button speichern — kein toString() Scope-Problem
+  setTimeout(()=>{
+    const btn=document.getElementById('confirm-delete-btn');
+    if(btn) btn.onclick=()=>{closeModal(true);onConfirm();};
+  },0);
+}
+
+let simActive=false;
+function toggleSim(){
+  simActive=!simActive;
+  const bar=document.getElementById('sim-bar');
+  const btn=document.getElementById('dash-sim-btn');
+  bar.style.display=simActive?'flex':'none';
+  if(btn) btn.textContent=simActive?'🔴':'🎬';
+  if(simActive){
+    const now=new Date();
+    document.getElementById('sim-time').value=now.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'});
+  }
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const offeneTodos = S.checklists.reduce((s,cl)=>s+cl.items.filter(i=>!i.done).length,0);
+  document.getElementById('dash-einsaetze').textContent = S.einsaetze.length;
+  document.getElementById('dash-fahrzeuge').textContent = S.vehicles.length;
+  document.getElementById('dash-teilnehmer').textContent = S.persons.length;
+  document.getElementById('dash-todos').textContent = offeneTodos;
+
+  function einsatzRow(b){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+      '<td style="font-size:12px;">'+b.start+'</td><td style="font-size:12px;">'+b.end+'</td>'+
+      '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
+      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td>'+statusBadge(b.status)+'</td>';
+    return tr;
+  }
+
+  // Datum aus Allgemeinen Infos, fallback auf heute
+  const eventDatum = S.infos&&S.infos.datum ? new Date(S.infos.datum) : null;
+  const now = new Date();
+  // Simulationszeit überschreibt aktuelle Zeit
+  let simNow = now;
+  if(simActive){
+    const simVal=document.getElementById('sim-time')?.value;
+    if(simVal){
+      const [sh,sm]=simVal.split(':').map(Number);
+      simNow=new Date(now);
+      simNow.setHours(sh,sm,0,0);
+    }
+    const lbl=document.getElementById('sim-label');
+    if(lbl) lbl.textContent='Simulierte Zeit: '+simNow.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'})+' Uhr';
+  }
+  const refDate = eventDatum || simNow;
+  const refStart = new Date(refDate);
+  refStart.setHours(10,0,0,0);
+  const nowOffMs = simNow - refStart;
+  const nowNorm = ((nowOffMs / 3600000) % 24 + 24) % 24;
+  const eventStart = eventDatum ? new Date(eventDatum) : null;
+  const eventEnd = S.infos&&S.infos.datumEnd ? new Date(S.infos.datumEnd) : null;
+  const imEventZeitraum = !eventStart || (simNow >= eventStart && (!eventEnd || simNow <= eventEnd));
+
+  function isLaufend(e){
+    if(e.status==='abgebrochen'||e.status==='abgeschlossen') return false;
+    if(!imEventZeitraum) return false;
+    let so=toOff(e.start), eo=toOff(e.end);
+    if(eo<=so) eo+=24;
+    return nowNorm>=so && nowNorm<eo;
+  }
+  function isAnstehend(e){
+    if(e.status==='abgebrochen'||e.status==='abgeschlossen') return false;
+    if(!imEventZeitraum) return false;
+    let so=toOff(e.start), eo=toOff(e.end);
+    if(eo<=so) eo+=24;
+    return nowNorm<so;
+  }
+
+  const hideTransport = localStorage.getItem('hide-transport')==='1';
+  const aktiv     = S.einsaetze.filter(e=>isLaufend(e));
+  const anstehend = S.einsaetze.filter(e=>isAnstehend(e) && !(hideTransport && e.art==='Transport'))
+    .sort((a,b)=>a.start.localeCompare(b.start));
+
+  const tbA=document.getElementById('dash-aktiv');
+  const tbP=document.getElementById('dash-anstehend');
+  const tbB=document.getElementById('dash-beendet');
+  tbA.innerHTML=''; tbP.innerHTML=''; tbB.innerHTML='';
+
+  const beendet = S.einsaetze.filter(e=>{
+    if(e.status==='abgeschlossen'||e.status==='abgebrochen') return true;
+    let so=toOff(e.start), eo=toOff(e.end);
+    if(eo<=so) eo+=24;
+    return imEventZeitraum && nowNorm>=eo;
+  }).sort((a,b)=>b.start.localeCompare(a.start));
+
+  function einsatzRowBeendet(b){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+      '<td style="font-size:12px;">'+b.start+'</td><td style="font-size:12px;">'+b.end+'</td>'+
+      '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
+      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td>'+statusBadge(b.status)+'</td>';
+    return tr;
+  }
+
+  document.getElementById('dash-aktiv-empty').style.display     = aktiv.length?'none':'block';
+  document.getElementById('dash-anstehend-empty').style.display = anstehend.length?'none':'block';
+  document.getElementById('dash-beendet-empty').style.display   = beendet.length?'none':'block';
+
+  aktiv.forEach(b=>tbA.appendChild(einsatzRow(b)));
+  anstehend.slice(0,5).forEach(b=>tbP.appendChild(einsatzRow(b)));
+  beendet.forEach(b=>tbB.appendChild(einsatzRowBeendet(b)));
+}
+
+function toggleInfoEdit(show){
+  document.getElementById('infos-view').style.display=show?'none':'block';
+  document.getElementById('infos-edit').style.display=show?'block':'none';
+  if(show) renderInfosForm();
+}
+
+function renderInfosForm(){
+  const f=S.infos;
+  if(!document.getElementById('info-name')) return;
+  document.getElementById('info-name').value=f.name||'';
+  document.getElementById('info-datum').value=f.datum||'';
+  document.getElementById('info-datum-end').value=f.datumEnd||'';
+  document.getElementById('info-ort').value=f.ort||'';
+  document.getElementById('info-start').value=f.start||'10:00';
+  document.getElementById('info-end').value=f.end||'10:00';
+  document.getElementById('info-verantwortlich').value=f.verantwortlich||'';
+  document.getElementById('info-notizen').value=f.notizen||'';
+}
+
+function renderInfos(){
+  const f=S.infos;
+  const nameEl=document.getElementById('view-name');
+  if(!nameEl) return;
+  nameEl.textContent=f.name||'Kein Eventname';
+  const fmt = d => d ? new Date(d).toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}) : null;
+  const d1 = fmt(f.datum);
+  const d2 = fmt(f.datumEnd);
+  const t1 = f.start||'10:00';
+  const t2 = f.end||'10:00';
+  const vonText = d1 ? d1+', '+t1+' Uhr' : '–';
+  const bisText = d2 ? 'bis '+d2+', '+t2+' Uhr' : (d1 ? 'bis '+t2+' Uhr' : '');
+  document.getElementById('view-datum-val').textContent=vonText;
+  const bisEl=document.getElementById('view-datum-bis-val');
+  if(bisEl) bisEl.textContent=bisText;
+  document.getElementById('view-ort-val').textContent=f.ort||'–';
+  document.getElementById('view-verantwortlich-val').textContent=f.verantwortlich||'–';
+  document.getElementById('view-notizen-val').textContent=f.notizen||'–';
+}
+
+function saveInfos(){
+  S.infos={
+    name:document.getElementById('info-name').value,
+    datum:document.getElementById('info-datum').value,
+    datumEnd:document.getElementById('info-datum-end').value,
+    ort:document.getElementById('info-ort').value,
+    start:document.getElementById('info-start').value,
+    end:document.getElementById('info-end').value,
+    verantwortlich:document.getElementById('info-verantwortlich').value,
+    notizen:document.getElementById('info-notizen').value,
+  };
+  save();
+  toggleInfoEdit(false);
+  renderInfos();
+}
+
+function renderVehicles(){
+  const el=document.getElementById('vehicle-list');el.innerHTML='';
+  S.vehicles.forEach((v,i)=>{
+    const tag=document.createElement('div');
+    tag.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;border:1px solid '+COLORS[i%8]+';background:'+COLORS_L[i%8]+';';
+    const dot=document.createElement('span');dot.style.cssText='width:10px;height:10px;border-radius:2px;background:'+COLORS[i%8]+';flex-shrink:0;';
+    const inp=document.createElement('input');inp.type='text';inp.value=v;
+    inp.style.cssText='border:none;background:transparent;font-size:13px;font-weight:500;color:'+COLORS[i%8]+';width:'+Math.max(60,v.length*9)+'px;outline:none;';
+    inp.addEventListener('change',()=>{const old=S.vehicles[i];S.vehicles[i]=inp.value;S.einsaetze.forEach(b=>{if(b.veh===old)b.veh=inp.value;});save();renderAll();});
+    const del=document.createElement('button');del.textContent='x';del.className='btn btn-sm';
+    del.style.cssText='padding:1px 6px;font-size:11px;color:#a32d2d;border-color:#f09595;';
+    del.onclick=()=>{confirmModal('Fahrzeug "'+v+'" und alle zugehörigen Einsätze werden gelöscht.',function(){S.vehicles.splice(i,1);S.einsaetze=S.einsaetze.filter(b=>b.veh!==v);save();renderAll();});};
+    tag.appendChild(dot);tag.appendChild(inp);tag.appendChild(del);el.appendChild(tag);
+  });
+}
+function addVehicle(){openModal('<h2>Neues Fahrzeug</h2>'+
+  '<div class="form-row"><label>Name</label><input type="text" id="m-vname" placeholder="z.B. WK573"></div>'+
+  '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+  '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+  '<button class="btn btn-primary" onclick="saveVehicle()">Speichern</button></div>');
+  setTimeout(()=>document.getElementById('m-vname').focus(),50);}
+function saveVehicle(){const n=document.getElementById('m-vname').value.trim();if(!n)return;S.vehicles.push(n);closeModal(true);save();renderAll();}
+
+/* ══ EINSAETZE ══ */
+function renderEinsaetze(){
+  const tb=document.getElementById('einsatz-body');tb.innerHTML='';
+  // Sort by start time using 10:00 as base (wraps midnight)
+  const timeSorted=[...S.einsaetze].sort((a,b)=>toOff(a.start||'10:00')-toOff(b.start||'10:00'));
+  const sorted = selectedEinsatzId
+    ? [timeSorted.find(x=>x.id===selectedEinsatzId), ...timeSorted.filter(x=>x.id!==selectedEinsatzId)].filter(Boolean)
+    : timeSorted;
+  sorted.forEach(b=>{
+    const tr=document.createElement('tr');
+    tr.id='einsatz-row-'+b.id;
+    const isSelected = b.id === selectedEinsatzId;
+    tr.style.cssText = isSelected ? 'background:'+clOf(b.veh)+';outline:2px solid '+cOf(b.veh)+';outline-offset:-1px;transition:background 0.2s;' : 'transition:background 0.2s;';
+    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+      '<td>'+statusDropdown(b.id, b.status)+'</td>'+
+      '<td>'+b.start+'</td><td>'+b.end+'</td><td style="color:var(--text2);font-size:12px;">'+durStr(b.start,b.end)+'</td>'+
+      '<td style="max-width:120px;font-size:12px;color:#185FA5;cursor:pointer;text-decoration:underline dotted;" onclick="showOrtDetail('+b.id+')">'+escHtml(b.ort||'–')+'</td>'+
+      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td style="max-width:180px;font-size:12px;color:#555;">'+escHtml(b.desc||'')+'</td>'+
+      '<td style="max-width:120px;font-size:12px;color:#555;">'+escHtml(b.asp||'')+'</td>'+
+      '</td>'+
+      '<td style="white-space:nowrap;"><button class="btn btn-sm" onclick="openEinsatzModal('+b.id+')" style="margin-right:4px;">Bearbeiten</button>'+
+      '<button class="btn btn-sm btn-danger" onclick="deleteEinsatz('+b.id+')">x</button></td>';
+    tb.appendChild(tr);
+  });
+}
+function openEinsatzModal(id){
+  const b=id?S.einsaetze.find(x=>x.id===id):{veh:S.vehicles[0]||'',start:'10:00',end:'12:00',desc:''};
+  const opts=S.vehicles.map(v=>'<option value="'+v+'"'+(v===b.veh?' selected':'')+'>'+v+'</option>').join('');
+  openModal('<h2>'+(id?'Einsatz bearbeiten':'Neuer Einsatz')+'</h2>'+
+    '<div class="form-row"><label>Fahrzeug</label><select id="m-veh">'+opts+'</select></div>'+
+    '<div class="form-row"><label>Status</label><select id="m-status">'+
+    '<option value="in_planung"'+(b.status==='in_planung'?' selected':'')+'>🟠 In Planung</option>'+
+    '<option value="geplant"'+((!b.status||b.status==='geplant')?' selected':'')+'>🟢 Geplant</option>'+
+    '<option value="aktiv"'+(b.status==='aktiv'?' selected':'')+'>🔵 Aktiv</option>'+
+    '<option value="abgeschlossen"'+(b.status==='abgeschlossen'?' selected':'')+'>⚫ Abgeschlossen</option>'+
+    '<option value="abgebrochen"'+(b.status==='abgebrochen'?' selected':'')+'>🔴 Abgebrochen</option>'+
+    '</select></div>'+
+    '<div class="form-row form-row-2"><div><label>Start</label><input type="time" id="m-start" value="'+b.start+'"></div>'+
+    '<div><label>Ende</label><input type="time" id="m-end" value="'+b.end+'"></div></div>'+
+    '<div class="form-row form-row-2"><div><label>Ort</label><input type="text" id="m-ort" value="'+escHtml(b.ort||'')+'"></div>'+
+    '<div><label>Adresse</label><input type="text" id="m-adresse" placeholder="Straße, Hausnr., PLZ..." value="'+escHtml(b.adresse||'')+'"></div></div>'+
+    '<div class="form-row"><label>Einsatzart</label><select id="m-art"><option value=""'+((!b.art)?' selected':'')+'>– bitte wählen –</option>'+
+    '<option value="Trauma"'+(b.art==='Trauma'?' selected':'')+'>Trauma</option>'+
+    '<option value="Internistisch"'+(b.art==='Internistisch'?' selected':'')+'>Internistisch</option>'+
+    '<option value="Transport"'+(b.art==='Transport'?' selected':'')+'>Transport</option>'+
+    '<option value="Andere"'+(b.art==='Andere'?' selected':'')+'>Andere</option></select></div>'+
+    '<div class="form-row"><label>Beschreibung</label><textarea id="m-desc">'+escHtml(b.desc||'')+'</textarea></div>'+
+    '<div class="form-row"><label>ASP (Ansprechperson)</label><input type="text" id="m-asp" value="'+escHtml(b.asp||'')+'"></div>'+
+    '<div style="border-top:1px solid #eee;margin:12px 0;padding-top:12px;font-size:13px;font-weight:500;color:#1F3864;">Alarmierung</div>'+
+    '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">'+
+    '<div><label>K</label><select id="m-ak"><option value="">–</option>'+
+    ['K','S','P','Q','Z'].map(v=>'<option value="'+v+'"'+(b.alarm_k===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'+
+    '<div><label>C</label><select id="m-ac"><option value="">–</option>'+
+    Array.from({length:20},(_,i)=>'C'+String(i+1).padStart(2,'0')).map(v=>'<option value="'+v+'"'+(b.alarm_c===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'+
+    '<div><label>R</label><select id="m-ar"><option value="">–</option>'+
+    ['V','G','R'].map(v=>'<option value="'+v+'"'+(b.alarm_r===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveEinsatz('+(id||0)+')">Speichern</button></div>');
+}
+function saveEinsatz(id){
+  const veh=document.getElementById('m-veh').value;
+  const status=document.getElementById('m-status').value;
+  const start=document.getElementById('m-start').value;
+  const end=document.getElementById('m-end').value;
+  const ort=document.getElementById('m-ort').value;
+  const adresse=document.getElementById('m-adresse').value;
+  const art=document.getElementById('m-art').value;
+  const desc=document.getElementById('m-desc').value;
+  const asp=document.getElementById('m-asp').value;
+  const alarm_k=document.getElementById('m-ak').value;
+  const alarm_c=document.getElementById('m-ac').value;
+  const alarm_r=document.getElementById('m-ar').value;
+  if(id){const b=S.einsaetze.find(x=>x.id===id);b.veh=veh;b.status=status;b.start=start;b.end=end;b.ort=ort;b.adresse=adresse;b.art=art;b.desc=desc;b.asp=asp;b.alarm_k=alarm_k;b.alarm_c=alarm_c;b.alarm_r=alarm_r;}
+  else{S.einsaetze.push({id:uid(),veh,status,start,end,ort,adresse,art,desc,asp,alarm_k,alarm_c,alarm_r});}
+  closeModal(true);save();renderEinsaetze();renderGantt();
+}
+function setEinsatzStatus(id, status){
+  const e=S.einsaetze.find(x=>x.id===id);
+  if(e){e.status=status;save();renderEinsaetze();renderGantt();renderDashboard();}
+}
+function deleteEinsatz(id){confirmModal('Dieser Einsatz wird unwiderruflich gelöscht.',function(){S.einsaetze=S.einsaetze.filter(x=>x.id!==id);save();renderEinsaetze();renderGantt();});}
+
+function showOrtDetail(id){
+  const b=S.einsaetze.find(x=>x.id===id);
+  openModal('<h2>Ort &amp; Adresse</h2>'+
+    '<div style="margin-bottom:8px;"><span style="font-size:13px;font-weight:500;">'+escHtml(b.ort||'–')+'</span></div>'+
+    '<div style="font-size:13px;color:#555;">'+escHtml(b.adresse||'Keine Adresse angegeben')+'</div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn btn-primary" onclick="closeModal(true)">Schliessen</button></div>');
+}
+
+function showAlarmDetail(id){
+  const b=S.einsaetze.find(x=>x.id===id);
+  const k=b.alarm_k||'–', c=b.alarm_c||'–', r=b.alarm_r||'–';
+  openModal('<h2>Alarmierung</h2>'+
+    (b.ort||b.adresse?'<div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;">'+
+    '<div style="font-size:13px;font-weight:500;color:#1F3864;">'+escHtml(b.ort||'')+'</div>'+
+    '<div style="font-size:12px;color:#666;margin-top:2px;">'+escHtml(b.adresse||'Keine Adresse angegeben')+'</div></div>':'')+
+    '<div style="display:flex;gap:16px;align-items:center;justify-content:center;margin:1.5rem 0;">'+
+    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">K</div>'+
+    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(k)+'</div></div>'+
+    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">C</div>'+
+    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(c)+'</div></div>'+
+    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">R</div>'+
+    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(r)+'</div></div>'+
+    '</div>'+
+    '<div style="text-align:center;font-size:16px;font-weight:500;color:#444;margin-bottom:1.5rem;">'+escHtml(k)+' '+escHtml(c)+' '+escHtml(r)+'</div>'+
+    '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="closeModal(true)">Schliessen</button></div>');
+}
+
+/* ══ GANTT ══ */
+function renderGantt(){
+  const canvas=document.getElementById('gantt');
+  const wrap=canvas.parentElement;
+  const TOTAL=24,BASE=10,LW=80,PT=44,PB=12,RH=110;
+  // Zonen innerhalb einer Zeile:
+  // Einsatz-Balken:       y+4  .. y+4+48   (Höhe 48)
+  // Standard-Turnus:      y+56 .. y+56+20  (Höhe 20)
+  // Fahrer-Turnus:        y+80 .. y+80+22  (Höhe 22)
+  const EY=4,EH=48,TY=56,TH=20,FTY=80,FTH=22;
+  const n=Math.max(S.vehicles.length,1);
+  const W=Math.max(wrap.clientWidth||700,700);
+  const H=PT+n*RH+PB;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const cW=W-LW-8;
+  ctx.clearRect(0,0,W,H);
+  function xOf(h){return LW+(h/TOTAL)*cW;}
+
+  // Fahrzeug-Zeilen Hintergrund + Trennlinien
+  S.vehicles.forEach((_,i)=>{
+    const rowY=PT+i*RH;
+    // Alternierender Hintergrund
+    ctx.fillStyle=i%2===0?'rgba(255,255,255,0)':'rgba(0,0,0,0.03)';
+    ctx.fillRect(LW,rowY,cW,RH);
+    // Trennlinie unten
+    ctx.strokeStyle='rgba(0,0,0,0.18)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(LW,rowY+RH);ctx.lineTo(LW+cW,rowY+RH);ctx.stroke();
+  });
+
+  // ── Turnus-Balken ──
+  if(!S.dienstplaene) S.dienstplaene={};
+  S.vehicles.forEach((v,i)=>{
+    const plans=S.dienstplaene[v]||[];
+    const rowY=PT+i*RH;
+    plans.forEach(t=>{
+      let so=toOff(t.start),eo=toOff(t.end);
+      if(eo<=so)eo+=24;
+      const soC=Math.max(0,Math.min(so,24));
+      const eoC=Math.max(0,Math.min(eo,24));
+      if(eoC<=soC)return;
+      const x1=xOf(soC),bW=xOf(eoC)-x1;
+      const isFahrer=t.typ==='fahrer';
+      const ty=rowY+(isFahrer?FTY:TY);
+      const th=isFahrer?FTH:TH;
+      // Farbe: Standard=blau, Fahrer=rot
+      ctx.fillStyle=isFahrer?'rgba(163,45,45,0.18)':'rgba(31,56,100,0.22)';
+      ctx.beginPath();ctx.roundRect(x1,ty,bW,th,3);ctx.fill();
+      ctx.strokeStyle=isFahrer?'rgba(163,45,45,0.5)':'rgba(31,56,100,0.45)';
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(x1,ty,bW,th,3);ctx.stroke();
+      if(bW>30){
+        ctx.save();
+        ctx.beginPath();ctx.rect(x1+3,ty,bW-6,th);ctx.clip();
+        ctx.fillStyle=isFahrer?'rgba(120,30,30,0.9)':'rgba(15,40,80,0.9)';
+        ctx.font='bold 9px sans-serif';
+        ctx.textAlign='center';
+        if(isFahrer){
+          const fahrerNames=(t.fahrer_ids||[]).map(id=>{const p=S.persons.find(x=>x.id===id);return p?(p.vorname||'')+(p.nachname?' '+p.nachname[0]+'.':''):null;}).filter(Boolean).join(', ');
+          ctx.fillText((fahrerNames||t.title)+'  '+t.start+'–'+t.end,x1+bW/2,ty+th/2+3);
+        } else {
+          ctx.fillText(t.title+'  '+t.start+'–'+t.end,x1+bW/2,ty+th/2+3);
+        }
+        ctx.restore();
+      }
+    });
+  });
+
+  // Gitternetzlinien
+  for(let h=0;h<=TOTAL;h+=0.5){
+    const x=xOf(h),full=h%1===0;
+    ctx.strokeStyle='rgba(0,0,0,0.07)';ctx.lineWidth=full?1:0.5;ctx.setLineDash(full?[]:[2,3]);
+    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+n*RH);ctx.stroke();ctx.setLineDash([]);
+    if(full){ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.fillText(String(Math.round((BASE+h)%24)).padStart(2,'0')+':00',x,PT-8);}
+  }
+
+  // Mitternachtslinie
+  const mx=xOf(14);ctx.strokeStyle='rgba(184,105,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(mx,PT-2);ctx.lineTo(mx,PT+n*RH+2);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',mx,PT-8);
+
+  // Fahrzeug-Labels links
+  S.vehicles.forEach((v,i)=>{ctx.fillStyle=cOf(v);ctx.font='500 12px sans-serif';ctx.textAlign='right';ctx.fillText(v,LW-10,PT+i*RH+EY+EH/2+5);});
+
+  // ── Einsatz-Balken (obere Zone) ──
+  S.einsaetze.forEach(b=>{
+    const vi=S.vehicles.indexOf(b.veh);if(vi<0)return;
+    let so=toOff(b.start),eo=toOff(b.end);if(eo<=so)eo+=24;if(eo>24)eo=24;
+    const x1=xOf(so),bW=Math.max(xOf(eo)-x1,2);
+    const y=PT+vi*RH+EY;
+    const isSel=b.id===selectedEinsatzId;
+    ctx.fillStyle=cOf(b.veh);
+    ctx.globalAlpha=isSel?1.0:0.85;
+    ctx.beginPath();ctx.roundRect(x1,y,bW,EH,4);ctx.fill();
+    ctx.globalAlpha=1.0;
+    if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(x1+1,y+1,bW-2,EH-2,3);ctx.stroke();}
+    if(bW>30){
+      const line1=b.ort||'';
+      const line2=b.art||durStr(b.start,b.end);
+      ctx.save();ctx.beginPath();ctx.rect(x1+2,y,bW-4,EH);ctx.clip();
+      ctx.fillStyle='#fff';ctx.textAlign='center';
+      if(line1&&line2){
+        ctx.font='500 11px sans-serif';ctx.fillText(line1,x1+bW/2,y+EH/2-4);
+        ctx.font='400 10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fillText(line2,x1+bW/2,y+EH/2+10);
+      } else {
+        ctx.font='500 11px sans-serif';ctx.fillText(line1||line2,x1+bW/2,y+EH/2+4);
+      }
+      ctx.restore();
+    }
+  });
+
+  ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,n*RH);
+  const leg=document.getElementById('gantt-legend');leg.innerHTML='';
+  S.vehicles.forEach((v,i)=>{const s=document.createElement('span');s.style.cssText='display:flex;align-items:center;gap:5px;font-size:12px;color:#666;';s.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+COLORS[i%8]+';"></span>'+escHtml(v);leg.appendChild(s);});
+}
+
+/* ══ TO-DOS ══ */
+let collapsedLists={};
+function toggleCollapse(clId){
+  collapsedLists[clId]=!collapsedLists[clId];
+  renderTodos();
+}
+function renderTodos(){
+  const el=document.getElementById('checklists');el.innerHTML='';
+  S.checklists.forEach(cl=>{
+    const collapsed=!!collapsedLists[cl.id];
+    // Fortschritt inkl. Unterpunkte
+    let total=0,done=0;
+    cl.items.forEach(it=>{
+      total++; if(it.done) done++;
+      (it.sub||[]).forEach(s=>{total++;if(s.done)done++;});
+    });
+    const pct=total?Math.round(done/total*100):0;
+
+    const div=document.createElement('div');div.className='card';div.style.marginBottom='10px';
+    div.innerHTML=
+      '<div class="card-header" style="cursor:pointer;" onclick="toggleCollapse('+cl.id+')">'+
+        '<div style="flex:1;display:flex;align-items:center;gap:8px;">'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;transform:rotate('+(collapsed?'-90':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg>'+
+          '<span style="font-weight:500;font-size:14px;">'+escHtml(cl.title)+'</span>'+
+          '<span style="font-size:12px;color:#888;">'+done+'/'+total+' ('+pct+'%)</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;" onclick="event.stopPropagation()">'+
+          '<button class="btn btn-sm btn-danger" onclick="deleteChecklist('+cl.id+')">Liste löschen</button>'+
+        '</div>'+
+      '</div>'+
+      (collapsed?'':
+        '<div style="background:#eee;height:4px;border-radius:2px;margin-bottom:10px;">'+
+          '<div style="background:#1F3864;height:4px;border-radius:2px;width:'+pct+'%;transition:width 0.3s;"></div>'+
+        '</div>'+
+        '<div id="items-'+cl.id+'"></div>'+
+        '<div style="display:flex;align-items:center;gap:8px;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:6px;">'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+
+          '<input type="text" id="new-item-'+cl.id+'" placeholder="Neuer Punkt hinzufügen..." '+
+            'style="flex:1;border:none;background:transparent;font-size:13px;color:var(--text);outline:none;padding:2px 0;" '+
+            'onkeydown="if(event.key===\'Enter\')addCheckItemInline('+cl.id+')">'+
+        '</div>'
+      );
+    el.appendChild(div);
+
+    if(!collapsed){
+      const itemsEl=div.querySelector('#items-'+cl.id);
+      cl.items.forEach(it=>{
+        const row=document.createElement('div');
+        row.style.cssText='padding:4px 0 8px;border-bottom:2px solid var(--border);margin-bottom:2px;';
+        const subDone=(it.sub||[]).filter(s=>s.done).length;
+        const subTotal=(it.sub||[]).length;
+        const subCollapsed = it.subCollapsed||false;
+        row.innerHTML=
+          '<div class="check-item'+(it.done?' done':'')+'" style="padding:5px 0;">'+
+            (subTotal?'<span onclick="toggleSubCollapse('+cl.id+','+it.id+')" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;cursor:pointer;" title="'+(subCollapsed?'Einblenden':'Ausblenden')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" style="transition:transform 0.2s;transform:rotate('+(subCollapsed?'-90':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg></span>':'<span style="display:inline-flex;width:20px;height:20px;flex-shrink:0;"></span>')+
+            '<input type="checkbox"'+(it.done?' checked':'')+' onchange="toggleItem('+cl.id+','+it.id+',this.checked)" style="'+((it.sub||[]).length>0?'pointer-events:none;':'')+'">'+
+            '<span style="flex:1;font-size:13px;'+(it.done?'text-decoration:line-through;color:#888;':'')+'">'+escHtml(it.text)+'</span>'+
+            (subTotal?'<span style="font-size:11px;color:var(--text2);margin-right:4px;">'+subDone+'/'+subTotal+'</span>':'')+
+            '<button class="btn btn-sm btn-danger" onclick="deleteItem('+cl.id+','+it.id+')" style="padding:1px 6px;font-size:11px;">✕</button>'+
+          '</div>'+
+          '<div style="margin-left:64px;'+(subCollapsed?'display:none;':'')+'">'+
+            (it.sub||[]).map(s=>
+              '<div class="check-item'+(s.done?' done':'')+'" style="padding:3px 0;font-size:12px;">'+
+                '<input type="checkbox"'+(s.done?' checked':'')+' onchange="toggleSubItem('+cl.id+','+it.id+','+s.id+',this.checked)">'+
+                '<span style="flex:1;color:var(--text2);">'+escHtml(s.text)+'</span>'+
+                '<button class="btn btn-sm btn-danger" onclick="deleteSubItem('+cl.id+','+it.id+','+s.id+')" style="padding:1px 5px;font-size:10px;">✕</button>'+
+              '</div>'
+            ).join('')+
+            '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">'+
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+
+              '<input type="text" id="new-sub-'+cl.id+'-'+it.id+'" placeholder="Unterpunkt..." '+
+                'style="flex:1;border:none;background:transparent;font-size:12px;color:var(--text2);outline:none;padding:1px 0;" '+
+                'onkeydown="if(event.key===\'Enter\')addSubItemInline('+cl.id+','+it.id+')">'+
+            '</div>'+
+          '</div>';
+        itemsEl.appendChild(row);
+      });
+    }
+  });
+}
+function exportChecklists(){
+  if(!S.checklists.length){alert('Keine Checklisten vorhanden.');return;}
+  const checks=S.checklists.map(cl=>{
+    let total=0,done=0;
+    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;">'+
+      '<input type="checkbox" checked data-clid="'+cl.id+'" style="width:15px;height:15px;">'+
+      '<span style="flex:1;">'+escHtml(cl.title)+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);">'+done+'/'+total+'</span>'+
+      '</label>';
+  }).join('');
+  openModal('<h2>Checklisten exportieren</h2>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Welche Listen sollen exportiert werden?</div>'+
+    '<div style="display:flex;gap:6px;margin-bottom:8px;">'+
+    '<button class="btn btn-sm" onclick="[...document.querySelectorAll(\'#cl-export-list input\')].forEach(c=>c.checked=true)">Alle</button>'+
+    '<button class="btn btn-sm" onclick="[...document.querySelectorAll(\'#cl-export-list input\')].forEach(c=>c.checked=false)">Keine</button>'+
+    '</div>'+
+    '<div id="cl-export-list">'+checks+'</div>'+
+    '<div style="margin-top:14px;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">Format</div>'+
+    '<div style="display:flex;gap:8px;margin-bottom:4px;">'+
+      '<button class="btn btn-sm" id="fmt-pdf" onclick="setExportFmt(\'pdf\')" style="flex:1;">🖨️ PDF</button>'+
+      '<button class="btn btn-sm" id="fmt-xlsx" onclick="setExportFmt(\'xlsx\')" style="flex:1;">📊 Excel</button>'+
+      '<button class="btn btn-sm" id="fmt-txt" onclick="setExportFmt(\'txt\')" style="flex:1;">📄 TXT</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="doExportChecklists()">↓ Exportieren</button>'+
+    '</div>');
+  setTimeout(()=>setExportFmt('pdf'),0);
+}
+let _exportFmt='txt';
+function setExportFmt(fmt){
+  _exportFmt=fmt;
+  ['txt','xlsx','pdf'].forEach(f=>{
+    const btn=document.getElementById('fmt-'+f);
+    if(btn) btn.style.cssText=f===fmt?'flex:1;background:#1F3864;color:#fff;border-color:#1F3864;':'flex:1;';
+  });
+}
+function doExportChecklists(){
+  const selected=[...document.querySelectorAll('#cl-export-list input:checked')].map(c=>parseInt(c.dataset.clid));
+  const lists=S.checklists.filter(cl=>selected.includes(cl.id));
+  if(!lists.length){alert('Keine Liste ausgewählt.');return;}
+  if(_exportFmt==='txt') exportChecklistsTxt(lists);
+  else if(_exportFmt==='xlsx') exportChecklistsXlsx(lists);
+  else if(_exportFmt==='pdf') exportChecklistsPdf(lists);
+}
+function exportChecklistsTxt(lists){
+  const eventName=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  let txt=eventName+' – Checklisten\n'+'='.repeat(40)+'\n\n';
+  lists.forEach(cl=>{
+    let total=0,done=0;
+    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
+    txt+=cl.title+' ('+done+'/'+total+')\n'+'-'.repeat(30)+'\n';
+    cl.items.forEach(it=>{
+      txt+=(it.done?'[x] ':'[ ] ')+it.text+'\n';
+      (it.sub||[]).forEach(s=>{txt+='    '+(s.done?'[x] ':'[ ] ')+s.text+'\n';});
+    });
+    txt+='\n';
+  });
+  const blob=new Blob([txt],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='checklisten-'+new Date().toISOString().slice(0,10)+'.txt';
+  a.click();URL.revokeObjectURL(url);
+  closeModal(true);
+}
+function exportChecklistsXlsx(lists){
+  const wb=XLSX.utils.book_new();
+  lists.forEach(cl=>{
+    const rows=[['Status','Punkt','Unterpunkt']];
+    cl.items.forEach(it=>{
+      rows.push([it.done?'✓':'○', it.text, '']);
+      (it.sub||[]).forEach(s=>rows.push([s.done?'✓':'○', '', s.text]));
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:8},{wch:40},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws, cl.title.substring(0,31));
+  });
+  XLSX.writeFile(wb,'checklisten-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  closeModal(true);
+}
+function exportChecklistsPdf(lists){
+  closeModal(true);
+  const eventName=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  // Temporäres Print-Div
+  const old=document.getElementById('pdf-print-div');
+  if(old) old.remove();
+  const div=document.createElement('div');
+  div.id='pdf-print-div';
+  div.style.cssText='display:none;';
+  let html='<h2 style="font-size:16px;margin-bottom:4px;">'+escHtml(eventName)+' – Checklisten</h2>'+
+    '<hr style="margin-bottom:12px;">';
+  lists.forEach(cl=>{
+    let total=0,done=0;
+    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
+    html+='<div style="margin-bottom:16px;page-break-inside:avoid;">'+
+      '<div style="font-weight:600;font-size:13px;margin-bottom:4px;">'+escHtml(cl.title)+
+        ' <span style="font-weight:400;color:#666;font-size:11px;">('+done+'/'+total+')</span></div>';
+    cl.items.forEach(it=>{
+      html+='<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;font-size:12px;">'+
+        '<span style="margin-top:1px;">'+(it.done?'☑':'☐')+'</span>'+
+        '<span style="'+(it.done?'text-decoration:line-through;color:#aaa;':'')+'">'+escHtml(it.text)+'</span></div>';
+      (it.sub||[]).forEach(s=>{
+        html+='<div style="display:flex;align-items:flex-start;gap:6px;padding:2px 0 2px 24px;font-size:11px;color:#555;">'+
+          '<span>'+(s.done?'☑':'☐')+'</span>'+
+          '<span style="'+(s.done?'text-decoration:line-through;color:#aaa;':'')+'">'+escHtml(s.text)+'</span></div>';
+      });
+    });
+    html+='</div>';
+  });
+  div.innerHTML=html;
+  document.body.appendChild(div);
+  // Print-CSS temporär aktivieren
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+  div.style.display='block';
+  setTimeout(()=>{
+    window.print();
+    div.remove();
+  },150);
+}
+function addChecklist(){openModal('<h2>Neue Checkliste</h2>'+
+  '<div class="form-row"><label>Name</label><input type="text" id="m-clname" placeholder="z.B. Vorbereitung"></div>'+
+  '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+  '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+  '<button class="btn btn-primary" onclick="saveChecklist()">Speichern</button></div>');
+  setTimeout(()=>document.getElementById('m-clname').focus(),50);}
+function saveChecklist(){const t=document.getElementById('m-clname').value.trim();if(!t)return;S.checklists.push({id:uid(),title:t,items:[]});closeModal(true);save();renderTodos();}
+function deleteChecklist(id){confirmModal('Diese Checkliste wird unwiderruflich gelöscht.',function(){S.checklists=S.checklists.filter(x=>x.id!==id);save();renderTodos();});}
+function addCheckItemInline(clId){
+  const inp=document.getElementById('new-item-'+clId);
+  const t=inp.value.trim();if(!t)return;
+  const cl=S.checklists.find(x=>x.id===clId);
+  cl.items.push({id:uid(),text:t,done:false,sub:[]});
+  inp.value='';save();renderTodos();
+  // Fokus wiederherstellen
+  setTimeout(()=>{const el=document.getElementById('new-item-'+clId);if(el)el.focus();},50);
+}
+function addSubItemInline(clId,itId){
+  const inp=document.getElementById('new-sub-'+clId+'-'+itId);
+  const t=inp.value.trim();if(!t)return;
+  const cl=S.checklists.find(x=>x.id===clId);
+  const it=cl.items.find(x=>x.id===itId);
+  if(!it.sub) it.sub=[];
+  it.sub.push({id:uid(),text:t,done:false});
+  inp.value='';save();renderTodos();
+  setTimeout(()=>{const el=document.getElementById('new-sub-'+clId+'-'+itId);if(el)el.focus();},50);
+}
+function toggleItem(clId,itId,val){
+  const cl=S.checklists.find(x=>x.id===clId);
+  const it=cl.items.find(x=>x.id===itId);
+  // Wenn Unterpunkte vorhanden → nicht manuell änderbar
+  if((it.sub||[]).length>0) return;
+  it.done=val;save();renderTodos();
+}
+function toggleSubItem(clId,itId,sId,val){
+  const cl=S.checklists.find(x=>x.id===clId);
+  const it=cl.items.find(x=>x.id===itId);
+  const s=(it.sub||[]).find(x=>x.id===sId);
+  if(s){
+    s.done=val;
+    // Hauptpunkt automatisch abhaken wenn alle Unterpunkte erledigt
+    it.done=(it.sub||[]).length>0 && (it.sub||[]).every(x=>x.done);
+    save();renderTodos();
+  }
+}
+function toggleSubCollapse(clId,itId){
+  const cl=S.checklists.find(x=>x.id===clId);
+  const it=cl.items.find(x=>x.id===itId);
+  it.subCollapsed=!it.subCollapsed;
+  save();renderTodos();
+}
+function deleteItem(clId,itId){const cl=S.checklists.find(x=>x.id===clId);cl.items=cl.items.filter(x=>x.id!==itId);save();renderTodos();}
+function deleteSubItem(clId,itId,sId){
+  const cl=S.checklists.find(x=>x.id===clId);
+  const it=cl.items.find(x=>x.id===itId);
+  it.sub=(it.sub||[]).filter(x=>x.id!==sId);
+  save();renderTodos();
+}
+
+function openAssignModal(tId,veh){
+  const allPlans=Object.values(S.dienstplaene||{}).flat();
+  const t=allPlans.find(x=>parseInt(x.id)===parseInt(tId));
+  if(!t) return;
+  const assigned=t.assignments?.[veh]||[];
+  const chips=S.persons.length
+    ? S.persons.map(p=>{
+        const isA=assigned.includes(p.id);
+        const name=escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''));
+        return '<span onclick="toggleAssign('+tId+',this.dataset.v,'+p.id+')" data-v="'+escHtml(veh)+'" id="chip-'+p.id+'" style="display:inline-flex;align-items:center;padding:5px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(isA?'background:'+cOf(veh)+';color:#fff;border:1px solid '+cOf(veh)+';':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+name+'</span>';
+      }).join('')
+    : '<span style="font-size:12px;color:var(--text2);">Keine Teilnehmer vorhanden</span>';
+  openModal('<h2>'+escHtml(veh)+' – '+escHtml(t.title)+'</h2>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">'+t.start+' – '+t.end+' Uhr</div>'+
+    '<div style="font-size:13px;font-weight:500;margin-bottom:8px;">Personen einteilen – klicken zum Auswählen</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">'+chips+'</div>'+
+    '<div style="display:flex;justify-content:flex-end;">'+
+    '<button class="btn btn-primary" onclick="closeModal(true)">Fertig</button></div>');
+}
+function buildTurnusModal(t, veh){
+  const title = t?escHtml(t.title):'';
+  const start = t?t.start:'10:00';
+  const end   = t?t.end:'16:00';
+  const v     = veh || (t?t.fahrzeug:'') || '';
+
+  const jugendliche = S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:[p.rolle||''];return r.some(x=>['jugendlicher','jugendliche','jugend'].includes(x.toLowerCase()));});
+  const jugChips = jugendliche.length
+    ? jugendliche.map(p=>{
+        const sel=t&&(t.teilnehmer||[]).includes(p.id);
+        return '<span onclick="toggleModalChip(this)" data-pid="'+p.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(sel?'background:#1F3864;color:#fff;border:1px solid #1F3864;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>';
+      }).join('')
+    : '<span style="font-size:12px;color:var(--text2);">Keine Jugendlichen in Teilnehmerliste</span>';
+
+  return '<h2>'+(t?'Dienstplan bearbeiten':'Neuer Dienstplan')+' – '+escHtml(v)+'</h2>'+
+    '<div class="form-row"><label>Bezeichnung</label><input type="text" id="m-ttitle" placeholder="z.B. Gruppe 1" value="'+title+'"></div>'+
+    '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="m-tstart" value="'+start+'"></div>'+
+    '<div><label>Bis</label><input type="time" id="m-tend" value="'+end+'"></div></div>'+
+    '<div class="form-row"><label>Jugendliche</label>'+
+    '<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px;min-height:40px;" id="m-t-chips">'+jugChips+'</div></div>'+
+    '<input type="hidden" id="m-t-veh" value="'+escHtml(v)+'">'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveTurnus('+(t?t.id:0)+')">Speichern</button></div>';
+}
+
+function toggleModalChip(el){
+  const active=el.dataset.selected==='1';
+  el.dataset.selected=active?'0':'1';
+  el.style.cssText='display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(active?'background:var(--bg3);color:var(--text);border:1px solid var(--border);':'background:#1F3864;color:#fff;border:1px solid #1F3864;');
+}
+
+
+function addTurnusGlobal(){
+  if(S.vehicles.length===0){alert('Bitte zuerst Fahrzeuge anlegen.');return;}
+  const opts=S.vehicles.map(v=>'<option value="'+escHtml(v)+'">'+escHtml(v)+'</option>').join('');
+  const vehSelect=S.vehicles.length===1?'<input type="hidden" id="m-veh-select" value="'+escHtml(S.vehicles[0])+'">':'<div class="form-row"><label>Fahrzeug</label><select id="m-veh-select">'+opts+'</select></div>';
+  openModal('<h2>Neuer Dienstplan</h2>'+
+    vehSelect+
+    '<div class="form-row"><label>Typ</label>'+
+    '<div style="display:flex;gap:8px;margin-top:4px;">'+
+    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:8px 14px;border:1px solid var(--input-border);border-radius:8px;flex:1;justify-content:center;" id="typ-standard-lbl">'+
+    '<input type="radio" name="m-typ" value="standard" checked onchange="highlightTyp()"> Standard-Plan<br><span style="font-size:11px;color:var(--text2);">Jugendliche</span></label>'+
+    '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:8px 14px;border:1px solid var(--input-border);border-radius:8px;flex:1;justify-content:center;" id="typ-fahrer-lbl">'+
+    '<input type="radio" name="m-typ" value="fahrer" onchange="highlightTyp()"> Fahrer-Plan<br><span style="font-size:11px;color:var(--text2);">Nur Fahrer</span></label>'+
+    '</div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="proceedAddTurnus()">Weiter</button></div>');
+  setTimeout(()=>highlightTyp(),0);
+}
+function highlightTyp(){
+  const val=document.querySelector('input[name="m-typ"]:checked')?.value;
+  const sl=document.getElementById('typ-standard-lbl');
+  const fl=document.getElementById('typ-fahrer-lbl');
+  if(sl) sl.style.cssText='display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:8px 14px;border-radius:8px;flex:1;justify-content:center;'+(val==='standard'?'border:2px solid #1F3864;background:#E6F1FB;':'border:1px solid var(--input-border);');
+  if(fl) fl.style.cssText='display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:8px 14px;border-radius:8px;flex:1;justify-content:center;'+(val==='fahrer'?'border:2px solid #A32D2D;background:#FCEBEB;':'border:1px solid var(--input-border);');
+}
+function proceedAddTurnus(){
+  const veh=document.getElementById('m-veh-select').value;
+  const typ=document.querySelector('input[name="m-typ"]:checked')?.value||'standard';
+  closeModal(true);
+  if(typ==='fahrer') openModal(buildFahrerTurnusModal(null,veh));
+  else openModal(buildTurnusModal(null,veh));
+}
+function addTurnus(veh){openModal(buildTurnusModal(null, veh));}
+function editTurnus(id, veh){
+  const numId=parseInt(id);
+  const plans=S.dienstplaene[veh]||[];
+  const t=plans.find(x=>parseInt(x.id)===numId);
+  if(!t) return;
+  if(t.typ==='fahrer') openModal(buildFahrerTurnusModal(t,veh));
+  else openModal(buildTurnusModal(t, veh));
+}
+
+function buildFahrerTurnusModal(t, veh){
+  const title=t?escHtml(t.title):'';
+  const start=t?t.start:'10:00';
+  const end=t?t.end:'16:00';
+  const v=veh||(t?t.fahrzeug:'')||'';
+  const fahrer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:[p.rolle||''];return r.some(x=>x.toLowerCase()==='fahrer');});
+  const fahrerChips=fahrer.length
+    ? fahrer.map(p=>{
+        const sel=t&&(t.fahrer_ids||[]).includes(p.id);
+        return '<span onclick="toggleModalChip(this)" data-pid="'+p.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(sel?'background:#A32D2D;color:#fff;border:1px solid #A32D2D;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>';
+      }).join('')
+    : '<span style="font-size:12px;color:var(--text2);">Keine Fahrer in Teilnehmerliste</span>';
+  return '<h2>'+(t?'Fahrer-Plan bearbeiten':'Neuer Fahrer-Plan')+' – '+escHtml(v)+'</h2>'+
+    '<div style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#FCEBEB;color:#A32D2D;margin-bottom:12px;">Fahrer-Plan</div>'+
+    '<div class="form-row"><label>Bezeichnung</label><input type="text" id="m-ttitle" placeholder="z.B. Frühdienst Fahrer" value="'+title+'"></div>'+
+    '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="m-tstart" value="'+start+'"></div>'+
+    '<div><label>Bis</label><input type="time" id="m-tend" value="'+end+'"></div></div>'+
+    '<div class="form-row"><label>Fahrer auswählen</label>'+
+    '<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px;min-height:40px;" id="m-t-chips">'+fahrerChips+'</div></div>'+
+    '<input type="hidden" id="m-t-veh" value="'+escHtml(v)+'">'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveFahrerTurnus('+(t?t.id:0)+')">Speichern</button></div>';
+}
+function saveFahrerTurnus(id){
+  const title=document.getElementById('m-ttitle').value.trim();
+  const start=document.getElementById('m-tstart').value;
+  const end=document.getElementById('m-tend').value;
+  const veh=document.getElementById('m-t-veh').value;
+  const fahrer_ids=[...document.querySelectorAll('#m-t-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean);
+  if(!title){alert('Bitte eine Bezeichnung eingeben.');return;}
+  if(!S.dienstplaene[veh]) S.dienstplaene[veh]=[];
+  if(id){
+    const numId=parseInt(id);
+    const t=S.dienstplaene[veh].find(x=>parseInt(x.id)===numId);
+    if(t){t.title=title;t.start=start;t.end=end;t.fahrer_ids=fahrer_ids;}
+  } else {
+    S.dienstplaene[veh].push({id:uid(),typ:'fahrer',title,start,end,fahrer_ids,fahrzeug:veh});
+  }
+  closeModal(true);save();renderDienstplan();
+}
+function saveTurnus(id){
+  const title=document.getElementById('m-ttitle').value.trim();
+  const start=document.getElementById('m-tstart').value;
+  const end=document.getElementById('m-tend').value;
+  const veh=document.getElementById('m-t-veh').value;
+  const chips=[...document.querySelectorAll('#m-t-chips span[data-selected="1"]')];
+  const teilnehmer=chips.map(el=>parseInt(el.dataset.pid)).filter(Boolean);
+  if(!title){alert('Bitte eine Bezeichnung eingeben.');return;}
+  if(!veh){alert('Kein Fahrzeug zugeordnet.');return;}
+  if(!S.dienstplaene[veh]) S.dienstplaene[veh]=[];
+  if(id){
+    const numId=parseInt(id);
+    const t=S.dienstplaene[veh].find(x=>parseInt(x.id)===numId);
+    if(t){t.title=title;t.start=start;t.end=end;t.teilnehmer=teilnehmer;}
+  } else {
+    S.dienstplaene[veh].push({id:uid(),title,start,end,teilnehmer,fahrzeug:veh,assignments:{}});
+  }
+  closeModal(true);save();renderDienstplan();
+}
+let _delId=null, _delVeh=null;
+function deleteTurnus(id, veh){
+  _delId=parseInt(id); _delVeh=veh;
+  openModal('<h2>Dienstplan löschen?</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;">Dieser Dienstplan wird unwiderruflich gelöscht.</p>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-danger" onclick="confirmDeleteTurnus()">Löschen</button></div>');
+}
+function confirmDeleteTurnus(){
+  if(_delVeh && S.dienstplaene[_delVeh])
+    S.dienstplaene[_delVeh]=S.dienstplaene[_delVeh].filter(x=>parseInt(x.id)!==_delId);
+  _delId=null; _delVeh=null;
+  closeModal(true); save(); renderDienstplan();
+}
+function toggleAssign(tId,vehOrEl,pId){
+  const veh=typeof vehOrEl==='string'?vehOrEl:vehOrEl;
+  const allPlans=Object.values(S.dienstplaene||{}).flat();
+  const t=allPlans.find(x=>parseInt(x.id)===parseInt(tId));
+  if(!t.assignments[veh])t.assignments[veh]=[];
+  const idx=t.assignments[veh].indexOf(pId);
+  if(idx>=0)t.assignments[veh].splice(idx,1);else t.assignments[veh].push(pId);
+  save(); renderDienstplan();
+  const chip=document.getElementById('chip-'+pId);
+  if(chip){
+    const isA=t.assignments[veh].includes(pId);
+    chip.style.cssText='display:inline-flex;align-items:center;padding:5px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(isA?'background:'+cOf(veh)+';color:#fff;border:1px solid '+cOf(veh)+';':'background:var(--bg3);color:var(--text);border:1px solid var(--border);');
+  }
+}
+
+/* ══ DIENSTPLAN RENDER ══ */
+if(!window._vehCollapsed) window._vehCollapsed={};
+function toggleVehSection(v){window._vehCollapsed[v]=!window._vehCollapsed[v];renderDienstplan();}
+
+function renderDienstplan(){
+  const el=document.getElementById('turnus-list');
+  el.innerHTML='';
+  if(!S.dienstplaene) S.dienstplaene={};
+  const allPlans=Object.values(S.dienstplaene).flat();
+  if(!allPlans.length){
+    el.innerHTML='<div style="text-align:center;padding:2rem;font-size:13px;color:var(--text2);">Noch keine Dienstpläne angelegt.</div>';
+    renderConflictWarnings();
+    return;
+  }
+  S.vehicles.forEach(v=>{
+    const plans=(S.dienstplaene[v]||[]).slice().sort((a,b)=>(b.typ==='fahrer'?1:0)-(a.typ==='fahrer'?1:0));
+    if(!plans.length) return;
+    const collapsed=!!window._vehCollapsed[v];
+    const color=cOf(v);
+
+    const section=document.createElement('div');
+    section.style.cssText='margin-bottom:12px;border-radius:12px;overflow:hidden;border:2px solid '+color+';';
+
+    const chevron=collapsed
+      ?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'
+      :'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
+
+    const vehHeader=document.createElement('div');
+    vehHeader.style.cssText='background:'+color+';padding:11px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;';
+    vehHeader.onclick=function(){toggleVehSection(v);};
+    vehHeader.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<span>'+chevron+'</span>'+
+        '<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(v)+'</span>'+
+        '<span style="font-size:11px;color:rgba(255,255,255,0.75);background:rgba(0,0,0,0.18);padding:2px 9px;border-radius:20px;">'+
+          plans.length+' Plan'+(plans.length!==1?'s':'')+
+        '</span>'+
+      '</div>';
+    section.appendChild(vehHeader);
+
+    if(!collapsed){
+      const body=document.createElement('div');
+      body.style.cssText='background:var(--bg2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;';
+      plans.forEach(t=>{
+        const isFahrerPlan=t.typ==='fahrer';
+        const card=document.createElement('div');
+        card.className='turnus-card';
+        card.style.marginBottom='0';
+        if(isFahrerPlan){
+          const fahrerChips=(t.fahrer_ids||[]).length
+            ?(t.fahrer_ids||[]).map(pId=>{const p=S.persons.find(x=>x.id===pId);if(!p)return '';return '<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;margin:2px;background:#FCEBEB;color:#A32D2D;border:1px solid #f09595;">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>';}).join('')
+            :'<span style="font-size:12px;color:var(--text2);font-style:italic;">Keine Fahrer eingeteilt</span>';
+          card.innerHTML=
+            '<div class="turnus-header">'+
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+                '<span>'+escHtml(t.title)+'</span>'+
+                '<span style="padding:1px 7px;border-radius:20px;font-size:10px;font-weight:500;background:#FCEBEB;color:#A32D2D;border:1px solid #f09595;">Fahrer-Plan</span>'+
+                '<span style="font-size:12px;font-weight:400;color:var(--text2);">'+t.start+' – '+t.end+'</span>'+
+              '</div>'+
+              '<div style="display:flex;gap:6px;">'+
+                '<button class="btn btn-sm" onclick="editTurnus('+t.id+',\''+escHtml(v)+'\')">✏️ Bearbeiten</button>'+
+                '<button class="btn btn-sm btn-danger" onclick="deleteTurnus('+t.id+',\''+escHtml(v)+'\')">✕</button>'+
+              '</div>'+
+            '</div>'+
+            '<div class="turnus-body"><div style="display:flex;align-items:flex-start;gap:6px;"><span style="font-size:11px;color:var(--text2);width:70px;flex-shrink:0;padding-top:4px;">Fahrer</span><div>'+fahrerChips+'</div></div></div>';
+        } else {
+          const jugendChips=(t.teilnehmer||[]).length
+            ?(t.teilnehmer||[]).map(pId=>{const p=S.persons.find(x=>x.id===pId);if(!p)return '';return '<span class="person-chip assigned" style="background:'+color+';border-color:'+color+';">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>';}).join('')
+            :'<span style="font-size:12px;color:var(--text2);">Keine Jugendlichen eingeteilt</span>';
+          card.innerHTML=
+            '<div class="turnus-header">'+
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
+                '<span>'+escHtml(t.title)+'</span>'+
+                '<span style="padding:1px 7px;border-radius:20px;font-size:10px;font-weight:500;background:#E6F1FB;color:#0C447C;border:1px solid #b3d0ee;">Standard-Plan</span>'+
+                '<span style="font-size:12px;font-weight:400;color:var(--text2);">'+t.start+' – '+t.end+'</span>'+
+              '</div>'+
+              '<div style="display:flex;gap:6px;">'+
+                '<button class="btn btn-sm" onclick="editTurnus('+t.id+',\''+escHtml(v)+'\')">✏️ Bearbeiten</button>'+
+                '<button class="btn btn-sm btn-danger" onclick="deleteTurnus('+t.id+',\''+escHtml(v)+'\')">✕</button>'+
+              '</div>'+
+            '</div>'+
+            '<div class="turnus-body"><div style="display:flex;align-items:flex-start;gap:6px;"><span style="font-size:11px;color:var(--text2);width:70px;flex-shrink:0;padding-top:4px;">Jugendliche</span><div>'+jugendChips+'</div></div></div>';
+        }
+        body.appendChild(card);
+      });
+      section.appendChild(body);
+    }
+    el.appendChild(section);
+  });
+  renderConflictWarnings();
+}
+
+
+
+/* ══ TEILNEHMER ══ */
+function renderPersons(){
+  const tb=document.getElementById('person-body');
+  if(!tb) return;
+  tb.innerHTML='';
+  const rolleColors={
+    Fahrer:  {bg:'#FCEBEB',col:'#A32D2D'},
+    Betreuer:{bg:'#EAF3DE',col:'#27500A'},
+    Jugend:  {bg:'#E6F1FB',col:'#0C447C'},
+    Helfer:  {bg:'#FFF4E5',col:'#7a4800'},
+    RUD:     {bg:'#F3E8FF',col:'#6B21A8'},
+  };
+  const sorted=[...S.persons].sort((a,b)=>{
+    const an=(a.nachname||'').localeCompare(b.nachname||'','de');
+    return an!==0?an:(a.vorname||'').localeCompare(b.vorname||'','de');
+  });
+  sorted.forEach(p=>{
+    const rollen=Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[]);
+    const rollenBadges=rollen.length
+      ? rollen.map(r=>{const c=rolleColors[r]||{bg:'var(--badge-bg)',col:'var(--badge-text)'};return '<span class="badge" style="background:'+c.bg+';color:'+c.col+';margin:1px;">'+escHtml(r)+'</span>';}).join('')
+      : '<span style="font-size:12px;color:var(--text2);">–</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td style="font-weight:500;">'+escHtml(p.nachname||'')+'</td>'+
+      '<td style="font-weight:500;">'+escHtml(p.vorname||'')+'</td>'+
+      '<td>'+rollenBadges+'</td>'+
+      '<td style="font-size:12px;color:var(--text2);">'+escHtml(p.kontakt||'–')+'</td>'+
+      '<td style="font-size:12px;color:var(--text2);max-width:200px;">'+escHtml(p.notizen||'–')+'</td>'+
+      '<td style="white-space:nowrap;">'+
+        '<button class="btn btn-sm" onclick="editPerson('+p.id+')" style="margin-right:4px;">✏️</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deletePerson('+p.id+')">✕</button>'+
+      '</td>';
+    tb.appendChild(tr);
+  });
+}
+function addPerson(){openPersonModal(null);}
+function addPersonWithRole(rolle){openPersonModal(null, rolle);}
+function editPerson(id){openPersonModal(S.persons.find(x=>x.id===id));}
+function openPersonModal(p, vorselRolle){
+  const rollen=['Fahrer','Betreuer','Jugend','Helfer','RUD'];
+  const selRollen=p?(Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[])):( vorselRolle?[vorselRolle]:[]); 
+  const rolleChips=rollen.map(r=>{
+    const sel=selRollen.includes(r);
+    return '<span onclick="toggleRolleChip(this)" data-r="'+r+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(sel?'background:#1F3864;color:#fff;border:1px solid #1F3864;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+r+'</span>';
+  }).join('');
+  openModal('<h2>'+(p?'Person bearbeiten':'Neue Person')+'</h2>'+
+    '<div class="form-row form-row-2"><div><label>Nachname</label><input type="text" id="m-pnachname" value="'+(p?escHtml(p.nachname||''):'')+'"></div>'+
+    '<div><label>Vorname</label><input type="text" id="m-pvorname" value="'+(p?escHtml(p.vorname||''):'')+'"></div></div>'+
+    '<div class="form-row"><label>Rollen</label><div style="display:flex;flex-wrap:wrap;gap:2px;padding:6px;border:1px solid var(--input-border);border-radius:6px;" id="m-prolle-wrap">'+rolleChips+'</div></div>'+
+    '<div class="form-row"><label>Kontakt</label><input type="text" id="m-pkontakt" placeholder="Tel. oder E-Mail" value="'+(p?escHtml(p.kontakt||''):'')+'"></div>'+
+    '<div class="form-row"><label>Notizen</label><textarea id="m-pnotizen" placeholder="Qualifikationen, Besonderheiten...">'+escHtml(p?p.notizen||'':'')+'</textarea></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="savePerson('+(p?p.id:0)+')">Speichern</button></div>');
+}
+function toggleRolleChip(el){
+  const active=el.dataset.selected==='1';
+  el.dataset.selected=active?'0':'1';
+  el.style.cssText='display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(active?'background:var(--bg3);color:var(--text);border:1px solid var(--border);':'background:#1F3864;color:#fff;border:1px solid #1F3864;');
+}
+function savePerson(id){
+  const vorname=document.getElementById('m-pvorname').value.trim();
+  const nachname=document.getElementById('m-pnachname').value.trim();
+  const rolle=[...document.querySelectorAll('#m-prolle-wrap span[data-selected="1"]')].map(el=>el.dataset.r);
+  const kontakt=document.getElementById('m-pkontakt').value.trim();
+  const notizen=document.getElementById('m-pnotizen').value.trim();
+  if(!vorname&&!nachname)return;
+  if(id){const p=S.persons.find(x=>x.id===id);p.vorname=vorname;p.nachname=nachname;p.rolle=rolle;p.kontakt=kontakt;p.notizen=notizen;}
+  else{S.persons.push({id:uid(),vorname,nachname,rolle,kontakt,notizen});}
+  closeModal(true);save();renderPersons();renderDienstplan();
+}
+function openExcelImport(){
+  openModal('<h2>Excel Import</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Wähle eine Excel-Datei (.xlsx) aus. Du kannst danach die Spalten den Feldern zuordnen.</p>'+
+    '<div class="form-row"><label>Datei</label><input type="file" id="xl-file" accept=".xlsx,.xls,.csv" onchange="previewExcel(this)"></div>'+
+    '<div id="xl-preview"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" id="xl-import-btn" onclick="doExcelImport()" style="display:none;">Importieren</button></div>');
+}
+
+let _xlData=[];
+function previewExcel(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    if(rows.length<2){document.getElementById('xl-preview').innerHTML='<p style="color:#c00;font-size:13px;">Keine Daten gefunden.</p>';return;}
+    const headers=rows[0].map((h,i)=>({label:String(h)||'Spalte '+(i+1),idx:i}));
+    _xlData=rows.slice(1).filter(r=>r.some(c=>String(c).trim()));
+    const fields=['vorname','nachname','rolle','kontakt'];
+    const fieldLabels={vorname:'Vorname',nachname:'Nachname',rolle:'Rolle(n)',kontakt:'Kontakt'};
+    const opts='<option value="">– ignorieren –</option>'+headers.map(h=>'<option value="'+h.idx+'">'+escHtml(h.label)+'</option>').join('');
+    // Auto-detect columns
+    function autoSel(name){
+      const n=name.toLowerCase();
+      const match=headers.find(h=>h.label.toLowerCase().includes(n));
+      return match?match.idx:-1;
+    }
+    const selects=fields.map(f=>{
+      const auto=autoSel(f);
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+        '<label style="width:90px;font-size:13px;flex-shrink:0;">'+fieldLabels[f]+'</label>'+
+        '<select id="xl-col-'+f+'" style="flex:1;">'+opts.replace('value="'+auto+'"','value="'+auto+'" selected')+'</select></div>';
+    }).join('');
+    document.getElementById('xl-preview').innerHTML=
+      '<div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px;">'+
+      '<div style="font-size:13px;font-weight:500;margin-bottom:8px;">Spalten zuordnen</div>'+
+      selects+
+      '<div style="font-size:12px;color:var(--text2);margin-top:8px;">'+_xlData.length+' Zeilen gefunden</div></div>';
+    document.getElementById('xl-import-btn').style.display='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function doExcelImport(){
+  const get=f=>{const v=document.getElementById('xl-col-'+f).value;return v===''?-1:parseInt(v);};
+  const cols={vorname:get('vorname'),nachname:get('nachname'),rolle:get('rolle'),kontakt:get('kontakt')};
+  const rollen=['Fahrer','Betreuer','Jugend','Helfer','RUD'];
+  let added=0;
+  _xlData.forEach(row=>{
+    const vorname=cols.vorname>=0?String(row[cols.vorname]||'').trim():'';
+    const nachname=cols.nachname>=0?String(row[cols.nachname]||'').trim():'';
+    if(!vorname&&!nachname)return;
+    const rolleRaw=cols.rolle>=0?String(row[cols.rolle]||'').trim():'';
+    const rolle=rolleRaw?rolleRaw.split(/[,;\/]/).map(r=>r.trim()).filter(Boolean):[];
+    const kontakt=cols.kontakt>=0?String(row[cols.kontakt]||'').trim():'';
+    S.persons.push({id:uid(),vorname,nachname,rolle,kontakt,notizen:''});
+    added++;
+  });
+  save();renderPersons();closeModal(true);
+  alert(added+' Person(en) importiert.');
+}
+
+function deletePerson(id){confirmModal('Diese Person wird aus der Teilnehmerliste gelöscht.',function(){S.persons=S.persons.filter(x=>x.id!==id);save();renderPersons();renderDienstplan();});}
+
+window.addEventListener('resize',()=>{if(document.getElementById('page-einsaetze').classList.contains('active'))renderGantt();});
+
+/* ══ DRUCK / PDF ══ */
+function printSection(section){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+  const pageMap={
+    infos:'page-infos',
+    einsaetze:'page-einsaetze',
+    dienstplan:'page-dienstplan',
+    teilnehmer:'page-teilnehmer',
+    todos:'page-todos',
+    bereiche:'page-bereiche',
+    freizeit:'page-freizeit',
+    rud:'page-rud',
+    all:null
+  };
+  if(section==='all'){
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('print-active'));
+  } else {
+    const pid=pageMap[section];
+    if(pid) document.getElementById(pid).classList.add('print-active');
+  }
+  if(section==='einsaetze'||section==='all') renderGantt();
+  if(section==='freizeit'||section==='all') renderFreizeitGantt();
+  if(section==='rud'||section==='all') renderRudGantt();
+
+  // Print-Header erstellen
+  const existing=document.getElementById('print-header');
+  if(existing) existing.remove();
+  const info=S.infos||{};
+  const printHeader=document.createElement('div');
+  printHeader.id='print-header';
+  printHeader.innerHTML=
+    '<h1 style="font-size:18px;font-weight:600;margin-bottom:4px;">24h-Dienst – '+escHtml(info.name||'Bericht')+'</h1>'+
+    '<p style="font-size:12px;color:#666;margin:0;">'+
+      [info.datum,info.ort?'Ort: '+info.ort:'',info.verantwortlich?'Verantwortlich: '+info.verantwortlich:''].filter(Boolean).map(escHtml).join(' &nbsp;|&nbsp; ')+
+    '</p>'+
+    '<hr style="margin:10px 0 0;">';
+  document.body.prepend(printHeader);
+
+  // Kurz warten damit Browser Layout berechnet, dann drucken
+  setTimeout(()=>{
+    window.print();
+    printHeader.remove();
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+  }, 150);
+}
+
+
+/* ══ FREIZEIT ══ */
+const FZ_COLORS={planung:{bg:'#1F6E3A',light:'#D4EDDA',border:'#1F6E3A'},essen:{bg:'#B8691C',light:'#F7E6D0',border:'#B8691C'},aufsicht:{bg:'#185FA5',light:'#D6E8F7',border:'#185FA5'}};
+
+function renderFreizeit(){
+  renderFreizeitTable();
+  renderEssenTable();
+  renderAufsichtTable();
+  renderFreizeitGantt();
+}
+
+function renderFreizeitTable(){
+  const tb=document.getElementById('freizeit-body');
+  const em=document.getElementById('freizeit-empty');
+  if(!tb)return;
+  tb.innerHTML='';
+  const list=S.freizeitPlanungen||[];
+  em.style.display=list.length?'none':'block';
+  list.forEach(f=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:500;">'+escHtml(f.name)+'</td>'+
+      '<td>'+escHtml(f.start)+'</td><td>'+escHtml(f.end)+'</td>'+
+      '<td style="font-size:12px;color:var(--text2);">'+escHtml(f.beschreibung||'')+'</td>'+
+      '<td style="white-space:nowrap;">'+
+        '<button class="btn btn-sm" onclick="editFreizeitPlanung('+f.id+')" style="margin-right:4px;">✏️</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteFreizeitPlanung('+f.id+')">✕</button>'+
+      '</td>';
+    tb.appendChild(tr);
+  });
+}
+
+function renderEssenTable(){
+  const tb=document.getElementById('essen-body');
+  const em=document.getElementById('essen-empty');
+  if(!tb)return;
+  tb.innerHTML='';
+  const list=S.essenszeiten||[];
+  em.style.display=list.length?'none':'block';
+  list.forEach(f=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:500;">'+escHtml(f.name)+'</td>'+
+      '<td>'+escHtml(f.start)+'</td><td>'+escHtml(f.end)+'</td>'+
+      '<td style="font-size:12px;color:var(--text2);">'+escHtml(f.beschreibung||'')+'</td>'+
+      '<td style="white-space:nowrap;">'+
+        '<button class="btn btn-sm" onclick="editEssen('+f.id+')" style="margin-right:4px;">✏️</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteEssen('+f.id+')">✕</button>'+
+      '</td>';
+    tb.appendChild(tr);
+  });
+}
+
+function renderAufsichtTable(){
+  const tb=document.getElementById('aufsicht-body');
+  const em=document.getElementById('aufsicht-empty');
+  if(!tb)return;
+  tb.innerHTML='';
+  const list=S.aufsichten||[];
+  em.style.display=list.length?'none':'block';
+  list.forEach(f=>{
+    const p=S.persons.find(x=>x.id===f.personId);
+    const pName=p?escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:'')):'–';
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:500;">'+pName+'</td>'+
+      '<td>'+escHtml(f.start)+'</td><td>'+escHtml(f.end)+'</td>'+
+      '<td style="font-size:12px;color:var(--text2);">'+escHtml(f.bereich||'')+'</td>'+
+      '<td style="white-space:nowrap;">'+
+        '<button class="btn btn-sm" onclick="editAufsicht('+f.id+')" style="margin-right:4px;">✏️</button>'+
+        '<button class="btn btn-sm btn-danger" onclick="deleteAufsicht('+f.id+')">✕</button>'+
+      '</td>';
+    tb.appendChild(tr);
+  });
+}
+
+/* ── Freizeit Gantt ── */
+function renderFreizeitGantt(){
+  const canvas=document.getElementById('freizeit-gantt');
+  if(!canvas)return;
+  const wrap=canvas.parentElement;
+  const TOTAL=26,BASE=9,LW=110,PT=44,PB=16;
+  // 3 Reihen: Planung, Essen, Aufsicht
+  const ROWS=[
+    {key:'planung',label:'🏕️ Freizeit',  color:FZ_COLORS.planung.bg,  light:FZ_COLORS.planung.light,  data:S.freizeitPlanungen||[],  nameKey:'name'},
+    {key:'essen',  label:'🍽️ Essen',    color:FZ_COLORS.essen.bg,    light:FZ_COLORS.essen.light,    data:S.essenszeiten||[],       nameKey:'name'},
+    {key:'aufsicht',label:'👤 Aufsicht', color:FZ_COLORS.aufsicht.bg, light:FZ_COLORS.aufsicht.light, data:S.aufsichten||[],         nameKey:'personId'},
+  ];
+  const RH=70,W=Math.max(wrap.clientWidth||700,700),H=PT+ROWS.length*RH+PB;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const cW=W-LW-8;
+  ctx.clearRect(0,0,W,H);
+  function xOf(h){return LW+(h/TOTAL)*cW;}
+  function toFzOff(t){const[h,m]=t.split(':').map(Number);let v=h+m/60-BASE;if(v<0)v+=24;return v;}
+
+  // Row backgrounds
+  ROWS.forEach((_,i)=>{
+    const rowY=PT+i*RH;
+    ctx.fillStyle=i%2===0?'rgba(255,255,255,0)':'rgba(0,0,0,0.025)';
+    ctx.fillRect(LW,rowY,cW,RH);
+    ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(LW,rowY+RH);ctx.lineTo(LW+cW,rowY+RH);ctx.stroke();
+  });
+
+  // Grid lines
+  for(let h=0;h<=TOTAL;h+=0.5){
+    const x=xOf(h),full=h%1===0;
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=full?1:0.5;ctx.setLineDash(full?[]:[2,3]);
+    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+ROWS.length*RH);ctx.stroke();ctx.setLineDash([]);
+    if(full){
+      ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign='center';
+      ctx.fillText(String(Math.round((BASE+h)%24)).padStart(2,'0')+':00',x,PT-8);
+    }
+  }
+
+  // Midnight line
+  const mx=xOf(24-BASE);
+  ctx.strokeStyle='rgba(184,105,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(mx,PT-2);ctx.lineTo(mx,PT+ROWS.length*RH+2);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',mx,PT-8);
+
+  // Row labels
+  ROWS.forEach((row,i)=>{
+    const rowY=PT+i*RH;
+    ctx.fillStyle=row.color;
+    ctx.font='bold 11px sans-serif';ctx.textAlign='right';
+    ctx.fillText(row.label,LW-6,rowY+RH/2+4);
+  });
+
+  // Bars
+  ROWS.forEach((row,i)=>{
+    const rowY=PT+i*RH;
+    const BY=8,BH=RH-16;
+    row.data.forEach(item=>{
+      let so=toFzOff(item.start),eo=toFzOff(item.end);
+      if(eo<=so)eo+=24;
+      const soC=Math.max(0,Math.min(so,TOTAL)),eoC=Math.max(0,Math.min(eo,TOTAL));
+      if(eoC<=soC)return;
+      const x1=xOf(soC),bW=Math.max(xOf(eoC)-x1,2);
+      // Bar
+      ctx.fillStyle=row.color;ctx.globalAlpha=0.82;
+      ctx.beginPath();ctx.roundRect(x1,rowY+BY,bW,BH,4);ctx.fill();
+      ctx.globalAlpha=1;
+      // Label
+      if(bW>24){
+        let label='';
+        if(row.key==='aufsicht'){
+          const p=S.persons.find(x=>x.id===item.personId);
+          label=p?((p.vorname||'')+(p.nachname?' '+p.nachname:'')):('ID:'+item.personId);
+        } else { label=item.name||''; }
+        if(item.bereich) label+=' ('+item.bereich+')';
+        ctx.save();ctx.beginPath();ctx.rect(x1+3,rowY+BY,bW-6,BH);ctx.clip();
+        ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';
+        ctx.fillText(label,x1+bW/2,rowY+BY+BH/2-4);
+        ctx.font='400 9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';
+        ctx.fillText(item.start+' – '+item.end,x1+bW/2,rowY+BY+BH/2+8);
+        ctx.restore();
+      }
+    });
+  });
+
+  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,ROWS.length*RH);
+
+  // Legend
+  const leg=document.getElementById('freizeit-legend');
+  if(leg){
+    leg.innerHTML=ROWS.map(r=>'<span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#666;">'+
+      '<span style="width:10px;height:10px;border-radius:2px;background:'+r.color+';"></span>'+r.label+'</span>').join('');
+  }
+}
+
+/* ── Modals Freizeit ── */
+function openFreizeitModal(item){
+  openModal('<h2>'+(item?'Planung bearbeiten':'Neue Freizeitplanung')+'</h2>'+
+    '<div class="form-row"><label>Bezeichnung</label><input type="text" id="mfz-name" value="'+escHtml(item?item.name||'':'')+'"></div>'+
+    '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="mfz-start" value="'+(item?item.start:'10:00')+'"></div>'+
+    '<div><label>Bis</label><input type="time" id="mfz-end" value="'+(item?item.end:'12:00')+'"></div></div>'+
+    '<div class="form-row"><label>Beschreibung</label><textarea id="mfz-desc">'+escHtml(item?item.beschreibung||'':'')+'</textarea></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveFreizeitPlanung('+(item?item.id:0)+')">Speichern</button></div>');
+}
+function editFreizeitPlanung(id){openFreizeitModal((S.freizeitPlanungen||[]).find(x=>x.id===id));}
+function saveFreizeitPlanung(id){
+  const name=document.getElementById('mfz-name').value.trim();
+  const start=document.getElementById('mfz-start').value;
+  const end=document.getElementById('mfz-end').value;
+  const beschreibung=document.getElementById('mfz-desc').value.trim();
+  if(!name)return;
+  if(!S.freizeitPlanungen)S.freizeitPlanungen=[];
+  if(id){const x=S.freizeitPlanungen.find(f=>f.id===id);if(x){x.name=name;x.start=start;x.end=end;x.beschreibung=beschreibung;}}
+  else S.freizeitPlanungen.push({id:uid(),name,start,end,beschreibung});
+  closeModal(true);save();renderFreizeit();
+}
+function deleteFreizeitPlanung(id){confirmModal('Planung löschen?',function(){S.freizeitPlanungen=(S.freizeitPlanungen||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+
+/* ── Modals Essen ── */
+function openEssenModal(item){
+  openModal('<h2>'+(item?'Essenszeit bearbeiten':'Neue Essenszeit')+'</h2>'+
+    '<div class="form-row"><label>Mahlzeit</label><input type="text" id="mes-name" placeholder="z.B. Frühstück" value="'+escHtml(item?item.name||'':'')+'"></div>'+
+    '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="mes-start" value="'+(item?item.start:'07:00')+'"></div>'+
+    '<div><label>Bis</label><input type="time" id="mes-end" value="'+(item?item.end:'08:00')+'"></div></div>'+
+    '<div class="form-row"><label>Beschreibung</label><textarea id="mes-desc">'+escHtml(item?item.beschreibung||'':'')+'</textarea></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveEssen('+(item?item.id:0)+')">Speichern</button></div>');
+}
+function editEssen(id){openEssenModal((S.essenszeiten||[]).find(x=>x.id===id));}
+function saveEssen(id){
+  const name=document.getElementById('mes-name').value.trim();
+  const start=document.getElementById('mes-start').value;
+  const end=document.getElementById('mes-end').value;
+  const beschreibung=document.getElementById('mes-desc').value.trim();
+  if(!name)return;
+  if(!S.essenszeiten)S.essenszeiten=[];
+  if(id){const x=S.essenszeiten.find(f=>f.id===id);if(x){x.name=name;x.start=start;x.end=end;x.beschreibung=beschreibung;}}
+  else S.essenszeiten.push({id:uid(),name,start,end,beschreibung});
+  closeModal(true);save();renderFreizeit();
+}
+function deleteEssen(id){confirmModal('Essenszeit löschen?',function(){S.essenszeiten=(S.essenszeiten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+
+/* ── Modals Aufsicht ── */
+function openAufsichtModal(item){
+  const betreuer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:[p.rolle||''];return r.some(x=>x.toLowerCase()==='betreuer');});
+  const personOpts='<option value="">– bitte wählen –</option>'+(betreuer.length?betreuer.map(p=>'<option value="'+p.id+'"'+(item&&item.personId===p.id?' selected':'')+'>'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</option>').join(''):'<option disabled>Keine Betreuer in Teilnehmerliste</option>');
+  openModal('<h2>'+(item?'Aufsicht bearbeiten':'Neue Aufsichtsperson')+'</h2>'+
+    '<div class="form-row"><label>Person</label><select id="mau-person">'+personOpts+'</select></div>'+
+    '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="mau-start" value="'+(item?item.start:'10:00')+'"></div>'+
+    '<div><label>Bis</label><input type="time" id="mau-end" value="'+(item?item.end:'12:00')+'"></div></div>'+
+    '<div class="form-row"><label>Bereich / Bemerkung</label><input type="text" id="mau-bereich" value="'+escHtml(item?item.bereich||'':'')+'"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveAufsicht('+(item?item.id:0)+')">Speichern</button></div>');
+}
+function editAufsicht(id){openAufsichtModal((S.aufsichten||[]).find(x=>x.id===id));}
+function saveAufsicht(id){
+  const personId=parseInt(document.getElementById('mau-person').value)||null;
+  const start=document.getElementById('mau-start').value;
+  const end=document.getElementById('mau-end').value;
+  const bereich=document.getElementById('mau-bereich').value.trim();
+  if(!personId)return;
+  if(!S.aufsichten)S.aufsichten=[];
+  if(id){const x=S.aufsichten.find(f=>f.id===id);if(x){x.personId=personId;x.start=start;x.end=end;x.bereich=bereich;}}
+  else S.aufsichten.push({id:uid(),personId,start,end,bereich});
+  closeModal(true);save();renderFreizeit();
+}
+function deleteAufsicht(id){confirmModal('Aufsicht löschen?',function(){S.aufsichten=(S.aufsichten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+
+
+/* ══ RUD ══ */
+const RUD_COLORS={schminken:{bg:'#D05A1A',label:'🟠 Schminken'}};
+
+function renderRud(){
+  renderRudConflicts();
+  renderRudList();
+  renderRudGantt();
+}
+
+function toRudMin(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function toTime(min){const h=Math.floor(((min%1440)+1440)%1440/60);const m=((min%1440)+1440)%1440%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+
+function getAllRudPatients(){
+  const all=[];
+  (S.rudEinsaetze||[]).forEach(r=>(r.patients||[]).forEach(p=>all.push({...p,einsatzId:r.einsatzId})));
+  return all;
+}
+
+function renderRudConflicts(){
+  const existing=document.getElementById('rud-conflicts');
+  if(existing)existing.remove();
+  const all=getAllRudPatients();
+  const conflicts=[];
+  const personSlots={};
+  all.forEach(p=>{
+    if(!p.schminkStart||!p.schminkEnd)return;
+    const s=toRudMin(p.schminkStart),e=toRudMin(p.schminkEnd);
+    (p.persons||[]).forEach(pid=>{
+      if(!personSlots[pid])personSlots[pid]=[];
+      personSlots[pid].push({s,e,patient:p.name});
+    });
+  });
+  Object.entries(personSlots).forEach(([pid,slots])=>{
+    const p=S.persons.find(x=>x.id===parseInt(pid));
+    const name=p?((p.vorname||'')+(p.nachname?' '+p.nachname:'')):'?';
+    for(let i=0;i<slots.length;i++)
+      for(let j=i+1;j<slots.length;j++)
+        if(slots[i].s<slots[j].e&&slots[j].s<slots[i].e)
+          conflicts.push(name+': "'+slots[i].patient+'" & "'+slots[j].patient+'" überlappen sich');
+  });
+  if(!conflicts.length)return;
+  const el=document.getElementById('rud-list');
+  const warn=document.createElement('div');
+  warn.id='rud-conflicts';
+  warn.style.cssText='background:#FCEBEB;border:1px solid #f09595;border-radius:8px;padding:10px 14px;margin-bottom:12px;';
+  warn.innerHTML='<div style="font-weight:500;font-size:13px;color:#A32D2D;margin-bottom:6px;">⚠️ Zeitkonflikte erkannt</div>'+
+    conflicts.map(c=>'<div style="font-size:12px;color:#A32D2D;">'+escHtml(c)+'</div>').join('');
+  el.parentElement.insertBefore(warn,el);
+}
+
+function renderRudList(){
+  const el=document.getElementById('rud-list');
+  const em=document.getElementById('rud-empty');
+  if(!el)return;
+  el.innerHTML='';
+  const einsaetze=S.einsaetze||[];
+  if(!einsaetze.length){em.style.display='block';return;}
+  em.style.display='none';
+
+  einsaetze.forEach(e=>{
+    const rudEntry=(S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id)||{einsatzId:e.id,patients:[]};
+    const patients=rudEntry.patients||[];
+
+    const section=document.createElement('div');
+    section.style.cssText='border:1.5px solid #A32D2D;border-radius:12px;overflow:hidden;margin-bottom:14px;';
+
+    // Einsatz header
+    const header=document.createElement('div');
+    header.style.cssText='background:#A32D2D;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;';
+    header.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+        '<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.veh)+'</span>'+
+        (e.ort?'<span style="font-size:12px;color:rgba(255,255,255,0.8);">📍 '+escHtml(e.ort)+'</span>':'')+
+        (e.start?'<span style="font-size:12px;color:rgba(255,255,255,0.8);">🕐 '+escHtml(e.start)+'</span>':'')+
+        '<span style="font-size:11px;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:20px;">'+patients.length+' Patient'+(patients.length!==1?'en':'')+'</span>'+
+      '</div>'+
+      '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',null)" style="color:#fff;border-color:rgba(255,255,255,0.4);font-size:11px;padding:3px 10px;">+ Patient</button>';
+    section.appendChild(header);
+
+    // Patient list
+    const body=document.createElement('div');
+    body.style.cssText='background:var(--bg2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;';
+
+    if(!patients.length){
+      body.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;color:var(--text2);font-style:italic;">Noch keine Patienten – klicke „+ Patient"</div>';
+    } else {
+      patients.forEach(p=>{
+        const personChips=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;background:#FFF0E6;color:#A04000;border:1px solid #F0A070;">👤 '+escHtml((per.vorname||'')+(per.nachname?' '+per.nachname:''))+'</span>':'';}).join('');
+        const card=document.createElement('div');
+        card.style.cssText='border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg3);';
+        card.innerHTML=
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'+
+            '<div>'+
+              '<div style="font-weight:600;font-size:13px;color:var(--text);">'+escHtml(p.name)+'</div>'+
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">'+personChips+'</div>'+
+              (p.schminkplatz?'<div style="font-size:11px;color:var(--text2);margin-top:4px;">📍 '+escHtml(p.schminkplatz)+'</div>':'')+
+            '</div>'+
+            '<div style="display:flex;gap:5px;flex-shrink:0;">'+
+              '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">✏️</button>'+
+              '<button class="btn btn-sm btn-danger" onclick="deleteRudPatient('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">✕</button>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">'+
+            '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:6px;padding:7px 10px;">'+
+              '<div style="font-size:10px;font-weight:600;color:#A07000;margin-bottom:3px;">🟡 ANKUNFT</div>'+
+              '<div style="font-size:12px;">'+escHtml(p.ankunft||'–')+'</div>'+
+            '</div>'+
+            '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:6px;padding:7px 10px;">'+
+              '<div style="font-size:10px;font-weight:600;color:#A04000;margin-bottom:3px;">🟠 SCHMINKEN</div>'+
+              '<div style="font-size:12px;">'+escHtml(p.schminkStart||'–')+' – '+escHtml(p.schminkEnd||'–')+' ('+escHtml(String(p.schminkdauer||40))+' min)</div>'+
+            '</div>'+
+            '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:6px;padding:7px 10px;">'+
+              '<div style="font-size:10px;font-weight:600;color:#A32D2D;margin-bottom:3px;">🔴 TRANSFER</div>'+
+              '<div style="font-size:12px;">'+escHtml(p.transferStart||'–')+' – '+escHtml(p.transferEnd||'–')+' → '+escHtml(p.transferNach||e.ort||'–')+'</div>'+
+              (e.asp?'<div style="font-size:11px;color:#A32D2D;margin-top:3px;">👤 ASP: '+escHtml(e.asp)+'</div>':'')+
+            '</div>'+
+          '</div>'+
+          (p.verletzung?'<div style="margin-top:8px;font-size:12px;color:var(--text2);">🩹 <b>Verletzungsmuster:</b> '+escHtml(p.verletzung)+'</div>':'');
+        body.appendChild(card);
+      });
+    }
+    section.appendChild(body);
+    el.appendChild(section);
+  });
+}
+
+/* ── RUD Patient Modal ── */
+function openRudPatientModal(einsatzId,patientId){
+  const einsatz=S.einsaetze.find(e=>e.id===einsatzId);
+  if(!einsatz)return;
+  if(!S.rudEinsaetze)S.rudEinsaetze=[];
+  let rudEntry=S.rudEinsaetze.find(r=>r.einsatzId===einsatzId);
+  if(!rudEntry){rudEntry={einsatzId,patients:[]};S.rudEinsaetze.push(rudEntry);}
+  const p=patientId?(rudEntry.patients||[]).find(x=>x.id===patientId):null;
+  const _pid=p?p.id:'';
+
+  const rudPersons=S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>['rud','betreuer'].includes(x.toLowerCase()));});
+  const allPersons=rudPersons.length?rudPersons:S.persons;
+  const personChips=allPersons.map(pr=>{
+    const sel=p&&(p.persons||[]).includes(pr.id);
+    return '<span onclick="toggleModalChip(this)" data-pid="'+pr.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(sel?'background:#A32D2D;color:#fff;border:1px solid #A32D2D;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+escHtml((pr.vorname||'')+(pr.nachname?' '+pr.nachname:''))+'</span>';
+  }).join('');
+
+  openModal(
+    '<h2>'+(p?'Patient bearbeiten':'Neuer Patient')+'</h2>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Einsatz: <b>'+escHtml(einsatz.veh+(einsatz.ort?' – '+einsatz.ort:'')+(einsatz.start?' ('+einsatz.start+')':''))+'</b></div>'+
+    '<div class="form-row"><label>Patientenname / Bezeichnung</label><input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'"></div>'+
+    '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#A07000;margin-bottom:8px;">🟡 VORBEREITUNG</div>'+
+      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+        '<div class="form-row"><label>Ankunft Patient <span style="font-size:10px;color:var(--text2);">(Einsatz −Transfer −Schminken)</span></label>'+
+          '<input type="time" id="mrud-ankunft" value="'+(p?p.ankunft||'':rudCalcAnkunft(einsatz,40))+'" oninput="rudRecalcSchminken()"></div>'+
+        '<div class="form-row"><label>Schminkplatz / Ort</label><input type="text" id="mrud-schminkplatz" value="'+escHtml(p?p.schminkplatz||'':'')+'"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#A04000;margin-bottom:8px;">🟠 SCHMINKEN</div>'+
+      '<div class="form-row" style="margin-bottom:8px;"><label>Schminkdauer (min) <span style="font-size:10px;color:var(--text2);">– je nach Verletzungsmuster</span></label>'+
+        '<input type="number" id="mrud-schminkdauer" value="'+(p?p.schminkdauer||40:40)+'" min="5" max="180" step="5" oninput="rudRecalcFromDauer(\''+einsatz.start+'\')" style="width:90px;"></div>'+
+      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+        '<div class="form-row"><label>Von</label><input type="time" id="mrud-sstart" value="'+(p?p.schminkStart||'':rudCalcAnkunft(einsatz,40))+'"></div>'+
+        '<div class="form-row"><label>Bis</label><input type="time" id="mrud-send" value="'+(p?p.schminkEnd||'':rudCalcSchminkEnd(einsatz))+'"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#A32D2D;margin-bottom:8px;">🔴 TRANSFER</div>'+
+      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+        '<div class="form-row"><label>Von</label><input type="time" id="mrud-tstart" value="'+(p?p.transferStart||'':rudCalcSchminkEnd(einsatz))+'"></div>'+
+        '<div class="form-row"><label>Bis</label><input type="time" id="mrud-tend" value="'+(p?p.transferEnd||'':rudCalcTransferEnd(einsatz))+'"></div>'+
+      '</div>'+
+      '<div class="form-row"><label>Ziel-Ort <span style="font-size:10px;color:var(--text2);">(vom Einsatz)</span></label>'+
+        '<input type="text" id="mrud-tnach" value="'+escHtml(p?p.transferNach||einsatz.ort||'':einsatz.ort||'')+'" style="background:var(--bg3);"></div>'+
+    '</div>'+
+    '<div class="form-row"><label>RUD-Team</label>'+
+      '<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px;min-height:40px;" id="mrud-chips">'+personChips+'</div></div>'+
+    '<div class="form-row"><label>Verletzungsmuster</label><textarea id="mrud-verletzung">'+escHtml(p?p.verletzung||'':'')+'</textarea></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveRudPatient('+einsatzId+',\''+_pid+'\')">Speichern</button></div>'
+  );
+}
+
+function rudCalcAnkunft(einsatz,dauer){
+  if(!einsatz||!einsatz.start)return'';
+  const[h,m]=einsatz.start.split(':').map(Number);
+  return toTime(h*60+m-30-(dauer||40));
+}
+function rudCalcSchminkEnd(einsatz){
+  if(!einsatz||!einsatz.start)return'';
+  const[h,m]=einsatz.start.split(':').map(Number);
+  return toTime(h*60+m-30);
+}
+function rudCalcTransferEnd(einsatz){
+  if(!einsatz||!einsatz.start)return'';
+  const[h,m]=einsatz.start.split(':').map(Number);
+  return toTime(h*60+m);
+}
+
+function rudRecalcFromDauer(einsatzStart){
+  const dauer=parseInt(document.getElementById('mrud-schminkdauer')?.value)||40;
+  if(!einsatzStart)return;
+  const[h,m]=einsatzStart.split(':').map(Number);
+  const einsatzMin=h*60+m;
+  const transferEnd=einsatzMin;
+  const transferStart=transferEnd-30;
+  const schminkEnd=transferStart;
+  const schminkStart=schminkEnd-dauer;
+  const ankunft=schminkStart;
+  const ankunftF=document.getElementById('mrud-ankunft');
+  const sStartF=document.getElementById('mrud-sstart');
+  const sEndF=document.getElementById('mrud-send');
+  const tStartF=document.getElementById('mrud-tstart');
+  const tEndF=document.getElementById('mrud-tend');
+  if(ankunftF)ankunftF.value=toTime(ankunft);
+  if(sStartF) sStartF.value=toTime(schminkStart);
+  if(sEndF)   sEndF.value=toTime(schminkEnd);
+  if(tStartF) tStartF.value=toTime(transferStart);
+  if(tEndF)   tEndF.value=toTime(transferEnd);
+}
+
+function rudRecalcSchminken(){
+  const ankunft=document.getElementById('mrud-ankunft')?.value;
+  const dauer=parseInt(document.getElementById('mrud-schminkdauer')?.value)||40;
+  if(!ankunft)return;
+  const[h,m]=ankunft.split(':').map(Number);
+  const base=h*60+m;
+  const sEnd=base+dauer,tEnd=sEnd+30;
+  const sStartF=document.getElementById('mrud-sstart');
+  const sEndF=document.getElementById('mrud-send');
+  const tStartF=document.getElementById('mrud-tstart');
+  const tEndF=document.getElementById('mrud-tend');
+  if(sStartF)sStartF.value=toTime(base);
+  if(sEndF)  sEndF.value=toTime(sEnd);
+  if(tStartF)tStartF.value=toTime(sEnd);
+  if(tEndF)  tEndF.value=toTime(tEnd);
+}
+
+function saveRudPatient(einsatzId,patientId){
+  const name=document.getElementById('mrud-name').value.trim();
+  if(!name)return;
+  if(!S.rudEinsaetze)S.rudEinsaetze=[];
+  let rudEntry=S.rudEinsaetze.find(r=>r.einsatzId===einsatzId);
+  if(!rudEntry){rudEntry={einsatzId,patients:[]};S.rudEinsaetze.push(rudEntry);}
+  const obj={
+    id:patientId||String(uid()),
+    name,
+    ankunft:document.getElementById('mrud-ankunft').value,
+    schminkplatz:document.getElementById('mrud-schminkplatz').value.trim(),
+    schminkdauer:parseInt(document.getElementById('mrud-schminkdauer').value)||40,
+    schminkStart:document.getElementById('mrud-sstart').value,
+    schminkEnd:document.getElementById('mrud-send').value,
+    transferStart:document.getElementById('mrud-tstart').value,
+    transferEnd:document.getElementById('mrud-tend').value,
+    transferNach:document.getElementById('mrud-tnach').value.trim(),
+    persons:[...document.querySelectorAll('#mrud-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean),
+    verletzung:document.getElementById('mrud-verletzung').value.trim(),
+  };
+  if(patientId){
+    const idx=(rudEntry.patients||[]).findIndex(x=>x.id===patientId);
+    if(idx>=0)rudEntry.patients[idx]=obj; else rudEntry.patients.push(obj);
+  } else {
+    if(!rudEntry.patients)rudEntry.patients=[];
+    rudEntry.patients.push(obj);
+  }
+  closeModal(true);save();renderRud();
+}
+
+function deleteRudPatient(einsatzId,patientId){
+  confirmModal('Diesen Patienten löschen?',function(){
+    const rudEntry=S.rudEinsaetze&&S.rudEinsaetze.find(r=>r.einsatzId===einsatzId);
+    if(rudEntry)rudEntry.patients=(rudEntry.patients||[]).filter(x=>x.id!==patientId);
+    save();renderRud();
+  });
+}
+
+/* ── RUD Gantt ── */
+function renderRudGantt(){
+  const canvas=document.getElementById('rud-gantt');
+  if(!canvas)return;
+  const wrap=canvas.parentElement;
+  const TOTAL=26,BASE=8,LW=120,PT=44,PB=16;
+  const allPatients=getAllRudPatients();
+
+  // One row per unique schminker
+  const personMap={};
+  allPatients.forEach(p=>{
+    (p.persons||[]).forEach(pid=>{
+      if(!personMap[pid])personMap[pid]=[];
+      personMap[pid].push(p);
+    });
+  });
+  const unassigned=allPatients.filter(p=>!(p.persons&&p.persons.length));
+  const rows=Object.entries(personMap).map(([pid,entries])=>{
+    const pr=S.persons.find(x=>x.id===parseInt(pid));
+    return{label:pr?((pr.vorname||'')+(pr.nachname?' '+pr.nachname:'')):'?',entries};
+  });
+  if(unassigned.length)rows.push({label:'Nicht zugewiesen',entries:unassigned});
+
+  const n=Math.max(rows.length,1);
+  const RH=60,W=Math.max(wrap.clientWidth||700,700),H=PT+n*RH+PB;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const cW=W-LW-8;
+  ctx.clearRect(0,0,W,H);
+  function xOf(h){return LW+(h/TOTAL)*cW;}
+  function toRudOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);let v=h+m/60-BASE;if(v<0)v+=24;return v;}
+
+  rows.forEach((_,i)=>{
+    const rowY=PT+i*RH;
+    ctx.fillStyle=i%2===0?'rgba(255,255,255,0)':'rgba(0,0,0,0.025)';
+    ctx.fillRect(LW,rowY,cW,RH);
+    ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(LW,rowY+RH);ctx.lineTo(LW+cW,rowY+RH);ctx.stroke();
+  });
+
+  for(let h=0;h<=TOTAL;h+=0.5){
+    const x=xOf(h),full=h%1===0;
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=full?1:0.5;ctx.setLineDash(full?[]:[2,3]);
+    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+n*RH);ctx.stroke();ctx.setLineDash([]);
+    if(full){ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign='center';
+      ctx.fillText(String(Math.round((BASE+h)%24)).padStart(2,'0')+':00',x,PT-8);}
+  }
+
+  const mx=xOf(24-BASE);
+  ctx.strokeStyle='rgba(184,105,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(mx,PT-2);ctx.lineTo(mx,PT+n*RH+2);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',mx,PT-8);
+
+  rows.forEach((row,i)=>{
+    const rowY=PT+i*RH;
+    ctx.fillStyle='#A32D2D';ctx.font='bold 11px sans-serif';ctx.textAlign='right';
+    ctx.fillText(row.label,LW-6,rowY+RH/2+4);
+  });
+
+  const BY=8,BH=RH-16;
+  rows.forEach((row,i)=>{
+    const rowY=PT+i*RH;
+    row.entries.forEach(p=>{
+      const so=toRudOff(p.schminkStart),eo=toRudOff(p.schminkEnd);
+      if(so===null||eo===null)return;
+      const eoAdj=eo<=so?eo+24:eo;
+      const soC=Math.max(0,Math.min(so,TOTAL)),eoC=Math.max(0,Math.min(eoAdj,TOTAL));
+      if(eoC<=soC)return;
+      const x1=xOf(soC),bW=Math.max(xOf(eoC)-x1,2);
+      ctx.fillStyle='#D05A1A';ctx.globalAlpha=0.85;
+      ctx.beginPath();ctx.roundRect(x1,rowY+BY,bW,BH,4);ctx.fill();
+      ctx.globalAlpha=1;
+      if(bW>24){
+        ctx.save();ctx.beginPath();ctx.rect(x1+3,rowY+BY,bW-6,BH);ctx.clip();
+        ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';
+        ctx.fillText(p.name||'?',x1+bW/2,rowY+BY+BH/2-3);
+        ctx.font='400 9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';
+        ctx.fillText((p.schminkStart||'')+'–'+(p.schminkEnd||''),x1+bW/2,rowY+BY+BH/2+9);
+        ctx.restore();
+      }
+    });
+  });
+
+  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,n*RH);
+  const leg=document.getElementById('rud-legend');
+  if(leg)leg.innerHTML='<span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#666;"><span style="width:10px;height:10px;border-radius:2px;background:#D05A1A;display:inline-block;"></span>🟠 Schminken</span>';
+}
+
+
+/* ══ RUD PDF EXPORT ══ */
+function exportRudPDF(){
+  if(typeof window.jspdf === 'undefined'){
+    alert('PDF-Bibliothek wird geladen, bitte erneut versuchen.');
+    return;
+  }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const info = S.infos||{};
+  const einsaetze = S.einsaetze||[];
+  const PW=210, PH=297, ML=15, MR=15, MT=15, CW=PW-ML-MR;
+  const RED=[163,45,45], ORANGE=[208,90,26], YELLOW=[180,130,0], BLUE=[31,56,100], GREY=[100,100,100], LIGHTGREY=[220,220,220];
+
+  function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return[r,g,b];}
+  function addHeader(title, subtitle){
+    doc.setFillColor(...RED);
+    doc.rect(0,0,PW,18,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(13);doc.setFont('helvetica','bold');
+    doc.text(title,ML,11);
+    if(subtitle){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text(subtitle,PW-MR,11,{align:'right'});}
+    doc.setTextColor(0,0,0);
+    return 24;
+  }
+  function addEventInfo(y){
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
+    const parts=[info.name,info.datum,info.ort].filter(Boolean).join('  |  ');
+    if(parts) doc.text(parts,ML,y);
+    doc.setTextColor(0,0,0);
+    return y+6;
+  }
+  function addSectionTitle(text,y,color=BLUE){
+    doc.setFillColor(...color);
+    doc.rect(ML,y,CW,6,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.text(text,ML+3,y+4.2);
+    doc.setTextColor(0,0,0);
+    return y+9;
+  }
+  function addTimeline(patients, y, pageWidth){
+    // Simple timeline bar
+    const BASE=8,TOTAL=26,TL=35,TW=CW-TL-5,TH=8,BY=y;
+    doc.setFontSize(7);doc.setFont('helvetica','normal');
+    // Hour labels
+    doc.setTextColor(...GREY);
+    for(let h=0;h<=TOTAL;h+=2){
+      const x=ML+TL+(h/TOTAL)*TW;
+      const hr=String((BASE+h)%24).padStart(2,'0');
+      doc.text(hr+':00',x,BY,{align:'center'});
+    }
+    doc.setTextColor(0,0,0);
+    y=BY+4;
+    patients.forEach(p=>{
+      if(!p.schminkStart||!p.schminkEnd)return;
+      // Label
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
+      doc.text((p.name||'').substring(0,16),ML,y+3.5);
+      // Schminken bar
+      const[sh,sm]=p.schminkStart.split(':').map(Number);
+      const[eh,em]=p.schminkEnd.split(':').map(Number);
+      let so=sh+sm/60-BASE, eo=eh+em/60-BASE;
+      if(so<0)so+=24;if(eo<=so)eo+=24;
+      const x1=ML+TL+(so/TOTAL)*TW, bw=Math.max((eo-so)/TOTAL*TW,1);
+      doc.setFillColor(...ORANGE);doc.setDrawColor(...ORANGE);
+      doc.roundedRect(x1,y,bw,TH-2,1,1,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(6);
+      if(bw>15)doc.text(p.schminkStart+'–'+p.schminkEnd,x1+bw/2,y+3.2,{align:'center'});
+      doc.setTextColor(0,0,0);
+      y+=TH;
+    });
+    // Border
+    doc.setDrawColor(...LIGHTGREY);
+    doc.rect(ML+TL,BY+3,TW,y-(BY+3));
+    return y+4;
+  }
+  function checkPageBreak(y,needed=20){
+    if(y+needed>PH-15){doc.addPage();return MT;}
+    return y;
+  }
+
+  // ── PAGE 1: GESAMTÜBERSICHT ──
+  let y = addHeader('RUD – Gesamtübersicht','Alle Patienten & Schminker');
+  y = addEventInfo(y);
+
+  // Collect all patients grouped by einsatz
+  const allPatients=[];
+  einsaetze.forEach(e=>{
+    const rudEntry=(S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id);
+    if(!rudEntry||!(rudEntry.patients||[]).length)return;
+    rudEntry.patients.forEach(p=>allPatients.push({...p,einsatz:e}));
+  });
+
+  if(!allPatients.length){
+    doc.setFontSize(10);doc.setTextColor(...GREY);
+    doc.text('Keine Patienten erfasst.',ML,y+10);
+  } else {
+    // Timeline overview
+    y=addSectionTitle('TIMELINE – Alle Patienten',y);
+    y=addTimeline(allPatients,y);
+    y=checkPageBreak(y,10);
+
+    // Table
+    y=addSectionTitle('PATIENTENLISTE',y);
+    // Header
+    doc.setFillColor(...LIGHTGREY);doc.rect(ML,y,CW,5,'F');
+    doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
+    doc.text('Patient',ML+2,y+3.5);
+    doc.text('Fahrzeug / Einsatz',ML+40,y+3.5);
+    doc.text('Ankunft',ML+90,y+3.5);
+    doc.text('Schminken',ML+108,y+3.5);
+    doc.text('Transfer',ML+133,y+3.5);
+    doc.text('Schminker',ML+158,y+3.5);
+    y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(7);
+    allPatients.forEach((p,i)=>{
+      y=checkPageBreak(y,6);
+      if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML,y-0.5,CW,5.5,'F');}
+      doc.setTextColor(0,0,0);
+      doc.text((p.name||'–').substring(0,18),ML+2,y+3.5);
+      doc.text((p.einsatz.veh+(p.einsatz.ort?' / '+p.einsatz.ort:'')).substring(0,22),ML+40,y+3.5);
+      doc.text(p.ankunft||'–',ML+90,y+3.5);
+      doc.text((p.schminkStart||'–')+'–'+(p.schminkEnd||'–'),ML+108,y+3.5);
+      doc.text((p.transferStart||'–')+'–'+(p.transferEnd||'–'),ML+133,y+3.5);
+      const schminker=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?(per.vorname||'')+(per.nachname?' '+per.nachname:''):'?';}).join(', ');
+      doc.text(schminker.substring(0,20),ML+158,y+3.5);
+      y+=5.5;
+      // Verletzungsmuster
+      if(p.verletzung){
+        y=checkPageBreak(y,5);
+        doc.setTextColor(...GREY);doc.setFontSize(6.5);
+        doc.text('  Verletzungsmuster: '+p.verletzung.substring(0,80),ML+2,y+2.5);
+        doc.setTextColor(0,0,0);doc.setFontSize(7);
+        y+=4;
+      }
+    });
+  }
+
+  // ── SEITEN PRO SCHMINKER ──
+  const personMap={};
+  allPatients.forEach(p=>{
+    (p.persons||[]).forEach(pid=>{
+      if(!personMap[pid])personMap[pid]=[];
+      personMap[pid].push(p);
+    });
+  });
+
+  Object.entries(personMap).forEach(([pid,patients])=>{
+    doc.addPage();
+    const per=S.persons.find(x=>x.id===parseInt(pid));
+    const name=per?((per.vorname||'')+(per.nachname?' '+per.nachname:'')):'Unbekannt';
+    let y=addHeader('RUD – Schminker: '+name,patients.length+' Patient'+(patients.length!==1?'en':''));
+    y=addEventInfo(y);
+
+    // Timeline for this schminker
+    y=addSectionTitle('TIMELINE',y,ORANGE);
+    y=addTimeline(patients,y);
+    y=checkPageBreak(y,10);
+
+    // Patient cards
+    y=addSectionTitle('PATIENTEN',y,ORANGE);
+    patients.forEach((p,i)=>{
+      y=checkPageBreak(y,40);
+      // Card background
+      doc.setFillColor(255,248,240);doc.setDrawColor(...ORANGE);doc.setLineWidth(0.3);
+      const cardH=p.verletzung?38:32;
+      doc.roundedRect(ML,y,CW,cardH,2,2,'FD');
+      // Patient name
+      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
+      doc.text(p.name||'–',ML+4,y+7);
+      // Einsatz ref
+      doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
+      doc.text('Einsatz: '+(p.einsatz.veh+(p.einsatz.ort?' – '+p.einsatz.ort:'')),ML+4,y+12);
+      doc.setTextColor(0,0,0);
+      // Three phase boxes
+      const bw=(CW-8)/3,bx1=ML+4,bx2=bx1+bw+2,bx3=bx2+bw+2;
+      // Ankunft
+      doc.setFillColor(255,248,230);doc.setDrawColor(240,208,128);
+      doc.roundedRect(bx1,y+14,bw,12,1,1,'FD');
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...YELLOW);
+      doc.text('ANKUNFT',bx1+2,y+18.5);
+      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
+      doc.text(p.ankunft||'–',bx1+2,y+23.5);
+      if(p.schminkplatz){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('📍 '+p.schminkplatz.substring(0,18),bx1+2,y+27);}
+      // Schminken
+      doc.setFillColor(255,240,230);doc.setDrawColor(240,160,112);
+      doc.roundedRect(bx2,y+14,bw,12,1,1,'FD');
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...ORANGE);
+      doc.text('SCHMINKEN ('+String(p.schminkdauer||40)+' min)',bx2+2,y+18.5);
+      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
+      doc.text((p.schminkStart||'–')+' – '+(p.schminkEnd||'–'),bx2+2,y+23.5);
+      // Transfer
+      doc.setFillColor(252,235,235);doc.setDrawColor(240,149,149);
+      doc.roundedRect(bx3,y+14,bw,12,1,1,'FD');
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
+      doc.text('TRANSFER',bx3+2,y+18.5);
+      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
+      doc.text((p.transferStart||'–')+' – '+(p.transferEnd||'–'),bx3+2,y+23.5);
+      if(p.transferNach||p.einsatz.ort){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('→ '+(p.transferNach||p.einsatz.ort||''),bx3+2,y+27);}
+      doc.setTextColor(0,0,0);
+      // ASP
+      if(p.einsatz.asp){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('ASP: '+p.einsatz.asp,bx3+2,y+27+(p.transferNach||p.einsatz.ort?3.5:0));}
+      // Verletzungsmuster
+      if(p.verletzung){
+        doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+        doc.text('Verletzungsmuster:',ML+4,y+30);
+        doc.setFont('helvetica','normal');
+        doc.text(p.verletzung.substring(0,90),ML+36,y+30);
+        doc.setTextColor(0,0,0);
+      }
+      y+=cardH+5;
+    });
+  });
+
+  // Footer on all pages
+  const pageCount=doc.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFontSize(7);doc.setTextColor(...GREY);
+    doc.text('RUD Export – 24h-Dienst WKJ',ML,PH-8);
+    doc.text('Seite '+i+' / '+pageCount,PW-MR,PH-8,{align:'right'});
+    doc.setTextColor(0,0,0);
+  }
+
+  doc.save('RUD_Export.pdf');
+}
+
+/* ══ ZUSTÄNDIGKEITSBEREICHE ══ */
+function renderBereiche(){
+  const grid=document.getElementById('bereiche-grid');
+  const empty=document.getElementById('bereiche-empty');
+  if(!grid) return;
+  grid.innerHTML='';
+  if(!S.bereiche||S.bereiche.length===0){
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  S.bereiche.forEach(b=>{
+    const veh=(b.fahrzeuge||[]).map(v=>'<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500;background:'+clOf(v)+';color:'+cOf(v)+';margin:2px;">'+escHtml(v)+'</span>').join('');
+    const verantwPersonen=(Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])).map(id=>S.persons.find(p=>p.id===id)).filter(Boolean);
+    const personenHtml=verantwPersonen.length
+      ? verantwPersonen.map(p=>'<span style="font-size:13px;color:var(--text);">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>').join('<span style="color:var(--text2);margin:0 4px;">·</span>')
+      : '<span style="color:var(--text2);">Nicht zugewiesen</span>';
+
+    // Checklist items
+    const checkItems=(b.checkItems||[]);
+    const doneCount=checkItems.filter(i=>i.status==='ok').length;
+    const checkHtml=checkItems.length
+      ? checkItems.map(item=>{
+          const isOk=item.status==='ok';
+          const isInProgress=item.status==='in_arbeit';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">'+
+            '<span style="flex:1;font-size:13px;cursor:text;border-radius:4px;padding:2px 4px;" '+
+              'onclick="editBereichItemText(this,'+b.id+','+item.id+')" '+
+              'title="Klicken zum Bearbeiten">'+escHtml(item.text)+'</span>'+
+            '<select onchange="setBereichItemStatus('+b.id+','+item.id+',this.value)" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--input-border);background:'+(isOk?'#EAF3DE':isInProgress?'#FFF4E5':'var(--input-bg)')+';color:'+(isOk?'#27500A':isInProgress?'#7a4800':'var(--text)')+';cursor:pointer;outline:none;width:auto;flex-shrink:0;">'+
+              '<option value="offen"'+(item.status==='offen'?' selected':'')+'>⬜ Offen</option>'+
+              '<option value="in_arbeit"'+(isInProgress?' selected':'')+'>🟠 In Arbeit</option>'+
+              '<option value="ok"'+(isOk?' selected':'')+'>✅ OK</option>'+
+            '</select>'+
+            '<button onclick="deleteBereichItem('+b.id+','+item.id+')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;padding:0 2px;" title="Löschen">✕</button>'+
+          '</div>';
+        }).join('')
+      : '';
+
+    const card=document.createElement('div');
+    card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;';
+    card.innerHTML=
+      '<div style="background:#1F3864;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="display:flex;align-items:center;gap:8px;">'+
+          '<span style="font-weight:500;font-size:14px;color:#fff;">'+escHtml(b.name||'Ohne Name')+'</span>'+
+          (checkItems.length?'<span style="font-size:11px;background:rgba(255,255,255,0.18);color:#fff;padding:1px 8px;border-radius:20px;">'+doneCount+'/'+checkItems.length+'</span>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:6px;">'+
+          '<button class="btn btn-sm" onclick="editBereich('+b.id+')" style="padding:2px 8px;font-size:11px;color:#fff;border-color:rgba(255,255,255,0.3);">Bearbeiten</button>'+
+          '<button class="btn btn-sm btn-danger" onclick="deleteBereich('+b.id+')" style="padding:2px 8px;font-size:11px;">x</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="padding:12px 14px;">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+
+          '<span>'+personenHtml+'</span>'+
+        '</div>'+
+        (b.beschreibung?'<div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5;">'+escHtml(b.beschreibung)+'</div>':'')+
+        (veh?'<div style="margin-top:6px;margin-bottom:10px;">'+veh+'</div>':'')+
+        '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">'+
+          '<div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">Checkliste</div>'+
+          (checkHtml||'<div style="font-size:12px;color:var(--text2);font-style:italic;padding:4px 0;">Keine Punkte vorhanden</div>')+
+          '<div style="display:flex;gap:6px;margin-top:8px;">'+
+            '<input type="text" id="new-item-'+b.id+'" placeholder="Neuer Punkt..." style="flex:1;font-size:12px;padding:5px 8px;" onkeydown="if(event.key===\'Enter\')addBereichItem('+b.id+')">'+
+            '<button class="btn btn-sm btn-primary" onclick="addBereichItem('+b.id+')">+</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+
+function editBereichItemText(span, bereichId, itemId){
+  const current=span.textContent;
+  const inp=document.createElement('input');
+  inp.type='text';
+  inp.value=current;
+  inp.style.cssText='flex:1;font-size:13px;padding:2px 4px;border:1px solid var(--input-border);border-radius:4px;background:var(--input-bg);color:var(--text);font-family:inherit;width:100%;';
+  span.replaceWith(inp);
+  inp.focus();
+  inp.select();
+  function save(){
+    const val=inp.value.trim();
+    if(val&&val!==current){
+      const b=S.bereiche.find(x=>x.id===bereichId);
+      const item=b&&(b.checkItems||[]).find(x=>x.id===itemId);
+      if(item){item.text=val;save();renderBereiche();}
+    } else {
+      renderBereiche();
+    }
+  }
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){inp.blur();}if(e.key==='Escape'){renderBereiche();}});
+}
+
+function addBereichItem(bereichId){
+  const inp=document.getElementById('new-item-'+bereichId);
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  const b=S.bereiche.find(x=>x.id===bereichId);
+  if(!b)return;
+  if(!b.checkItems)b.checkItems=[];
+  b.checkItems.push({id:uid(),text,status:'offen'});
+  inp.value='';
+  save();renderBereiche();
+}
+
+function setBereichItemStatus(bereichId,itemId,status){
+  const b=S.bereiche.find(x=>x.id===bereichId);
+  if(!b)return;
+  const item=(b.checkItems||[]).find(x=>x.id===itemId);
+  if(item){item.status=status;save();renderBereiche();}
+}
+
+function deleteBereichItem(bereichId,itemId){
+  const b=S.bereiche.find(x=>x.id===bereichId);
+  if(!b)return;
+  b.checkItems=(b.checkItems||[]).filter(x=>x.id!==itemId);
+  save();renderBereiche();
+}
+
+function addBereich(){ openBereichModal(null); }
+function editBereich(id){ openBereichModal(S.bereiche.find(x=>x.id===id)); }
+
+function openBereichModal(b){
+  const selectedIds=b?(Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])):[];
+  const betreuer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[]);return r.some(x=>x.toLowerCase()==='betreuer');});
+  const personChips=betreuer.length
+    ? betreuer.map(p=>{
+        const sel=selectedIds.includes(p.id);
+        return '<span onclick="toggleModalChip(this)" data-pid="'+p.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(sel?'background:#1F3864;color:#fff;border:1px solid #1F3864;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>';
+      }).join('')
+    : '<span style="font-size:12px;color:var(--text2);">Keine Betreuer in Teilnehmerliste</span>';
+  const vehChecks=S.vehicles.map(v=>
+    '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;cursor:pointer;">'+
+    '<input type="checkbox" value="'+v+'"'+(b&&(b.fahrzeuge||[]).includes(v)?' checked':'')+' style="width:14px;height:14px;"> '+escHtml(v)+'</label>'
+  ).join('');
+  openModal('<h2>'+(b?'Bereich bearbeiten':'Neuer Bereich')+'</h2>'+
+    '<div class="form-row"><label>Name des Bereichs</label><input type="text" id="m-bname" value="'+escHtml(b?b.name||'':'')+'"></div>'+
+    '<div class="form-row"><label>Verantwortliche Personen</label>'+
+    '<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px;min-height:40px;" id="m-bperson-chips">'+personChips+'</div></div>'+
+    '<div class="form-row"><label>Beschreibung / Aufgaben</label><textarea id="m-bdesc">'+escHtml(b?b.beschreibung||'':'')+'</textarea></div>'+
+    '<div class="form-row"><label>Zugeordnete Fahrzeuge</label>'+
+    (S.vehicles.length?'<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px 10px;">'+vehChecks+'</div>':'<div style="font-size:12px;color:var(--text2);">Keine Fahrzeuge vorhanden</div>')+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveBereich('+(b?b.id:0)+')">Speichern</button></div>');
+}
+
+function saveBereich(id){
+  const name=document.getElementById('m-bname').value.trim();
+  const personen=[...document.querySelectorAll('#m-bperson-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean);
+  const beschreibung=document.getElementById('m-bdesc').value.trim();
+  const fahrzeuge=[...document.querySelectorAll('#modal-content input[type=checkbox]:checked')].map(c=>c.value);
+  if(!name) return;
+  if(id){
+    const b=S.bereiche.find(x=>x.id===id);
+    b.name=name; b.personen=personen; b.beschreibung=beschreibung; b.fahrzeuge=fahrzeuge;
+  } else {
+    S.bereiche.push({id:uid(),name,personen,beschreibung,fahrzeuge});
+  }
+  closeModal(true); save(); renderBereiche();
+}
+
+function deleteBereich(id){
+  confirmModal('Dieser Bereich wird unwiderruflich gelöscht.',function(){
+    S.bereiche=S.bereiche.filter(x=>x.id!==id);
+    save(); renderBereiche();
+  });
+}
+
+
+function checkConflicts(){
+  const conflicts=[];
+  Object.values(S.dienstplaene||{}).flat().forEach(t=>{
+    const allAssigned=Object.values(t.assignments||{}).flat();
+    const seen={};
+    allAssigned.forEach(pId=>{
+      if(seen[pId]){
+        const p=S.persons.find(x=>x.id===pId);
+        if(p) conflicts.push({turnus:t.title, person:p.name});
+      }
+      seen[pId]=(seen[pId]||0)+1;
+    });
+  });
+  // Check same person in overlapping turnusse
+  S.persons.forEach(p=>{
+    const turnusse=Object.values(S.dienstplaene||{}).flat().filter(t=>Object.values(t.assignments||{}).flat().includes(p.id));
+    for(let i=0;i<turnusse.length;i++){
+      for(let j=i+1;j<turnusse.length;j++){
+        const a=turnusse[i], b=turnusse[j];
+        const aS=toOff(a.start,0), aE=toOff(a.end,0)||24;
+        const bS=toOff(b.start,0), bE=toOff(b.end,0)||24;
+        if(aS<bE && bS<aE) conflicts.push({person:p.name, turnus:a.title+' & '+b.title});
+      }
+    }
+  });
+  return conflicts;
+}
+
+function renderConflictWarnings(){
+  const existing=document.getElementById('conflict-warnings');
+  if(existing) existing.remove();
+  const conflicts=checkConflicts();
+  if(!conflicts.length) return;
+  const el=document.getElementById('turnus-list');
+  const warn=document.createElement('div');
+  warn.id='conflict-warnings';
+  warn.style.cssText='background:#FCEBEB;border:1px solid #f09595;border-radius:8px;padding:10px 14px;margin-bottom:12px;';
+  warn.innerHTML='<div style="font-weight:500;font-size:13px;color:#A32D2D;margin-bottom:6px;">⚠️ Konflikte erkannt</div>'+
+    conflicts.map(c=>'<div style="font-size:12px;color:#A32D2D;">'+escHtml(c.person)+' ist doppelt eingeteilt ('+escHtml(c.turnus)+')</div>').join('');
+  el.parentElement.insertBefore(warn, el);
+}
+
+/* ══ DIENSTPLAN-ÜBERSICHT PRO PERSON ══ */
+function renderPersonOverview(){
+  const existing=document.getElementById('person-overview');
+  if(existing) existing.remove();
+  const allT=Object.values(S.dienstplaene||{}).flat();
+  if(!S.persons.length||!allT.length) return;
+  const card=document.createElement('div');
+  card.id='person-overview'; card.className='card';
+
+  const grid = S.persons.map(p=>{
+    const fullName=escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''));
+    const rows=allT.map(t=>{
+      const veh=Object.entries(t.assignments||{}).filter(([v,ids])=>ids.includes(p.id)).map(([v])=>v);
+      if(!veh.length) return '';
+      return '<div style="margin-bottom:4px;">'+
+        '<div style="font-size:11px;color:var(--text2);">'+escHtml(t.title)+' ('+t.start+'–'+t.end+')</div>'+
+        '<div style="font-size:12px;font-weight:500;color:var(--text);">'+veh.map(v=>'<span style="display:inline-block;padding:1px 7px;border-radius:4px;margin:1px;background:'+clOf(v)+';color:'+cOf(v)+';">'+escHtml(v)+'</span>').join('')+'</div>'+
+        '</div>';
+    }).filter(Boolean).join('');
+
+    return '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border);">'+
+      '<div style="font-weight:500;font-size:13px;margin-bottom:6px;color:var(--text);">'+fullName+'</div>'+
+      (rows||'<span style="font-size:12px;color:var(--text2);">Nicht eingeteilt</span>')+
+      '</div>';
+  }).join('');
+
+  card.innerHTML='<div class="card-header"><span class="card-title">Übersicht pro Person</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">'+grid+'</div>';
+  document.getElementById('turnus-list').after(card);
+}
+
+/* ══ TABELLEN SORTIEREN ══ */
+let sortState={col:null,dir:1};
+function sortTable(col){
+  if(sortState.col===col) sortState.dir*=-1; else { sortState.col=col; sortState.dir=1; }
+  S.einsaetze.sort((a,b)=>{
+    const av=a[col]||'', bv=b[col]||'';
+    return av.localeCompare(bv)*sortState.dir;
+  });
+  renderEinsaetze();
+}
+
+
+document.getElementById('gantt').addEventListener('click', function(e){
+  const canvas = this;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const TOTAL=24,BASE=10,LW=80,PT=44,RH=110,EY=4,EH=48;
+  const chartW = canvas.width - LW - 8;
+  function xOf(h){return LW+(h/TOTAL)*chartW;}
+  let hit = null;
+  S.einsaetze.forEach(b=>{
+    const vi=S.vehicles.indexOf(b.veh); if(vi<0)return;
+    let so=toOff(b.start),eo=toOff(b.end); if(eo<=so)eo+=24; if(eo>24)eo=24;
+    const x1=xOf(so),x2=xOf(eo),y=PT+vi*RH+EY;
+    if(mx>=x1&&mx<=x2&&my>=y&&my<=y+EH) hit=b.id;
+  });
+  selectedEinsatzId = (hit===selectedEinsatzId)?null:hit;
+  renderEinsaetze();
+  renderGantt();
+  if(selectedEinsatzId){
+    const row=document.getElementById('einsatz-row-'+selectedEinsatzId);
+    if(row) row.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+});
+load();
+</script>
+</body>
+</html>
