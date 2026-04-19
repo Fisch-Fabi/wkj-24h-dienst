@@ -294,9 +294,6 @@ body:not(.is-admin) .admin-only{display:none!important;}
       <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="login-btn" onclick="doLogin()">Anmelden</button>
-    <div style="margin-top:14px;text-align:center;font-size:11px;color:#bbb;">
-      Lokale Anmeldung · Version <span id="login-version"></span>
-    </div>
   </div>
 </div>
 
@@ -490,20 +487,20 @@ body:not(.is-admin) .admin-only{display:none!important;}
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">🟢 Aktuell laufende Einsätze</span></div>
-        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
-        <tbody id="dash-aktiv"></tbody></table>
+        <div style="overflow-x:auto;"><table style="min-width:440px;width:100%;"><thead><tr><th style="white-space:nowrap;">Fahrzeug</th><th style="white-space:nowrap;min-width:46px;">Start</th><th style="white-space:nowrap;min-width:46px;">Ende</th><th>Ort</th><th style="white-space:nowrap;min-width:90px;">Einsatzart</th><th style="white-space:nowrap;">Status</th></tr></thead>
+        <tbody id="dash-aktiv"></tbody></table></div>
         <div id="dash-aktiv-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine laufenden Einsätze</div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">🕐 Anstehende Einsätze</span></div>
-        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
-        <tbody id="dash-anstehend"></tbody></table>
+        <div style="overflow-x:auto;"><table style="min-width:440px;width:100%;"><thead><tr><th style="white-space:nowrap;">Fahrzeug</th><th style="white-space:nowrap;min-width:46px;">Start</th><th style="white-space:nowrap;min-width:46px;">Ende</th><th>Ort</th><th style="white-space:nowrap;min-width:90px;">Einsatzart</th><th style="white-space:nowrap;">Status</th></tr></thead>
+        <tbody id="dash-anstehend"></tbody></table></div>
         <div id="dash-anstehend-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine anstehenden Einsätze</div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">⚫ Abgeschlossen</span></div>
-        <table style="table-layout:fixed;"><colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:24%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Fahrzeug</th><th>Start</th><th>Ende</th><th>Ort</th><th>Einsatzart</th><th>Status</th></tr></thead>
-        <tbody id="dash-beendet"></tbody></table>
+        <div style="overflow-x:auto;"><table style="min-width:440px;width:100%;"><thead><tr><th style="white-space:nowrap;">Fahrzeug</th><th style="white-space:nowrap;min-width:46px;">Start</th><th style="white-space:nowrap;min-width:46px;">Ende</th><th>Ort</th><th style="white-space:nowrap;min-width:90px;">Einsatzart</th><th style="white-space:nowrap;">Status</th></tr></thead>
+        <tbody id="dash-beendet"></tbody></table></div>
         <div id="dash-beendet-empty" style="text-align:center;padding:1rem;font-size:13px;color:var(--text2);">Keine abgeschlossenen Einsätze</div>
       </div>
     </div>
@@ -1984,9 +1981,9 @@ function renderDashboard(){
   function einsatzRow(b){
     const tr=document.createElement('tr');
     tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
-      '<td style="font-size:12px;">'+b.start+'</td><td style="font-size:12px;">'+b.end+'</td>'+
+      '<td style="font-size:12px;white-space:nowrap;">'+b.start+'</td><td style="font-size:12px;white-space:nowrap;">'+b.end+'</td>'+
       '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
-      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td style="white-space:nowrap;"><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
       '<td>'+statusBadge(b.status)+'</td>';
     return tr;
   }
@@ -2050,9 +2047,9 @@ function renderDashboard(){
   function einsatzRowBeendet(b){
     const tr=document.createElement('tr');
     tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
-      '<td style="font-size:12px;">'+b.start+'</td><td style="font-size:12px;">'+b.end+'</td>'+
+      '<td style="font-size:12px;white-space:nowrap;">'+b.start+'</td><td style="font-size:12px;white-space:nowrap;">'+b.end+'</td>'+
       '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
-      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td style="white-space:nowrap;"><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
       '<td>'+statusBadge(b.status)+'</td>';
     return tr;
   }
