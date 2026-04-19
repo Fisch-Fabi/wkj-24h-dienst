@@ -141,16 +141,164 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
   table{width:100%;border-collapse:collapse;}
   th,td{border:1px solid #ccc;padding:5px 8px;font-size:12px;}
 }
+/* ── Role-based visibility ── */
+body:not(.is-admin) .admin-only{display:none!important;}
+/* ── Mobile sidebar ── */
+/* ── Login Screen ── */
+#login-screen{
+  display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;
+  align-items:center;justify-content:center;flex-direction:column;
+}
+#login-screen.show{display:flex;}
+.login-box{
+  background:#fff;border-radius:16px;padding:2rem 2.25rem;width:90%;max-width:380px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.12);
+}
+.login-logo{text-align:center;margin-bottom:1.75rem;}
+.login-logo svg{display:block;margin:0 auto 10px;}
+.login-logo h1{font-size:20px;font-weight:600;color:#1F3864;margin-bottom:2px;}
+.login-logo p{font-size:12px;color:#888;}
+.login-input-wrap{margin-bottom:12px;}
+.login-input-wrap label{display:block;font-size:12px;color:#666;margin-bottom:5px;font-weight:500;}
+.login-input-wrap input{
+  width:100%;padding:9px 12px;font-size:14px;border:1.5px solid #ddd;
+  border-radius:8px;font-family:inherit;transition:border-color 0.15s;background:#fafafa;
+}
+.login-input-wrap input:focus{outline:none;border-color:#1F3864;background:#fff;}
+.login-btn{
+  width:100%;padding:10px;background:#1F3864;color:#fff;border:none;border-radius:8px;
+  font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:6px;
+  transition:background 0.15s;
+}
+.login-btn:hover{background:#162a4e;}
+.login-error{
+  background:#FFF0F0;border:1px solid #f09595;color:#A32D2D;border-radius:6px;
+  padding:7px 12px;font-size:12px;margin-bottom:10px;display:none;
+}
+.login-error.show{display:block;}
+.role-badge{
+  display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;
+  font-size:11px;font-weight:500;
+}
+.role-badge.admin{background:#E6F1FB;color:#1F3864;}
+.role-badge.betreuer{background:#F0FAF0;color:#2a7a3a;}
+
+/* ── Settings Tiles ── */
+.settings-tile{
+  position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:1.1rem 1rem 1rem;cursor:pointer;transition:box-shadow 0.15s,border-color 0.15s;
+  display:flex;flex-direction:column;gap:4px;
+}
+.settings-tile:hover{box-shadow:0 3px 12px rgba(0,0,0,0.09);border-color:#bbb;}
+.settings-tile-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;flex-shrink:0;}
+.settings-tile-title{font-size:14px;font-weight:500;color:var(--text);}
+.settings-tile-desc{font-size:12px;color:var(--text2);line-height:1.4;}
+.settings-tile-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text2);opacity:0.5;}
+.settings-tile:hover .settings-tile-arrow{opacity:1;color:#1F3864;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row-label{font-size:14px;font-weight:500;color:var(--text);}
+.settings-row-desc{font-size:12px;color:var(--text2);margin-top:2px;}
 @media(max-width:700px){
   .sidebar{position:fixed;left:-220px;z-index:150;transition:left 0.2s;}
   .sidebar.open{left:0;}
   .sidebar.collapsed{left:-220px!important;width:220px!important;}
-  .content{padding:1rem 0.75rem;}
+  .content{padding:0.75rem 0.6rem;}
+
+  /* Cards stack, full width */
+  .card{border-radius:10px;padding:0.85rem 0.9rem;}
+
+  /* Hide table on mobile, show cards */
+  .mobile-card-list{display:flex;flex-direction:column;gap:8px;}
+  .mobile-card-item{
+    background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;font-size:13px;
+  }
+  .mobile-card-item .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .mobile-card-item .mc-label{font-size:11px;color:var(--text2);}
+  .mobile-card-item .mc-val{font-weight:500;}
+
+  /* Responsive table: horizontal scroll */
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Bigger touch targets */
+  .btn{padding:8px 16px;font-size:13px;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+
+  /* Modal full-screen on mobile */
+  .modal{width:100%;max-width:100%;border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:92vh;}
+  .modal-backdrop.open{align-items:flex-end;}
+
+  /* Topbar */
+  .topbar{padding:0.6rem 1rem;}
+  .topbar-title{font-size:14px;}
+
+  /* Form grid single column */
+  .form-row-2{grid-template-columns:1fr;}
+
+  /* Timeline canvas scroll hint */
+  .canvas-scroll-hint{font-size:11px;color:var(--text2);text-align:center;padding:3px 0 6px;}
+
+  /* Dashboard tiles 2 per row */
+  #page-dashboard > div:first-of-type{grid-template-columns:repeat(2,1fr)!important;}
+
+  /* Bereiche grid single col */
+  #bereiche-grid{grid-template-columns:1fr!important;}
+
+  /* Person overview single col */
+  #person-overview div[style*="grid"]{grid-template-columns:1fr!important;}
 }
+@media(min-width:701px){
+  .canvas-scroll-hint{display:none;}
+}
+/* ── Mobile card layout ── */
+@media(max-width:700px){
+  .mobile-cards table thead{display:none;}
+  .mobile-cards table tbody tr{display:block;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:10px 12px;background:var(--bg2);}
+  .mobile-cards table tbody td{display:flex;padding:4px 0;border:none;font-size:13px;gap:8px;}
+  .mobile-cards table tbody td:before{content:attr(data-label);font-size:11px;color:var(--text2);min-width:90px;flex-shrink:0;padding-top:1px;}
+  .mobile-cards table tbody td:last-child{justify-content:flex-end;}
+  .mobile-cards table tbody td:last-child:before{display:none;}
+  .btn{min-height:36px;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .card{padding:0.875rem 1rem;}
+  .modal{width:95%;padding:1.25rem;}
+  .form-row-2{grid-template-columns:1fr;}
+  .topbar{padding:0.6rem 1rem;}
+  .topbar-title{font-size:15px;}
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+
+<!-- ── Login Screen ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="12" fill="#1F3864"/>
+        <path d="M24 10L12 16v10c0 7 5.4 13.5 12 15 6.6-1.5 12-8 12-15V16L24 10z" fill="white" fill-opacity="0.9"/>
+        <path d="M21 24l2 2 4-4" stroke="#1F3864" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>24h-Dienst WKJ</h1>
+    </div>
+    <div class="login-error" id="login-error">Benutzername oder Passwort falsch.</div>
+    <div class="login-input-wrap">
+      <label>Benutzername</label>
+      <input type="text" id="login-user" placeholder="Benutzername" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-input-wrap">
+      <label>Passwort</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Anmelden</button>
+    <div style="margin-top:14px;text-align:center;font-size:11px;color:#bbb;">
+      Lokale Anmeldung · Version <span id="login-version"></span>
+    </div>
+  </div>
+</div>
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar" id="sidebar">
@@ -251,7 +399,7 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 
   </nav>
   <div class="sidebar-footer">
-    <div onclick="showPage('einstellungen', {classList:{add:()=>{},remove:()=>{}}})" style="cursor:pointer;display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.5);padding:4px 0;transition:color 0.15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
+    <div class="admin-only" onclick="showPage('einstellungen', {classList:{add:()=>{},remove:()=>{}}})" style="cursor:pointer;display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.5);padding:4px 0;transition:color 0.15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       Einstellungen
     </div>
@@ -284,9 +432,18 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
               </div>
               <div>
                 <div id="um-username" style="font-weight:500;font-size:13px;color:var(--text);">Gast</div>
+                <div id="um-role-badge" style="margin-top:3px;"></div>
                 <div id="um-eventname" style="font-size:11px;color:var(--text2);margin-top:1px;">24h-Dienst</div>
               </div>
             </div>
+          </div>
+          <div onclick="ownPasswordModal()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text);border-top:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Passwort ändern
+          </div>
+          <div class="admin-only" onclick="openUserMgmt()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Benutzerverwaltung
           </div>
           <div onclick="abmelden()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:#A32D2D;border-top:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -479,6 +636,7 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
       <div class="card" style="padding:0.75rem 1rem;">
         <div class="card-header"><span class="card-title">Timeline</span><div id="gantt-legend" style="display:flex;gap:16px;flex-wrap:wrap;"></div></div>
         <div style="overflow-x:auto;"><canvas id="gantt"></canvas></div>
+        <div class="canvas-scroll-hint">← scrollbar zum Navigieren →</div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Einsätze</span><button class="btn btn-primary btn-sm" onclick="openEinsatzModal()">+ Einsatz</button></div>
@@ -533,7 +691,7 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 
     <!-- ══ TEILNEHMER ══ -->
     <div class="page" id="page-teilnehmer">
-      <div class="card">
+      <div class="card mobile-cards">
         <div class="card-header"><span class="card-title">Teilnehmerliste</span>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm" onclick="openExcelImport()">📥 Excel Import</button>
@@ -577,99 +735,82 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 
     <!-- ══ EINSTELLUNGEN ══ -->
     <div class="page" id="page-einstellungen">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Daten</span></div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Daten exportieren</div>
-              <div style="font-size:12px;color:var(--text2);">Alle Daten als JSON-Datei speichern</div>
+
+      <!-- Kachel-Übersicht -->
+      <div id="settings-overview">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;">Wähle einen Bereich um dessen Einstellungen zu öffnen.</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+
+          <div class="settings-tile" onclick="openSettingsSection('darstellung')">
+            <div class="settings-tile-icon" style="background:#E6F1FB;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="exportData()">↓ Exportieren</button>
+            <div class="settings-tile-title">Darstellung</div>
+            <div class="settings-tile-desc">Dunkelmodus, Seitenmenü, Ansicht</div>
+            <div class="settings-tile-arrow">→</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Daten importieren</div>
-              <div style="font-size:12px;color:var(--text2);">Gespeicherte JSON-Datei laden</div>
+
+          <div class="settings-tile" onclick="openSettingsSection('daten')">
+            <div class="settings-tile-icon" style="background:#F0FAF0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2a7a3a" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
             </div>
-            <label class="btn btn-sm" style="cursor:pointer;">↑ Importieren<input type="file" accept=".json" onchange="importData(this.files[0])" style="display:none;"></label>
+            <div class="settings-tile-title">Daten</div>
+            <div class="settings-tile-desc">Exportieren, importieren, zurücksetzen</div>
+            <div class="settings-tile-arrow">→</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Dunkelmodus</div>
-              <div style="font-size:12px;color:var(--text2);">Dunkles Farbschema aktivieren</div>
+
+          <div class="settings-tile admin-only" onclick="openSettingsSection('benutzer')">
+            <div class="settings-tile-icon" style="background:#F5F0FF;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <button onclick="toggleDark()" class="btn btn-sm" id="dark-toggle-btn">🌙 Dunkel</button>
+            <div class="settings-tile-title">Benutzer</div>
+            <div class="settings-tile-desc">Konten, Rollen &amp; Zugriffsrechte</div>
+            <div class="settings-tile-arrow">→</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Seitenmenü</div>
-              <div style="font-size:12px;color:var(--text2);">Fixiert: Menü bleibt immer sichtbar. Nicht fixiert: Menü verschwindet beim Seitenwechsel.</div>
+
+          <div class="settings-tile admin-only" onclick="openSettingsSection('sync')">
+            <div class="settings-tile-icon" style="background:#FFF4E5;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B85C00" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
             </div>
-            <button id="sidebar-fixed-btn" onclick="toggleSidebarFixed()" class="btn btn-sm">📌 Fixieren</button>
+            <div class="settings-tile-title">Synchronisierung</div>
+            <div class="settings-tile-desc">PocketBase Server-Verbindung</div>
+            <div id="pb-status-dot-tile" style="position:absolute;top:12px;right:40px;width:8px;height:8px;border-radius:50%;background:#ccc;"></div>
+            <div class="settings-tile-arrow">→</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Dashboard – Anstehende Einsätze</div>
-              <div style="font-size:12px;color:var(--text2);">Transporte in der Liste der anstehenden Einsätze anzeigen.</div>
+
+          <div class="settings-tile" onclick="openSettingsSection('ueber')">
+            <div class="settings-tile-icon" style="background:#F0F0F0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <button id="transport-filter-btn" onclick="toggleTransportFilter()" class="btn btn-sm">Ausblenden</button>
+            <div class="settings-tile-title">Über das Tool</div>
+            <div class="settings-tile-desc">Version &amp; Systeminformationen</div>
+            <div class="settings-tile-arrow">→</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
-            <div>
-              <div style="font-size:14px;font-weight:500;color:#A32D2D;">Alle Daten löschen</div>
-              <div style="font-size:12px;color:var(--text2);">Setzt das Tool auf den Ausgangszustand zurück</div>
-            </div>
-            <button class="btn btn-sm btn-danger" onclick="resetAllData()">⚠️ Zurücksetzen</button>
-          </div>
+
         </div>
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">🔄 PocketBase Synchronisierung</span></div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Server-URL</div>
-              <div style="font-size:12px;color:var(--text2);">z.B. http://192.168.1.100:8090</div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" id="pb-url" placeholder="http://..." style="width:200px;font-size:12px;" value="">
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Admin E-Mail</div>
-              <div style="font-size:12px;color:var(--text2);">PocketBase Superuser E-Mail</div>
-            </div>
-            <input type="email" id="pb-email" placeholder="admin@example.com" style="width:200px;font-size:12px;">
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Passwort</div>
-              <div style="font-size:12px;color:var(--text2);">PocketBase Superuser Passwort</div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="password" id="pb-pass" placeholder="••••••••" style="width:200px;font-size:12px;">
-              <button class="btn btn-sm btn-primary" onclick="pbConnect()">Verbinden</button>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
-            <div>
-              <div style="font-size:14px;font-weight:500;">Status</div>
-              <div id="pb-status-text" style="font-size:12px;color:var(--text2);">Nicht verbunden</div>
-            </div>
-            <div id="pb-status-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
-          </div>
-        </div>
+
+      <!-- Detail-Panel -->
+      <div id="settings-detail" style="display:none;">
+        <button onclick="closeSettingsSection()" style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-size:13px;color:var(--text2);padding:0 0 1rem;font-family:inherit;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text2)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Zurück
+        </button>
+        <div id="settings-detail-content"></div>
       </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Über das Tool</span></div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-          <div><strong>Name:</strong> 24h-Dienst Verwaltungs-Tool</div>
-          <div><strong>Version:</strong> <span id="settings-version"></span></div>
-          <div id="pb-data-info"><strong>Daten:</strong> Lokal im Browser gespeichert</div>
-        </div>
-      </div>
+
+      <!-- Hidden PB inputs needed by JS -->
+      <input type="text"     id="pb-url"          style="display:none">
+      <input type="email"    id="pb-email"         style="display:none">
+      <input type="password" id="pb-pass"          style="display:none">
+      <div id="pb-status-text" style="display:none">Nicht verbunden</div>
+      <div id="pb-status-dot"  style="display:none"></div>
+      <div id="pb-data-info"   style="display:none">Lokal gespeichert</div>
+      <span id="settings-version" style="display:none"></span>
+      <button id="dark-toggle-btn"       style="display:none"></button>
+      <button id="sidebar-fixed-btn"     style="display:none"></button>
+      <button id="transport-filter-btn"  style="display:none"></button>
+
     </div>
 
   </div>
@@ -682,12 +823,373 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+// Kompatible Hilfsfunktion für abgerundete Rechtecke
+function rrect(ctx,x,y,w,h,r){
+  if(w<2*r)r=w/2; if(h<2*r)r=h/2;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
 const COLORS=['#185FA5','#B8691C','#0F6E56','#993556','#534AB7','#3B6D11','#A32D2D','#854F0B'];
 const COLORS_L=['#D6E8F7','#F7E6D0','#E1F5EE','#FBEAF0','#EEEDFE','#EAF3DE','#FCEBEB','#FAEEDA'];
 const PAGE_TITLES={dashboard:'Dashboard',infos:'Infos',todos:'To-Do-Liste',bereiche:'Zuständigkeitsbereiche',freizeit:'Freizeit',einsaetze:'Einsätze',rud:'RUD',dienstplan:'Dienstplan',teilnehmer:'Teilnehmer',drucken:'Drucken / PDF',einstellungen:'Einstellungen'};
 
+/* ══ AUTHENTICATION ══ */
+// Users are stored in localStorage under 'wkj-users' (hashed passwords)
+// Default admin is bootstrapped on first run
+// Role: 'admin' | 'betreuer'
+
+let AUTH = { loggedIn: false, username: '', role: '' };
+
+function hashPass(str){
+  // Simple but not cryptographic – fine for local/intranet use
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (Math.imul(31,h)+str.charCodeAt(i))|0; }
+  return 'h'+Math.abs(h).toString(36)+'x'+(str.length*7).toString(36);
+}
+
+function getUsers(){
+  try{ return JSON.parse(localStorage.getItem('wkj-users')||'[]'); }
+  catch(e){ return []; }
+}
+function saveUsers(arr){ localStorage.setItem('wkj-users',JSON.stringify(arr)); }
+
+function bootstrapUsers(){
+  const users = getUsers();
+  if(!users.find(u=>u.username==='fabian')){
+    users.push({username:'fabian', passwordHash:hashPass('wkj2024'), role:'admin', displayName:'Fabian'});
+    saveUsers(users);
+  }
+}
+
+function doLogin(){
+  const uInput = document.getElementById('login-user');
+  const pInput = document.getElementById('login-pass');
+  const err = document.getElementById('login-error');
+  const username = uInput.value.trim().toLowerCase();
+  const password = pInput.value;
+  err.classList.remove('show');
+
+  const users = getUsers();
+  const user = users.find(u=>u.username===username && u.passwordHash===hashPass(password));
+  if(!user){
+    err.textContent = 'Benutzername oder Passwort falsch.';
+    err.classList.add('show');
+    pInput.value='';
+    pInput.focus();
+    return;
+  }
+  // Store session
+  sessionStorage.setItem('wkj-auth', JSON.stringify({loggedIn:true, username:user.username, role:user.role, displayName:user.displayName||user.username}));
+  AUTH = {loggedIn:true, username:user.username, role:user.role, displayName:user.displayName||user.username};
+  document.getElementById('login-screen').classList.remove('show');
+  applyRoleUI();
+  load();
+}
+
+function abmelden(){
+  sessionStorage.removeItem('wkj-auth');
+  AUTH = {loggedIn:false, username:'', role:''};
+  document.getElementById('user-menu').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').classList.remove('show');
+  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('login-user').focus();
+}
+
+function applyRoleUI(){
+  // Update user menu display
+  const um = document.getElementById('um-username');
+  const rb = document.getElementById('um-role-badge');
+  if(um) um.textContent = AUTH.displayName || AUTH.username;
+  if(rb){
+    if(AUTH.role==='admin'){
+      rb.innerHTML='<span class="role-badge admin">⚙️ Admin</span>';
+    } else {
+      rb.innerHTML='<span class="role-badge betreuer">👤 Betreuer</span>';
+    }
+  }
+  // Hide restricted elements for Betreuer
+  enforceRole();
+  applyPagePerms();
+}
+
+function enforceRole(){
+  const isAdmin = AUTH.role==='admin';
+  // Toggle body class — CSS handles all .admin-only visibility
+  document.body.classList.toggle('is-admin', isAdmin);
+  // Also hide/show btn-danger (not always admin-only class)
+  document.querySelectorAll('.btn-danger').forEach(el=>{
+    el.style.display = isAdmin ? '' : 'none';
+  });
+}
+
+function initAuth(){
+  bootstrapUsers();
+  // Set login version
+  const lv = document.getElementById('login-version');
+  if(lv) lv.textContent = '1.0';
+  // Check session
+  try{
+    const sess = JSON.parse(sessionStorage.getItem('wkj-auth')||'null');
+    if(sess && sess.loggedIn){
+      AUTH = sess;
+      applyRoleUI();
+      load();
+      return;
+    }
+  }catch(e){}
+  // Show login
+  document.getElementById('login-screen').classList.add('show');
+  setTimeout(()=>{ const el=document.getElementById('login-user'); if(el)el.focus(); },100);
+}
+
+/* ── User Management (Admin) ── */
+/* ══ PERMISSIONS SYSTEM ══ */
+// All available pages with labels and groups
+const ALL_PAGES = [
+  {id:'dashboard',   label:'Dashboard',              group:'Allgemein'},
+  {id:'infos',       label:'Infos',                  group:'Allgemein'},
+  {id:'todos',       label:'To-Do-Liste',            group:'Allgemein'},
+  {id:'bereiche',    label:'Zuständigkeitsbereiche', group:'Allgemein'},
+  {id:'freizeit',    label:'Freizeit',               group:'Allgemein'},
+  {id:'einsaetze',   label:'Einsätze',               group:'Einsatz'},
+  {id:'rud',         label:'RUD',                    group:'Einsatz'},
+  {id:'dienstplan',  label:'Dienstplan',             group:'Einsatz'},
+  {id:'teilnehmer',  label:'Teilnehmer',             group:'Einsatz'},
+  {id:'drucken',     label:'Drucken / PDF',          group:'Sonstiges'},
+];
+
+// Default permissions for new Betreuer (all read, all write, no settings)
+const DEFAULT_PERMS = {
+  pages:   ALL_PAGES.map(p=>p.id),  // visible pages
+  write:   ALL_PAGES.map(p=>p.id),  // pages where editing is allowed
+};
+
+function getPerms(user){
+  if(!user) return {pages:[], write:[]};
+  if(user.role==='admin') return {pages:[...ALL_PAGES.map(p=>p.id),'einstellungen'], write:[...ALL_PAGES.map(p=>p.id),'einstellungen']};
+  return user.perms || DEFAULT_PERMS;
+}
+
+function canSeePage(pageId){
+  if(AUTH.role==='admin') return true;
+  const users = getUsers();
+  const me = users.find(u=>u.username===AUTH.username);
+  return getPerms(me).pages.includes(pageId);
+}
+
+function canWrite(pageId){
+  if(AUTH.role==='admin') return true;
+  const users = getUsers();
+  const me = users.find(u=>u.username===AUTH.username);
+  return getPerms(me).write.includes(pageId);
+}
+
+// Apply page visibility to nav items
+function applyPagePerms(){
+  if(AUTH.role==='admin') return; // admin sees everything
+  const users = getUsers();
+  const me = users.find(u=>u.username===AUTH.username);
+  const perms = getPerms(me);
+  ALL_PAGES.forEach(p=>{
+    const navEl = [...document.querySelectorAll('.nav-item')].find(n=>{
+      const oc = n.getAttribute('onclick')||'';
+      return oc.includes("'"+p.id+"'");
+    });
+    if(navEl) navEl.style.display = perms.pages.includes(p.id) ? '' : 'none';
+  });
+  // Hide write buttons on read-only pages
+  applyWritePerms();
+}
+
+function applyWritePerms(){
+  // Called after render — hide add/edit buttons on pages user can only read
+  // We mark add/edit buttons with data-page attribute in showPage
+}
+
+function openUserMgmt(){
+  if(AUTH.role!=='admin') return;
+  const users = getUsers();
+  const rows = users.map(u=>
+    '<tr>'+
+    '<td style="padding:7px 10px;font-size:13px;">'+escHtml(u.displayName||u.username)+'</td>'+
+    '<td style="padding:7px 10px;font-size:13px;">'+escHtml(u.username)+'</td>'+
+    '<td style="padding:7px 10px;"><span class="role-badge '+(u.role==='admin'?'admin':'betreuer')+'">'+(u.role==='admin'?'Admin':'Betreuer')+'</span></td>'+
+    '<td style="padding:7px 10px;display:flex;gap:6px;">'+
+      (u.role!=='admin'?'<button class="btn btn-sm" onclick="openPermEditor(\''+escHtml(u.username)+'\')">⚙️ Rechte</button>':'')+
+      (u.username!==AUTH.username?'<button class="btn btn-sm btn-danger" onclick="deleteUser(\''+escHtml(u.username)+'\')">Löschen</button>':'<span style="font-size:11px;color:var(--text2);">Ich</span>')+
+    '</td>'+
+    '</tr>'
+  ).join('');
+  openModal(
+    '<h2>👥 Benutzerverwaltung</h2>'+
+    '<div style="overflow-x:auto;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'+
+    '<th style="font-size:12px;color:var(--text2);text-align:left;padding:6px 10px;background:var(--bg3);">Name</th>'+
+    '<th style="font-size:12px;color:var(--text2);text-align:left;padding:6px 10px;background:var(--bg3);">Benutzername</th>'+
+    '<th style="font-size:12px;color:var(--text2);text-align:left;padding:6px 10px;background:var(--bg3);">Rolle</th>'+
+    '<th style="background:var(--bg3);"></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div style="border-top:1px solid var(--border);padding-top:14px;">'+
+    '<div style="font-weight:500;font-size:13px;margin-bottom:10px;">➕ Neuer Benutzer</div>'+
+    '<div class="form-row-2"><div class="form-row"><label>Anzeigename</label><input type="text" id="nu-display" placeholder="Max Mustermann"></div>'+
+    '<div class="form-row"><label>Benutzername</label><input type="text" id="nu-name" placeholder="max"></div></div>'+
+    '<div class="form-row-2"><div class="form-row"><label>Passwort</label><input type="password" id="nu-pass" placeholder="Min. 4 Zeichen"></div>'+
+    '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option></select></div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
+    '<button class="btn" onclick="closeModal(true)">Schließen</button>'+
+    '<button class="btn btn-primary" onclick="addUser()">Anlegen</button></div></div>'
+  );
+}
+
+function addUser(){
+  const display = document.getElementById('nu-display').value.trim();
+  const name = document.getElementById('nu-name').value.trim().toLowerCase();
+  const pass = document.getElementById('nu-pass').value;
+  const role = document.getElementById('nu-role').value;
+  if(!name||!pass){ alert('Bitte Benutzername und Passwort eingeben.'); return; }
+  if(pass.length<4){ alert('Passwort muss mindestens 4 Zeichen haben.'); return; }
+  const users = getUsers();
+  if(users.find(u=>u.username===name)){ alert('Dieser Benutzername ist bereits vergeben.'); return; }
+  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms: {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
+  saveUsers(users);
+  closeModal(true);
+  openUserMgmt();
+}
+
+function deleteUser(username){
+  confirmModal('Benutzer "'+username+'" wirklich löschen?', function(){
+    let users = getUsers().filter(u=>u.username!==username);
+    saveUsers(users);
+    closeModal(true);
+    openUserMgmt();
+  });
+}
+
+/* ── Permission Editor ── */
+function openPermEditor(username){
+  const users = getUsers();
+  const u = users.find(x=>x.username===username);
+  if(!u) return;
+  const perms = u.perms || {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]};
+
+  // Group pages
+  const groups = {};
+  ALL_PAGES.forEach(p=>{ if(!groups[p.group]) groups[p.group]=[]; groups[p.group].push(p); });
+
+  let html = '<h2>⚙️ Rechte: '+escHtml(u.displayName||u.username)+'</h2>'+
+    '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Legen Sie fest welche Seiten sichtbar sind und ob der Benutzer dort auch bearbeiten darf.</p>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+    '<thead><tr>'+
+    '<th style="text-align:left;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Bereich</th>'+
+    '<th style="text-align:center;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Sichtbar</th>'+
+    '<th style="text-align:center;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Bearbeiten</th>'+
+    '</tr></thead><tbody>';
+
+  Object.entries(groups).forEach(([group, pages])=>{
+    html += '<tr><td colspan="3" style="padding:8px 8px 4px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);">'+escHtml(group)+'</td></tr>';
+    pages.forEach(p=>{
+      const canSee = perms.pages.includes(p.id);
+      const canEdit = perms.write.includes(p.id);
+      html +=
+        '<tr style="border-bottom:1px solid var(--border);">'+
+        '<td style="padding:8px 8px;">'+escHtml(p.label)+'</td>'+
+        '<td style="text-align:center;padding:8px;">'+
+          '<input type="checkbox" data-perm="see" data-page="'+p.id+'" '+(canSee?'checked':'')+
+          ' onchange="permCheckChange(this)" style="width:16px;height:16px;accent-color:#1F3864;cursor:pointer;">'+
+        '</td>'+
+        '<td style="text-align:center;padding:8px;">'+
+          '<input type="checkbox" data-perm="write" data-page="'+p.id+'" '+(canEdit?'checked':'')+
+          ' '+(canSee?'':'disabled')+
+          ' onchange="permCheckChange(this)" style="width:16px;height:16px;accent-color:#1F3864;cursor:pointer;">'+
+        '</td>'+
+        '</tr>';
+    });
+  });
+
+  html += '</tbody></table>'+
+    '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'+
+    '<button class="btn btn-sm" onclick="permSetAll(true)">Alle aktivieren</button>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<button class="btn" onclick="openSettingsSection(\'benutzer\')">← Zurück</button>'+
+    '<button class="btn btn-primary" onclick="savePerms(\''+escHtml(username)+'\')">Speichern</button>'+
+    '</div></div>';
+
+  openModal(html);
+}
+
+function permCheckChange(cb){
+  // If "see" unchecked → also uncheck and disable "write"
+  if(cb.dataset.perm==='see'){
+    const row = cb.closest('tr');
+    const writeCb = row.querySelector('[data-perm="write"]');
+    if(writeCb){
+      if(!cb.checked){ writeCb.checked=false; writeCb.disabled=true; }
+      else { writeCb.disabled=false; }
+    }
+  }
+}
+
+function permSetAll(on){
+  document.querySelectorAll('#modal-content input[type=checkbox]').forEach(cb=>{
+    cb.checked=on;
+    cb.disabled=false;
+    if(!on && cb.dataset.perm==='write') cb.disabled=true;
+  });
+}
+
+function savePerms(username){
+  const pages=[], write=[];
+  document.querySelectorAll('#modal-content input[data-perm="see"]:checked').forEach(cb=>pages.push(cb.dataset.page));
+  document.querySelectorAll('#modal-content input[data-perm="write"]:checked').forEach(cb=>write.push(cb.dataset.page));
+  const users = getUsers();
+  const u = users.find(x=>x.username===username);
+  if(!u) return;
+  u.perms = {pages, write};
+  saveUsers(users);
+  closeModal(true);
+  openSettingsSection('benutzer');
+}
+
+function ownPasswordModal(){
+  toggleUserMenu();
+  openModal('<h2>🔑 Passwort ändern</h2>'+
+    '<div class="form-row"><label>Aktuelles Passwort</label><input type="password" id="cp-old" placeholder="••••••••"></div>'+
+    '<div class="form-row"><label>Neues Passwort</label><input type="password" id="cp-new1" placeholder="Mindestens 4 Zeichen"></div>'+
+    '<div class="form-row"><label>Neues Passwort wiederholen</label><input type="password" id="cp-new2" placeholder="••••••••"></div>'+
+    '<div id="cp-err" style="display:none;color:#A32D2D;font-size:12px;margin-bottom:8px;"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveOwnPassword()">Speichern</button></div>');
+}
+
+function saveOwnPassword(){
+  const oldP = document.getElementById('cp-old').value;
+  const new1 = document.getElementById('cp-new1').value;
+  const new2 = document.getElementById('cp-new2').value;
+  const errEl = document.getElementById('cp-err');
+  const showErr = msg => { errEl.textContent=msg; errEl.style.display='block'; };
+
+  const users = getUsers();
+  const me = users.find(u=>u.username===AUTH.username);
+  if(!me || me.passwordHash !== hashPass(oldP)){
+    showErr('Aktuelles Passwort ist falsch.'); return;
+  }
+  if(new1.length < 4){ showErr('Neues Passwort muss mindestens 4 Zeichen haben.'); return; }
+  if(new1 !== new2){ showErr('Die neuen Passwörter stimmen nicht überein.'); return; }
+  me.passwordHash = hashPass(new1);
+  saveUsers(users);
+  closeModal(true);
+  alert('Passwort erfolgreich geändert.');
+}
+
 let selectedEinsatzId = null;
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 1; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
+const APP_VERSION = '2.5.0'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 let S={
   version: CURRENT_VERSION,
@@ -785,7 +1287,9 @@ function load(){
     document.getElementById('sidebar').classList.add('collapsed');
   }
   updateClock();
+  setInterval(updateClock, 30000);
   renderAll();
+  setTimeout(pbAutoConnect, 300);
 }
 function save(){
   try{
@@ -990,7 +1494,7 @@ function pbAutoConnect(){
   }
 }
 
-function renderAll(){renderDashboard();renderVehicles();renderEinsaetze();renderGantt();renderTodos();renderDienstplan();renderPersons();renderInfos();renderBereiche();renderFreizeit();renderRud();}
+function renderAll(){renderDashboard();renderVehicles();renderEinsaetze();renderGantt();renderTodos();renderDienstplan();renderPersons();renderInfos();renderBereiche();renderFreizeit();renderRud();enforceRole();applyPagePerms();}
 
 // Nav group state
 const _navGroupOpen={allgemein:false,einsatz:false,sonstiges:false};
@@ -1017,6 +1521,14 @@ function applyNavGroups(){
 const _pageGroup={infos:'allgemein',todos:'allgemein',bereiche:'allgemein',einsaetze:'einsatz',rud:'einsatz',dienstplan:'einsatz',drucken:'sonstiges'};
 
 function showPage(id,el){
+  if(id==='einstellungen' && AUTH.role!=='admin'){
+    alert('Nur Admins dürfen auf die Einstellungen zugreifen.');
+    return;
+  }
+  if(id!=='einstellungen' && !canSeePage(id)){
+    alert('Du hast keinen Zugriff auf diesen Bereich.');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1039,11 +1551,44 @@ function showPage(id,el){
   if(id==='infos'){renderInfos();}
   if(id==='bereiche'){renderBereiche();}
   if(id==='einstellungen'){
-    document.getElementById('settings-version').textContent='1.'+CURRENT_VERSION;
-    const dtBtn=document.getElementById('dark-toggle-btn');
-    if(dtBtn) dtBtn.textContent=document.body.classList.contains('dark')?'☀️ Hell':'🌙 Dunkel';
+    // Always reset to tile overview when navigating to settings
+    const ov = document.getElementById('settings-overview');
+    const dt = document.getElementById('settings-detail');
+    if(ov) ov.style.display='';
+    if(dt) dt.style.display='none';
     renderSidebarSetting();
     renderTransportFilterBtn();
+  }
+  // Apply write permissions for this page
+  setTimeout(()=>applyWritePermsForPage(id), 80);
+}
+
+function applyWritePermsForPage(pageId){
+  if(AUTH.role==='admin') return;
+  const readonly = !canWrite(pageId);
+  // Find the active page and toggle all write-action buttons
+  const pageEl = document.getElementById('page-'+pageId);
+  if(!pageEl) return;
+  pageEl.querySelectorAll('.btn-primary, .btn-danger').forEach(btn=>{
+    // Don't hide navigation/print buttons, only add/edit/delete actions
+    const oc = btn.getAttribute('onclick')||btn.textContent||'';
+    const isWriteAction = /\+|Hinzufügen|Anlegen|Speichern|Löschen|Zurücksetzen|open.*Modal|add|edit|delete|save/i.test(oc+btn.textContent);
+    if(isWriteAction){
+      btn.style.display = readonly ? 'none' : '';
+    }
+  });
+  // Show read-only banner if page is read-only
+  let banner = pageEl.querySelector('.readonly-banner');
+  if(readonly){
+    if(!banner){
+      banner = document.createElement('div');
+      banner.className='readonly-banner';
+      banner.style.cssText='background:#FFF8E6;border:1px solid #f5c57a;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#7a4800;display:flex;align-items:center;gap:8px;';
+      banner.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Nur-Lesen – du hast keine Bearbeitungsrechte für diesen Bereich.';
+      pageEl.insertBefore(banner, pageEl.firstChild);
+    }
+  } else {
+    if(banner) banner.remove();
   }
 }
 
@@ -1119,9 +1664,8 @@ function resetAllData(){
 }
 function confirmResetAllData(){
   localStorage.removeItem('eventmgr');
+  sessionStorage.removeItem('wkj-auth');
   location.reload();
-applyNavGroups();
-setTimeout(pbAutoConnect, 300);
 }
 
 let userMenuOpen=false;
@@ -1133,11 +1677,9 @@ function toggleUserMenu(){
 }
 function updateUserMenu(){
   const name=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
-  const user=localStorage.getItem('username')||'Gast';
   const el=document.getElementById('um-eventname');
-  const uEl=document.getElementById('um-username');
   if(el) el.textContent=name;
-  if(uEl) uEl.textContent=user;
+  // username and role badge are handled by applyRoleUI()
 }
 function updateClock(){
   const now=new Date();
@@ -1146,12 +1688,9 @@ function updateClock(){
   if(timeEl) timeEl.textContent=now.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'});
   if(dateEl) dateEl.textContent=now.toLocaleDateString('de-AT',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
 }
-function abmelden(){
-  toggleUserMenu();
-  const name=prompt('Benutzername eingeben (wird lokal gespeichert):',localStorage.getItem('username')||'');
-  if(name!==null) localStorage.setItem('username',name.trim()||'Gast');
-  updateUserMenu();
-}
+// (Auth system defined above in the initial script block)
+
+
 function navTo(page){
   const navItem=[...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"));
   if(navItem) navItem.click();
@@ -1204,6 +1743,181 @@ function renderSidebarSetting(){
   btn.style.background=isFixed?'#1F3864':'';
   btn.style.color=isFixed?'#fff':'';
   btn.style.borderColor=isFixed?'#1F3864':'';
+}
+
+/* ══ SETTINGS SECTIONS ══ */
+function openSettingsSection(section){
+  document.getElementById('settings-overview').style.display='none';
+  document.getElementById('settings-detail').style.display='block';
+  const content = document.getElementById('settings-detail-content');
+
+  if(section==='darstellung'){
+    const isDark = document.body.classList.contains('dark');
+    const isFixed = localStorage.getItem('sidebar-fixed')==='1';
+    const showTransport = localStorage.getItem('hide-transport')!=='1';
+    content.innerHTML =
+      '<div class="card"><div class="card-header"><span class="card-title">☀️ Darstellung</span></div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Dunkelmodus</div><div class="settings-row-desc">Dunkles Farbschema aktivieren</div></div>'+
+        '<button class="btn btn-sm" id="dark-toggle-btn" onclick="toggleDark();openSettingsSection(\'darstellung\')">'+(isDark?'☀️ Hell':'🌙 Dunkel')+'</button>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Seitenmenü fixieren</div><div class="settings-row-desc">Menü bleibt beim Seitenwechsel sichtbar</div></div>'+
+        '<button class="btn btn-sm" id="sidebar-fixed-btn" onclick="toggleSidebarFixed();openSettingsSection(\'darstellung\')" style="'+(isFixed?'background:#1F3864;color:#fff;border-color:#1F3864;':'')+'">'+
+        (isFixed?'📌 Fixiert':'📌 Fixieren')+'</button>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Transporte im Dashboard</div><div class="settings-row-desc">Transporte in der Liste anstehender Einsätze anzeigen</div></div>'+
+        '<button class="btn btn-sm" id="transport-filter-btn" onclick="toggleTransportFilter();openSettingsSection(\'darstellung\')">'+(showTransport?'Ausblenden':'Anzeigen')+'</button>'+
+      '</div>'+
+      '</div>';
+  }
+
+  else if(section==='daten'){
+    content.innerHTML =
+      '<div class="card"><div class="card-header"><span class="card-title">🗄️ Daten</span></div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Exportieren</div><div class="settings-row-desc">Alle Daten als JSON-Datei speichern</div></div>'+
+        '<button class="btn btn-primary btn-sm" onclick="exportData()">↓ Exportieren</button>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Importieren</div><div class="settings-row-desc">Gespeicherte JSON-Datei laden</div></div>'+
+        '<label class="btn btn-sm" style="cursor:pointer;">↑ Importieren<input type="file" accept=".json" onchange="importData(this.files[0])" style="display:none;"></label>'+
+      '</div>'+
+      '<div class="settings-row" style="'+(AUTH.role==='admin'?'':'display:none')+'">'+
+        '<div><div class="settings-row-label" style="color:#A32D2D;">Alle Daten löschen</div><div class="settings-row-desc">Setzt das Tool auf den Ausgangszustand zurück</div></div>'+
+        '<button class="btn btn-sm btn-danger" onclick="resetAllData()">⚠️ Zurücksetzen</button>'+
+      '</div>'+
+      '</div>';
+  }
+
+  else if(section==='benutzer'){
+    if(AUTH.role!=='admin') return;
+    const users = getUsers();
+    const rows = users.map(u=>
+      '<tr style="border-bottom:1px solid var(--border);">'+
+      '<td style="padding:10px 8px;font-size:13px;font-weight:500;">'+escHtml(u.displayName||u.username)+'<br><span style="font-size:11px;color:var(--text2);font-weight:400;">@'+escHtml(u.username)+'</span></td>'+
+      '<td style="padding:10px 8px;"><span class="role-badge '+(u.role==='admin'?'admin':'betreuer')+'">'+(u.role==='admin'?'⚙️ Admin':'👤 Betreuer')+'</span></td>'+
+      '<td style="padding:10px 8px;text-align:right;">'+
+        '<div style="display:flex;gap:6px;justify-content:flex-end;">'+
+        (u.role!=='admin'?'<button class="btn btn-sm" onclick="openPermEditor(\''+escHtml(u.username)+'\')">Rechte</button>':'')+
+        (u.username!==AUTH.username?'<button class="btn btn-sm btn-danger" onclick="confirmDeleteUser(\''+escHtml(u.username)+'\')">Löschen</button>':'<span style="font-size:11px;color:var(--text2);line-height:2.2;">Ich</span>')+
+        '</div>'+
+      '</td></tr>'
+    ).join('');
+    content.innerHTML =
+      '<div class="card">'+
+      '<div class="card-header"><span class="card-title">👥 Benutzer</span><button class="btn btn-primary btn-sm" onclick="openInlineAddUser()">+ Benutzer anlegen</button></div>'+
+      '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+
+      '<thead><tr>'+
+      '<th style="text-align:left;padding:8px;font-size:11px;color:var(--text2);background:var(--bg3);">Name</th>'+
+      '<th style="text-align:left;padding:8px;font-size:11px;color:var(--text2);background:var(--bg3);">Rolle</th>'+
+      '<th style="background:var(--bg3);"></th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div>'+
+      '</div>'+
+      '<div id="inline-add-user" style="display:none;" class="card">'+
+      '<div class="card-header"><span class="card-title">Neuer Benutzer</span></div>'+
+      '<div class="form-row-2">'+
+        '<div class="form-row"><label>Anzeigename</label><input type="text" id="nu-display" placeholder="Max Mustermann"></div>'+
+        '<div class="form-row"><label>Benutzername</label><input type="text" id="nu-name" placeholder="max"></div>'+
+      '</div>'+
+      '<div class="form-row-2">'+
+        '<div class="form-row"><label>Passwort</label><input type="password" id="nu-pass" placeholder="Min. 4 Zeichen"></div>'+
+        '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option></select></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">'+
+        '<button class="btn btn-sm" onclick="document.getElementById(\'inline-add-user\').style.display=\'none\'">Abbrechen</button>'+
+        '<button class="btn btn-primary btn-sm" onclick="addUserInline()">Anlegen</button>'+
+      '</div></div>';
+  }
+
+  else if(section==='sync'){
+    if(AUTH.role!=='admin') return;
+    const pbUrl = localStorage.getItem('pb-url')||'';
+    const connected = !!localStorage.getItem('pb-record-id');
+    const statusColors = {ok:'#27a85e',error:'#A32D2D',connecting:'#E6A817',off:'#ccc'};
+    content.innerHTML =
+      '<div class="card"><div class="card-header"><span class="card-title">🔄 PocketBase Synchronisierung</span>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><div id="pb-status-dot" style="width:10px;height:10px;border-radius:50%;background:'+(connected?'#27a85e':'#ccc')+';"></div>'+
+      '<span id="pb-status-text" style="font-size:12px;color:var(--text2);">'+(connected?'Verbunden':'Nicht verbunden')+'</span></div></div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Server-URL</div><div class="settings-row-desc">z.B. http://192.168.1.100:8090</div></div>'+
+        '<input type="text" id="pb-url" placeholder="http://..." style="width:200px;font-size:12px;" value="'+escHtml(pbUrl)+'">'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Admin E-Mail</div><div class="settings-row-desc">PocketBase Superuser E-Mail</div></div>'+
+        '<input type="email" id="pb-email" placeholder="admin@example.com" style="width:200px;font-size:12px;">'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div><div class="settings-row-label">Passwort</div><div class="settings-row-desc">PocketBase Superuser Passwort</div></div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<input type="password" id="pb-pass" placeholder="••••••••" style="width:150px;font-size:12px;">'+
+          '<button class="btn btn-primary btn-sm" onclick="pbConnect()">Verbinden</button>'+
+        '</div>'+
+      '</div>'+
+      '<div id="pb-data-info" style="font-size:12px;color:var(--text2);padding:8px 0;">'+
+        (connected?'Daten: PocketBase – '+escHtml(pbUrl):'Daten: Lokal im Browser gespeichert')+
+      '</div></div>';
+  }
+
+  else if(section==='ueber'){
+    content.innerHTML =
+      '<div class="card"><div class="card-header"><span class="card-title">ℹ️ Über das Tool</span></div>'+
+      '<div class="settings-row">'+
+        '<div class="settings-row-label">App-Version</div>'+
+        '<div style="font-size:13px;"><span style="font-weight:600;color:#1F3864;">v'+APP_VERSION+'</span></div>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div class="settings-row-label">Name</div>'+
+        '<div style="font-size:13px;color:var(--text2);">24h-Dienst Verwaltungs-Tool · WKJ</div>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div class="settings-row-label">Angemeldet als</div>'+
+        '<div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;">'+escHtml(AUTH.displayName||AUTH.username)+' <span class="role-badge '+(AUTH.role==='admin'?'admin':'betreuer')+'">'+(AUTH.role==='admin'?'Admin':'Betreuer')+'</span></div>'+
+      '</div>'+
+      '<div class="settings-row">'+
+        '<div class="settings-row-label">Datenspeicher</div>'+
+        '<div id="pb-data-info" style="font-size:13px;color:var(--text2);">'+escHtml(localStorage.getItem('pb-url')?'PocketBase – '+localStorage.getItem('pb-url'):'Lokal im Browser')+'</div>'+
+      '</div>'+
+      '<div class="settings-row" style="border-bottom:none;">'+
+        '<div><div class="settings-row-label">Datenschema-Version</div><div class="settings-row-desc">Interne Versionsnummer der gespeicherten Daten</div></div>'+
+        '<div style="font-size:13px;color:var(--text2);">v'+CURRENT_VERSION+'</div>'+
+      '</div>'+
+      '</div>';
+  }
+}
+
+function closeSettingsSection(){
+  document.getElementById('settings-overview').style.display='';
+  document.getElementById('settings-detail').style.display='none';
+}
+
+function openInlineAddUser(){
+  const el = document.getElementById('inline-add-user');
+  if(el) el.style.display='';
+}
+
+function addUserInline(){
+  const display = document.getElementById('nu-display').value.trim();
+  const name = document.getElementById('nu-name').value.trim().toLowerCase();
+  const pass = document.getElementById('nu-pass').value;
+  const role = document.getElementById('nu-role').value;
+  if(!name||!pass){ alert('Bitte Benutzername und Passwort eingeben.'); return; }
+  if(pass.length<4){ alert('Passwort muss mindestens 4 Zeichen haben.'); return; }
+  const users = getUsers();
+  if(users.find(u=>u.username===name)){ alert('Dieser Benutzername ist bereits vergeben.'); return; }
+  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms:{...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
+  saveUsers(users);
+  openSettingsSection('benutzer');
+}
+
+function confirmDeleteUser(username){
+  confirmModal('Benutzer "'+username+'" wirklich löschen?', function(){
+    let users = getUsers().filter(u=>u.username!==username);
+    saveUsers(users);
+    closeModal(true);
+    openSettingsSection('benutzer');
+  });
 }
 
 function openModal(html){
@@ -1545,12 +2259,12 @@ function showAlarmDetail(id){
 function renderGantt(){
   const canvas=document.getElementById('gantt');
   const wrap=canvas.parentElement;
-  const TOTAL=24,BASE=10,LW=80,PT=44,PB=12,RH=110;
+  const TOTAL=24,BASE=10,LW=80,PT=44,PB=12,RH=148;
   // Zonen innerhalb einer Zeile:
   // Einsatz-Balken:       y+4  .. y+4+48   (Höhe 48)
   // Standard-Turnus:      y+56 .. y+56+20  (Höhe 20)
   // Fahrer-Turnus:        y+80 .. y+80+22  (Höhe 22)
-  const EY=4,EH=48,TY=56,TH=20,FTY=80,FTH=22;
+  const EY=4,EH=52,TY=62,TH=36,FTY=104,FTH=36;
   const n=Math.max(S.vehicles.length,1);
   const W=Math.max(wrap.clientWidth||700,700);
   const H=PT+n*RH+PB;
@@ -1592,21 +2306,26 @@ function renderGantt(){
       const th=isFahrer?FTH:TH;
       // Farbe: Standard=blau, Fahrer=rot
       ctx.fillStyle=isFahrer?'rgba(163,45,45,0.18)':'rgba(31,56,100,0.22)';
-      ctx.beginPath();ctx.roundRect(x1,ty,bW,th,3);ctx.fill();
+      rrect(ctx,x1,ty,bW,th,3);ctx.fill();
       ctx.strokeStyle=isFahrer?'rgba(163,45,45,0.5)':'rgba(31,56,100,0.45)';
       ctx.lineWidth=1;
-      ctx.beginPath();ctx.roundRect(x1,ty,bW,th,3);ctx.stroke();
+      rrect(ctx,x1,ty,bW,th,3);ctx.stroke();
       if(bW>30){
         ctx.save();
         ctx.beginPath();ctx.rect(x1+3,ty,bW-6,th);ctx.clip();
         ctx.fillStyle=isFahrer?'rgba(120,30,30,0.9)':'rgba(15,40,80,0.9)';
-        ctx.font='bold 9px sans-serif';
         ctx.textAlign='center';
         if(isFahrer){
           const fahrerNames=(t.fahrer_ids||[]).map(id=>{const p=S.persons.find(x=>x.id===id);return p?(p.vorname||'')+(p.nachname?' '+p.nachname[0]+'.':''):null;}).filter(Boolean).join(', ');
-          ctx.fillText((fahrerNames||t.title)+'  '+t.start+'–'+t.end,x1+bW/2,ty+th/2+3);
+          ctx.font='bold 11px sans-serif';
+          ctx.fillText((fahrerNames||t.title)+'  '+t.start+'–'+t.end,x1+bW/2,ty+th/2+4);
         } else {
-          ctx.fillText(t.title+'  '+t.start+'–'+t.end,x1+bW/2,ty+th/2+3);
+          const persNames=(t.teilnehmer||[]).map(id=>{const p=S.persons.find(x=>x.id===id);return p?(p.vorname||'')+(p.nachname?' '+p.nachname[0]+'.':''):null;}).filter(Boolean).join(', ');
+          ctx.font='bold 12px sans-serif';
+          ctx.fillText(t.title,x1+bW/2,ty+th*0.35);
+          ctx.font='400 11px sans-serif';
+          ctx.fillStyle='rgba(15,40,80,0.75)';
+          ctx.fillText((persNames?persNames+'  ':'')+t.start+'–'+t.end,x1+bW/2,ty+th*0.72);
         }
         ctx.restore();
       }
@@ -1638,9 +2357,9 @@ function renderGantt(){
     const isSel=b.id===selectedEinsatzId;
     ctx.fillStyle=cOf(b.veh);
     ctx.globalAlpha=isSel?1.0:0.85;
-    ctx.beginPath();ctx.roundRect(x1,y,bW,EH,4);ctx.fill();
+    rrect(ctx,x1,y,bW,EH,4);ctx.fill();
     ctx.globalAlpha=1.0;
-    if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(x1+1,y+1,bW-2,EH-2,3);ctx.stroke();}
+    if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=2;rrect(ctx,x1+1,y+1,bW-2,EH-2,3);ctx.stroke();}
     if(bW>30){
       const line1=b.ort||'';
       const line2=b.art||durStr(b.start,b.end);
@@ -2463,13 +3182,44 @@ function renderFreizeitGantt(){
   if(!canvas)return;
   const wrap=canvas.parentElement;
   const TOTAL=26,BASE=9,LW=110,PT=44,PB=16;
+
+  function toFzOff(t){const[h,m]=t.split(':').map(Number);let v=h+m/60-BASE;if(v<0)v+=24;return v;}
+
+  // Assign lanes within a row to avoid overlaps
+  function assignLanes(items){
+    const sorted=[...items].map(function(item,idx){var s=toFzOff(item.start),e=toFzOff(item.end);if(e<=s)e+=24;return {item:item,idx:idx,so:s,eo:e};})
+      .sort((a,b)=>a.so-b.so);
+    const lanes=[]; // each lane: array of {eo}
+    const result=[];
+    sorted.forEach(({item,so,eo})=>{
+      let placed=false;
+      for(let l=0;l<lanes.length;l++){
+        if(lanes[l].eo<=so+0.01){lanes[l].eo=eo;result.push({item,lane:l,so,eo});placed=true;break;}
+      }
+      if(!placed){lanes.push({eo});result.push({item,lane:lanes.length-1,so,eo});}
+    });
+    return {assignments:result,laneCount:Math.max(1,lanes.length)};
+  }
+
   // 3 Reihen: Planung, Essen, Aufsicht
   const ROWS=[
-    {key:'planung',label:'🏕️ Freizeit',  color:FZ_COLORS.planung.bg,  light:FZ_COLORS.planung.light,  data:S.freizeitPlanungen||[],  nameKey:'name'},
-    {key:'essen',  label:'🍽️ Essen',    color:FZ_COLORS.essen.bg,    light:FZ_COLORS.essen.light,    data:S.essenszeiten||[],       nameKey:'name'},
-    {key:'aufsicht',label:'👤 Aufsicht', color:FZ_COLORS.aufsicht.bg, light:FZ_COLORS.aufsicht.light, data:S.aufsichten||[],         nameKey:'personId'},
+    {key:'planung', label:'🏕️ Freizeit', color:FZ_COLORS.planung.bg,  light:FZ_COLORS.planung.light,  data:S.freizeitPlanungen||[], nameKey:'name'},
+    {key:'essen',   label:'🍽️ Essen',   color:FZ_COLORS.essen.bg,    light:FZ_COLORS.essen.light,    data:S.essenszeiten||[],      nameKey:'name'},
+    {key:'aufsicht',label:'👤 Aufsicht', color:FZ_COLORS.aufsicht.bg, light:FZ_COLORS.aufsicht.light, data:S.aufsichten||[],        nameKey:'personId'},
   ];
-  const RH=70,W=Math.max(wrap.clientWidth||700,700),H=PT+ROWS.length*RH+PB;
+
+  const BASE_LANE_H=36; // height per lane
+  const ROW_PAD_TOP=8,ROW_PAD_BOT=8;
+
+  // Pre-compute lanes for each row
+  const rowMeta=ROWS.map(row=>{
+    const {assignments,laneCount}=assignLanes(row.data);
+    const rh=ROW_PAD_TOP+laneCount*BASE_LANE_H+ROW_PAD_BOT;
+    return {assignments,laneCount,rh};
+  });
+
+  const totalRowH=rowMeta.reduce((s,m)=>s+m.rh,0);
+  const W=Math.max(wrap.clientWidth||700,700),H=PT+totalRowH+PB;
   const dpr=window.devicePixelRatio||1;
   canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
@@ -2477,22 +3227,22 @@ function renderFreizeitGantt(){
   const cW=W-LW-8;
   ctx.clearRect(0,0,W,H);
   function xOf(h){return LW+(h/TOTAL)*cW;}
-  function toFzOff(t){const[h,m]=t.split(':').map(Number);let v=h+m/60-BASE;if(v<0)v+=24;return v;}
 
   // Row backgrounds
-  ROWS.forEach((_,i)=>{
-    const rowY=PT+i*RH;
+  let curY=PT;
+  rowMeta.forEach(({rh},i)=>{
     ctx.fillStyle=i%2===0?'rgba(255,255,255,0)':'rgba(0,0,0,0.025)';
-    ctx.fillRect(LW,rowY,cW,RH);
+    ctx.fillRect(LW,curY,cW,rh);
     ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=1;ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(LW,rowY+RH);ctx.lineTo(LW+cW,rowY+RH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(LW,curY+rh);ctx.lineTo(LW+cW,curY+rh);ctx.stroke();
+    curY+=rh;
   });
 
   // Grid lines
   for(let h=0;h<=TOTAL;h+=0.5){
     const x=xOf(h),full=h%1===0;
     ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=full?1:0.5;ctx.setLineDash(full?[]:[2,3]);
-    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+ROWS.length*RH);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+totalRowH);ctx.stroke();ctx.setLineDash([]);
     if(full){
       ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign='center';
       ctx.fillText(String(Math.round((BASE+h)%24)).padStart(2,'0')+':00',x,PT-8);
@@ -2500,52 +3250,73 @@ function renderFreizeitGantt(){
   }
 
   // Midnight line
-  const mx=xOf(24-BASE);
+  const midX=xOf(24-BASE);
   ctx.strokeStyle='rgba(184,105,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(mx,PT-2);ctx.lineTo(mx,PT+ROWS.length*RH+2);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',mx,PT-8);
+  ctx.beginPath();ctx.moveTo(midX,PT-2);ctx.lineTo(midX,PT+totalRowH+2);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',midX,PT-8);
 
-  // Row labels
+  // Row labels + Bars
+  curY=PT;
   ROWS.forEach((row,i)=>{
-    const rowY=PT+i*RH;
+    const {assignments,laneCount,rh}=rowMeta[i];
+    const rowY=curY;
+
+    // Row label – centered vertically in the whole row
     ctx.fillStyle=row.color;
     ctx.font='bold 11px sans-serif';ctx.textAlign='right';
-    ctx.fillText(row.label,LW-6,rowY+RH/2+4);
-  });
+    ctx.fillText(row.label,LW-6,rowY+rh/2+4);
 
-  // Bars
-  ROWS.forEach((row,i)=>{
-    const rowY=PT+i*RH;
-    const BY=8,BH=RH-16;
-    row.data.forEach(item=>{
-      let so=toFzOff(item.start),eo=toFzOff(item.end);
-      if(eo<=so)eo+=24;
+    // Lane separator lines (subtle)
+    if(laneCount>1){
+      for(let l=1;l<laneCount;l++){
+        const ly=rowY+ROW_PAD_TOP+l*BASE_LANE_H;
+        ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=0.5;ctx.setLineDash([3,4]);
+        ctx.beginPath();ctx.moveTo(LW,ly);ctx.lineTo(LW+cW,ly);ctx.stroke();ctx.setLineDash([]);
+      }
+    }
+
+    // Bars per lane
+    assignments.forEach(({item,lane,so,eo})=>{
       const soC=Math.max(0,Math.min(so,TOTAL)),eoC=Math.max(0,Math.min(eo,TOTAL));
       if(eoC<=soC)return;
       const x1=xOf(soC),bW=Math.max(xOf(eoC)-x1,2);
-      // Bar
-      ctx.fillStyle=row.color;ctx.globalAlpha=0.82;
-      ctx.beginPath();ctx.roundRect(x1,rowY+BY,bW,BH,4);ctx.fill();
+      const laneTop=rowY+ROW_PAD_TOP+lane*BASE_LANE_H;
+      const BAR_PAD=4,BH=BASE_LANE_H-BAR_PAD*2;
+      const barY=laneTop+BAR_PAD;
+
+      ctx.fillStyle=row.color;ctx.globalAlpha=0.85;
+      rrect(ctx,x1,barY,bW,BH,4);ctx.fill();
       ctx.globalAlpha=1;
-      // Label
-      if(bW>24){
+
+      if(bW>20){
         let label='';
         if(row.key==='aufsicht'){
           const p=S.persons.find(x=>x.id===item.personId);
-          label=p?((p.vorname||'')+(p.nachname?' '+p.nachname:'')):('ID:'+item.personId);
-        } else { label=item.name||''; }
-        if(item.bereich) label+=' ('+item.bereich+')';
-        ctx.save();ctx.beginPath();ctx.rect(x1+3,rowY+BY,bW-6,BH);ctx.clip();
-        ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';
-        ctx.fillText(label,x1+bW/2,rowY+BY+BH/2-4);
-        ctx.font='400 9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';
-        ctx.fillText(item.start+' – '+item.end,x1+bW/2,rowY+BY+BH/2+8);
+          label=p?((p.vorname?p.vorname[0]+'. ':'')+escHtml(p.nachname||'')):('ID:'+item.personId);
+          if(item.bereich) label+=' · '+item.bereich;
+        } else {
+          label=item.name||'';
+        }
+        ctx.save();ctx.beginPath();ctx.rect(x1+3,barY,bW-6,BH);ctx.clip();
+        ctx.fillStyle='#fff';
+        const showTime=bW>70;
+        if(showTime){
+          ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+          ctx.fillText(label,x1+bW/2,barY+BH/2-3);
+          ctx.font='400 9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.82)';
+          ctx.fillText(item.start+' – '+item.end,x1+bW/2,barY+BH/2+9);
+        } else {
+          ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+          ctx.fillText(label,x1+bW/2,barY+BH/2+4);
+        }
         ctx.restore();
       }
     });
+
+    curY+=rh;
   });
 
-  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,ROWS.length*RH);
+  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,totalRowH);
 
   // Legend
   const leg=document.getElementById('freizeit-legend');
@@ -2980,7 +3751,7 @@ function renderRudGantt(){
       if(eoC<=soC)return;
       const x1=xOf(soC),bW=Math.max(xOf(eoC)-x1,2);
       ctx.fillStyle='#D05A1A';ctx.globalAlpha=0.85;
-      ctx.beginPath();ctx.roundRect(x1,rowY+BY,bW,BH,4);ctx.fill();
+      rrect(ctx,x1,rowY+BY,bW,BH,4);ctx.fill();
       ctx.globalAlpha=1;
       if(bW>24){
         ctx.save();ctx.beginPath();ctx.rect(x1+3,rowY+BY,bW-6,BH);ctx.clip();
@@ -3489,7 +4260,7 @@ document.getElementById('gantt').addEventListener('click', function(e){
   const rect = canvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
   const my = (e.clientY - rect.top) * (canvas.height / rect.height);
-  const TOTAL=24,BASE=10,LW=80,PT=44,RH=110,EY=4,EH=48;
+  const TOTAL=24,BASE=10,LW=80,PT=44,RH=148,EY=4,EH=52;
   const chartW = canvas.width - LW - 8;
   function xOf(h){return LW+(h/TOTAL)*chartW;}
   let hit = null;
@@ -3507,7 +4278,8 @@ document.getElementById('gantt').addEventListener('click', function(e){
     if(row) row.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 });
-load();
+// Start with auth check instead of direct load
+initAuth();
 </script>
 </body>
 </html>
