@@ -421,6 +421,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       <span class="topbar-title" id="topbar-title">Dashboard</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
+      <div id="topbar-pb-warning" onclick="showPage('einstellungen')" title="PocketBase Verbindungsstatus" style="display:none;cursor:pointer;background:#A32D2D;color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;">⚠️ Nicht verbunden</div>
       <div style="text-align:right;">
         <div id="topbar-time" style="font-size:14px;font-weight:500;color:var(--text);"></div>
         <div id="topbar-date" style="font-size:11px;color:var(--text2);"></div>
@@ -1345,6 +1346,7 @@ function pbSetStatus(state, text){
   const dot = document.getElementById('pb-status-dot');
   const txt = document.getElementById('pb-status-text');
   const info = document.getElementById('pb-data-info');
+  const warn = document.getElementById('topbar-pb-warning');
   const colors = {ok:'#27a85e', error:'#A32D2D', connecting:'#E6A817', off:'#ccc'};
   if(dot) dot.style.background = colors[state]||'#ccc';
   if(txt) txt.textContent = text;
@@ -1352,10 +1354,61 @@ function pbSetStatus(state, text){
     if(state==='ok') info.innerHTML = '<strong>Daten:</strong> PocketBase – '+escHtml(_pbUrl);
     else info.innerHTML = '<strong>Daten:</strong> Lokal im Browser gespeichert';
   }
+  // Topbar warning: show only on error when PB was configured
+  if(warn){
+    if(state==='error' && _pbUrl){
+      warn.style.display='block';
+      warn.textContent='⚠️ '+text;
+    } else if(state==='ok'){
+      warn.style.display='none';
+    } else if(state==='connecting'){
+      warn.style.display='block';
+      warn.style.background='#E6A817';
+      warn.textContent='🔄 Verbinde...';
+    } else {
+      warn.style.display='none';
+    }
+  }
 }
 
 function pbHeaders(){
   return {'Content-Type':'application/json', ...(_pbToken?{'Authorization':_pbToken}:{})};
+}
+
+// Token automatisch erneuern (alle 12 Stunden)
+let _pbRefreshInterval = null;
+async function pbRefreshToken(){
+  if(!_pbUrl || !_pbToken) return;
+  try{
+    const res = await fetch(_pbUrl+'/api/collections/_superusers/auth-refresh',{
+      method:'POST',
+      headers:pbHeaders()
+    });
+    if(res.ok){
+      const data = await res.json();
+      if(data.token){
+        _pbToken = data.token;
+        localStorage.setItem('pb-token', _pbToken);
+        console.log('PocketBase: Token erneuert');
+      }
+    } else {
+      console.warn('PocketBase: Token-Erneuerung fehlgeschlagen, Status:', res.status);
+    }
+  } catch(err){
+    console.warn('PocketBase: Token-Erneuerung Fehler:', err);
+  }
+}
+
+function pbStartRefreshTimer(){
+  if(_pbRefreshInterval) clearInterval(_pbRefreshInterval);
+  // Alle 12 Stunden erneuern (Token läuft nach ~14 Tagen ab)
+  _pbRefreshInterval = setInterval(pbRefreshToken, 12 * 60 * 60 * 1000);
+  // Sofort einmal erneuern nach 5 Minuten (falls Token schon älter)
+  setTimeout(pbRefreshToken, 5 * 60 * 1000);
+}
+
+function pbStopRefreshTimer(){
+  if(_pbRefreshInterval){ clearInterval(_pbRefreshInterval); _pbRefreshInterval = null; }
 }
 
 async function pbConnect(){
@@ -1419,6 +1472,7 @@ async function pbConnect(){
     pbSetStatus('ok','Verbunden ✓ · Echtzeit-Sync aktiv');
     if(urlInput) urlInput.value = url;
     pbSubscribe();
+    pbStartRefreshTimer();
   } catch(err){
     pbSetStatus('error','Fehler: '+err.message);
     console.error('PocketBase Fehler:',err);
@@ -1430,12 +1484,27 @@ async function pbSave(){
   if(_pbSyncing) return;
   _pbSyncing = true;
   try{
-    await fetch(_pbUrl+'/api/collections/eventmgr/records/'+_pbRecordId,{
+    const res = await fetch(_pbUrl+'/api/collections/eventmgr/records/'+_pbRecordId,{
       method:'PATCH',
       headers:pbHeaders(),
       body: JSON.stringify({data: S})
     });
-  } catch(err){ console.error('PocketBase save error:',err); }
+    if(res.status === 401 || res.status === 403){
+      // Token abgelaufen – Session zurücksetzen und Benutzer informieren
+      _pbToken = '';
+      _pbRecordId = '';
+      _pbUrl = '';
+      localStorage.removeItem('pb-token');
+      localStorage.removeItem('pb-record-id');
+      pbSetStatus('error','⚠️ Sitzung abgelaufen – bitte neu verbinden!');
+      console.warn('PocketBase: Token abgelaufen');
+    } else if(!res.ok){
+      pbSetStatus('error','Speicherfehler: '+res.status);
+    }
+  } catch(err){
+    pbSetStatus('error','Verbindungsfehler beim Speichern');
+    console.error('PocketBase save error:',err);
+  }
   finally{ _pbSyncing = false; }
 }
 
@@ -1483,7 +1552,18 @@ function pbAutoConnect(){
     pbSetStatus('connecting','Verbinde...');
     pbSubscribe();
     fetch(url+'/api/collections/eventmgr/records/'+recId, {headers:pbHeaders()})
-      .then(r=>r.json())
+      .then(r=>{
+        if(r.status===401||r.status===403){
+          // Token abgelaufen
+          _pbToken=''; _pbRecordId=''; _pbUrl='';
+          localStorage.removeItem('pb-token');
+          localStorage.removeItem('pb-record-id');
+          pbStopRefreshTimer();
+          pbSetStatus('error','⚠️ Sitzung abgelaufen – bitte neu verbinden!');
+          throw new Error('token_expired');
+        }
+        return r.json();
+      })
       .then(rec=>{
         if(rec.data){
           const serverData = typeof rec.data==='string'?JSON.parse(rec.data):rec.data||{};
@@ -1494,8 +1574,9 @@ function pbAutoConnect(){
           }
         }
         pbSetStatus('ok','Verbunden ✓ · Echtzeit-Sync aktiv');
+        pbStartRefreshTimer();
       })
-      .catch(()=>pbSetStatus('error','Server nicht erreichbar'));
+      .catch(err=>{ if(err.message!=='token_expired') pbSetStatus('error','Server nicht erreichbar'); });
   }
 }
 
