@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=1024, initial-scale=1.0">
 <meta name="theme-color" content="#1F3864">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -117,7 +117,7 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 .modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;}
 .modal h2{font-size:16px;font-weight:500;margin-bottom:1rem;}
 .form-row{margin-bottom:12px;}
-.form-row label{display:block;font-size:12px;color:#666;margin-bottom:4px;}
+.form-row label{display:block;font-size:12px;color:var(--text);margin-bottom:4px;}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
 /* ── Dienstplan ── */
@@ -207,7 +207,8 @@ body:not(.is-admin) .admin-only{display:none!important;}
 .settings-row:last-child{border-bottom:none;}
 .settings-row-label{font-size:14px;font-weight:500;color:var(--text);}
 .settings-row-desc{font-size:12px;color:var(--text2);margin-top:2px;}
-@media(max-width:700px){
+/* Mobile CSS deaktiviert – App zeigt Desktop-Ansicht auf allen Geräten */
+@media(max-width:0px){
   .sidebar{position:fixed;left:-220px;z-index:150;transition:left 0.2s;}
   .sidebar.open{left:0;}
   .sidebar.collapsed{left:-220px!important;width:220px!important;}
@@ -256,11 +257,11 @@ body:not(.is-admin) .admin-only{display:none!important;}
   /* Person overview single col */
   #person-overview div[style*="grid"]{grid-template-columns:1fr!important;}
 }
-@media(min-width:701px){
+@media(min-width:1px){
   .canvas-scroll-hint{display:none;}
 }
 /* ── Mobile card layout ── */
-@media(max-width:700px){
+@media(max-width:0px){
   .mobile-cards table thead{display:none;}
   .mobile-cards table tbody tr{display:block;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:10px 12px;background:var(--bg2);}
   .mobile-cards table tbody td{display:flex;padding:4px 0;border:none;font-size:13px;gap:8px;}
@@ -435,7 +436,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       <span class="topbar-title" id="topbar-title">Dashboard</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <div id="topbar-pb-warning" onclick="showPage('einstellungen')" title="PocketBase Verbindungsstatus" style="display:none;cursor:pointer;background:#A32D2D;color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;">⚠️ Nicht verbunden</div>
+      <div id="topbar-pb-warning" onclick="if(AUTH&&AUTH.role==='admin')showPage('administration')" title="PocketBase Verbindungsstatus" style="display:none;cursor:default;background:#A32D2D;color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;">⚠️ Nicht verbunden</div>
       <div style="text-align:right;">
         <div id="topbar-time" style="font-size:14px;font-weight:500;color:var(--text);"></div>
         <div id="topbar-date" style="font-size:11px;color:var(--text2);"></div>
@@ -928,6 +929,8 @@ function enforceRole(){
   document.querySelectorAll('.btn-danger').forEach(el=>{
     el.style.display = isAdmin ? '' : 'none';
   });
+  const pbWarn = document.getElementById('topbar-pb-warning');
+  if(pbWarn) pbWarn.style.cursor = isAdmin ? 'pointer' : 'default';
 }
 
 function initAuth(){
@@ -1041,15 +1044,23 @@ function openUserMgmt(){
     '<th style="font-size:12px;color:var(--text2);text-align:left;padding:6px 10px;background:var(--bg3);">Benutzername</th>'+
     '<th style="font-size:12px;color:var(--text2);text-align:left;padding:6px 10px;background:var(--bg3);">Rolle</th>'+
     '<th style="background:var(--bg3);"></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<div style="border-top:1px solid var(--border);padding-top:14px;">'+
-    '<div style="font-weight:500;font-size:13px;margin-bottom:10px;">➕ Neuer Benutzer</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+    '<button class="btn" onclick="closeModal(true)">Schließen</button>'+
+    '<button class="btn btn-primary" onclick="openAddUser()">➕ Neuer Benutzer</button></div>'
+  );
+}
+
+function openAddUser(){
+  if(AUTH.role!=='admin') return;
+  openModal(
+    '<h2>➕ Neuer Benutzer</h2>'+
     '<div class="form-row-2"><div class="form-row"><label>Anzeigename</label><input type="text" id="nu-display" placeholder="Max Mustermann"></div>'+
     '<div class="form-row"><label>Benutzername</label><input type="text" id="nu-name" placeholder="max"></div></div>'+
     '<div class="form-row-2"><div class="form-row"><label>Passwort</label><input type="password" id="nu-pass" placeholder="Min. 4 Zeichen"></div>'+
     '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option><option value="gast">Gast</option></select></div></div>'+
     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
-    '<button class="btn" onclick="closeModal(true)">Schließen</button>'+
-    '<button class="btn btn-primary" onclick="addUser()">Anlegen</button></div></div>'
+    '<button class="btn" onclick="openUserMgmt()">← Zurück</button>'+
+    '<button class="btn btn-primary" onclick="addUser()">Anlegen</button></div>'
   );
 }
 
@@ -1245,7 +1256,33 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '2.8.0'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '2.9.7'; // App-Version – bei jeder Änderungsrunde erhöhen
+
+/* ═══════════════════════════════════════════════════════════════
+   📋 TO-DOs FÜR NÄCHSTE SESSION
+   ═══════════════════════════════════════════════════════════════
+
+   [GRAFIK] Dienstplan – Darstellung
+     → Aktuelle Darstellung gefällt nicht
+     → 3+ Vorschläge: eigene Claude-Ideen + Webrecherche wie
+       Dienstpläne online typischerweise dargestellt werden
+
+   [UX] Dashboard – große Icons (4–5 Stück oben)
+     → Abwägen ob diese Icons im System bleiben sollen oder nicht
+     → Entscheidung treffen und ggf. entfernen/überarbeiten
+
+   [SECURITY] Auto-Logout bei Inaktivität
+     → Bei zu langem Untätigsein automatisch ausloggen
+     → Timeout konfigurierbar (z.B. 15/30/60 Min.)
+     → Warnung kurz vor dem Logout anzeigen
+
+   [FEATURE] To-Do-Liste & Zuständigkeitsbereiche zusammenlegen
+     → Beide Bereiche haben Checklisten-Funktionalität
+     → Zuständigkeitsbereiche hat bereits kurze Checklisten darunter
+     → Zwischenlösung finden: Funktion beider Bereiche zusammenführen
+       ohne die Trennung von "Bereich" und "offener To-do" zu verlieren
+
+   ═══════════════════════════════════════════════════════════════ */
 
 let S={
   version: CURRENT_VERSION,
@@ -1566,20 +1603,52 @@ async function pbSave(){
   finally{ _pbSyncing = false; }
 }
 
+let _pbHeartbeatTimer = null;
+let _pbReconnectTimer = null;
+let _pbClientId = '';
+const PB_HEARTBEAT_TIMEOUT = 45000; // 45s – PocketBase sendet alle ~30s einen Heartbeat
+
+function pbResetHeartbeat(){
+  if(_pbHeartbeatTimer) clearTimeout(_pbHeartbeatTimer);
+  _pbHeartbeatTimer = setTimeout(()=>{
+    // Kein Heartbeat erhalten – Verbindung ist still tot
+    console.warn('PocketBase: Heartbeat-Timeout, reconnecting...');
+    pbSubscribe();
+  }, PB_HEARTBEAT_TIMEOUT);
+}
+
 function pbSubscribe(){
+  // Bestehende Verbindung + Timer sauber beenden
+  if(_pbHeartbeatTimer){ clearTimeout(_pbHeartbeatTimer); _pbHeartbeatTimer=null; }
+  if(_pbReconnectTimer){ clearTimeout(_pbReconnectTimer); _pbReconnectTimer=null; }
   if(_pbEs){ _pbEs.close(); _pbEs=null; }
+  _pbClientId = '';
   if(!_pbUrl || !_pbRecordId) return;
+
   try{
     _pbEs = new EventSource(_pbUrl+'/api/realtime');
-    _pbEs.onopen = ()=>{
-      // Subscribe to this record
+
+    // PocketBase schickt beim Öffnen ein "PB_CONNECT"-Event mit der clientId
+    _pbEs.addEventListener('PB_CONNECT', e=>{
+      try{
+        const msg = JSON.parse(e.data);
+        _pbClientId = msg.clientId || '';
+      } catch(err){ _pbClientId = ''; }
+
+      // Jetzt mit echter clientId abonnieren
       fetch(_pbUrl+'/api/realtime',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({clientId:'', subscriptions:['eventmgr/'+_pbRecordId]})
+        headers:{'Content-Type':'application/json', ...(_pbToken?{'Authorization':_pbToken}:{})},
+        body: JSON.stringify({clientId:_pbClientId, subscriptions:['eventmgr/'+_pbRecordId]})
       }).catch(()=>{});
-    };
+
+      pbSetStatus('ok','Verbunden');
+      pbResetHeartbeat();
+    });
+
+    // Daten-Updates empfangen
     _pbEs.addEventListener('eventmgr/'+_pbRecordId, e=>{
+      pbResetHeartbeat(); // Jedes Event zählt als Lebenszeichen
       try{
         const msg = JSON.parse(e.data);
         if(msg.record && msg.record.data){
@@ -1592,7 +1661,28 @@ function pbSubscribe(){
         }
       } catch(err){}
     });
-    _pbEs.onerror = ()=>{ pbSetStatus('error','Verbindung unterbrochen – versuche erneut...'); setTimeout(pbSubscribe,5000); };
+
+    // Heartbeat-Events von PocketBase als Lebenszeichen werten
+    _pbEs.addEventListener('heartbeat', ()=>{ pbResetHeartbeat(); });
+
+    _pbEs.onerror = ()=>{
+      if(_pbEs && _pbEs.readyState === EventSource.CLOSED){
+        pbSetStatus('error','Verbindung unterbrochen – versuche erneut...');
+        if(_pbHeartbeatTimer){ clearTimeout(_pbHeartbeatTimer); _pbHeartbeatTimer=null; }
+        // Exponentielles Backoff: erst 3s, dann 5s, dann 10s
+        const delay = _pbClientId ? 3000 : 5000;
+        _pbReconnectTimer = setTimeout(pbSubscribe, delay);
+      }
+    };
+
+    // Watchdog: falls readyState CLOSED ist aber onerror nicht feuert
+    setTimeout(()=>{
+      if(_pbEs && _pbEs.readyState === EventSource.CLOSED && !_pbClientId){
+        console.warn('PocketBase: EventSource closed without error, reconnecting...');
+        pbSubscribe();
+      }
+    }, 8000);
+
   } catch(err){ console.error('SSE error:',err); }
 }
 
@@ -2054,7 +2144,7 @@ function openSettingsSection(section){
       '</td></tr>'
     ).join('');
     content.innerHTML =
-      '<div class="card">'+
+      '<div id="user-table-card" class="card">'+
       '<div class="card-header"><span class="card-title">👥 Benutzer</span><button class="btn btn-primary btn-sm" onclick="openInlineAddUser()">+ Benutzer anlegen</button></div>'+
       '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'+
       '<thead><tr>'+
@@ -2074,7 +2164,7 @@ function openSettingsSection(section){
         '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option></select></div>'+
       '</div>'+
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">'+
-        '<button class="btn btn-sm" onclick="document.getElementById(\'inline-add-user\').style.display=\'none\'">Abbrechen</button>'+
+        '<button class="btn btn-sm" onclick="closeInlineAddUser()">← Zurück</button>'+
         '<button class="btn btn-primary btn-sm" onclick="addUserInline()">Anlegen</button>'+
       '</div></div>';
   }
@@ -2142,7 +2232,16 @@ function closeSettingsSection(){
 
 function openInlineAddUser(){
   const el = document.getElementById('inline-add-user');
+  const tbl = document.getElementById('user-table-card');
   if(el) el.style.display='';
+  if(tbl) tbl.style.display='none';
+}
+
+function closeInlineAddUser(){
+  const el = document.getElementById('inline-add-user');
+  const tbl = document.getElementById('user-table-card');
+  if(el) el.style.display='none';
+  if(tbl) tbl.style.display='';
 }
 
 function addUserInline(){
@@ -3796,55 +3895,93 @@ function renderRudList(){
     header.style.cssText='background:#A32D2D;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;';
     header.innerHTML=
       '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
-        '<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.veh)+'</span>'+
-        (e.ort?'<span style="font-size:12px;color:rgba(255,255,255,0.8);">📍 '+escHtml(e.ort)+'</span>':'')+
-        (e.start?'<span style="font-size:12px;color:rgba(255,255,255,0.8);">🕐 '+escHtml(e.start)+'</span>':'')+
+        (e.start?'<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.start)+'</span>':'')+
+        (e.ort?'<span style="font-size:13px;color:rgba(255,255,255,0.9);">'+escHtml(e.ort)+'</span>':'<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.veh)+'</span>')+
         '<span style="font-size:11px;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:20px;">'+patients.length+' Patient'+(patients.length!==1?'en':'')+'</span>'+
       '</div>'+
       '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',null)" style="color:#fff;border-color:rgba(255,255,255,0.4);font-size:11px;padding:3px 10px;">+ Patient</button>';
     section.appendChild(header);
 
-    // Patient list
+    // Patient accordion list
     const body=document.createElement('div');
-    body.style.cssText='background:var(--bg2);padding:10px 12px;display:flex;flex-direction:column;gap:8px;';
+    body.style.cssText='background:var(--bg2);padding:8px 10px;display:flex;flex-direction:column;gap:6px;';
 
     if(!patients.length){
-      body.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;color:var(--text2);font-style:italic;">Noch keine Patienten – klicke „+ Patient"</div>';
+      body.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;color:var(--text2);font-style:italic;">Noch keine Patienten \u2013 klicke \u201e+ Patient\u201c</div>';
     } else {
-      patients.forEach(p=>{
-        const personChips=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;background:#FFF0E6;color:#A04000;border:1px solid #F0A070;">👤 '+escHtml((per.vorname||'')+(per.nachname?' '+per.nachname:''))+'</span>':'';}).join('');
+      patients.forEach((p,idx)=>{
+        const accId='rud-acc-'+e.id+'-'+p.id;
+        const schminkerNames=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?(per.vorname||'')+(per.nachname?' '+per.nachname:''):null;}).filter(Boolean).join(', ');
+
         const card=document.createElement('div');
-        card.style.cssText='border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg3);';
-        card.innerHTML=
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'+
-            '<div>'+
-              '<div style="font-weight:600;font-size:13px;color:var(--text);">'+escHtml(p.name)+'</div>'+
-              '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">'+personChips+'</div>'+
-              (p.schminkplatz?'<div style="font-size:11px;color:var(--text2);margin-top:4px;">📍 '+escHtml(p.schminkplatz)+'</div>':'')+
+        card.style.cssText='border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);';
+
+        // Akkordeon-Kopfzeile
+        const cardHeader=document.createElement('div');
+        cardHeader.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;user-select:none;';
+        cardHeader.onclick=()=>{
+          const detail=document.getElementById(accId);
+          const chev=document.getElementById(accId+'-chev');
+          const open=detail.style.display==='block';
+          detail.style.display=open?'none':'block';
+          chev.textContent=open?'+':'-'; chev.style.transform=open?'':'rotate(45deg)';
+        };
+        cardHeader.innerHTML=
+          '<span id="'+accId+'-chev" style="font-size:11px;color:var(--text2);flex-shrink:0;transition:transform 0.15s;display:inline-block;">+</span>'+
+          '<span style="font-size:13px;font-weight:500;color:var(--text);flex:1;">'+escHtml(p.name)+'</span>'+
+          '<div style="display:flex;gap:5px;flex-shrink:0;" onclick="event.stopPropagation()">'+
+            '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">\u270f\ufe0f</button>'+
+            '<button class="btn btn-sm btn-danger" onclick="deleteRudPatient('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">\u2715</button>'+
+          '</div>';
+        card.appendChild(cardHeader);
+
+        // Akkordeon-Detail
+        const detail=document.createElement('div');
+        detail.id=accId;
+        detail.style.cssText='display:none;border-top:1px solid var(--border);padding:10px 12px;background:var(--bg2);';
+        detail.innerHTML=
+          '<div style="display:flex;flex-wrap:nowrap;gap:0;overflow-x:auto;">'+
+            '<div style="flex:1;min-width:100px;padding:8px 12px;border-right:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminker/in</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(schminkerNames||'\u2013')+'</div>'+
             '</div>'+
-            '<div style="display:flex;gap:5px;flex-shrink:0;">'+
-              '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">✏️</button>'+
-              '<button class="btn btn-sm btn-danger" onclick="deleteRudPatient('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">✕</button>'+
+            '<div style="flex:1;min-width:90px;padding:8px 12px;border-right:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminkort</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.schminkplatz||'\u2013')+'</div>'+
+            '</div>'+
+            '<div style="flex:1;min-width:80px;padding:8px 12px;border-right:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Ankunft</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.ankunft||'\u2013')+'</div>'+
+            '</div>'+
+            '<div style="flex:1;min-width:110px;padding:8px 12px;border-right:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminken</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.schminkStart||'\u2013')+' \u2013 '+escHtml(p.schminkEnd||'\u2013')+'</div>'+
+              '<div style="font-size:11px;color:var(--text2);">'+escHtml(String(p.schminkdauer||40))+' min</div>'+
+            '</div>'+
+            '<div style="flex:1;min-width:110px;padding:8px 12px;border-right:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Transfer</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.transferStart||'\u2013')+' \u2013 '+escHtml(p.transferEnd||'\u2013')+'</div>'+
+              '<div style="font-size:11px;color:var(--text2);">\u2192 '+escHtml(p.transferNach||e.ort||'\u2013')+'</div>'+
+            '</div>'+
+            '<div style="flex:1;min-width:70px;padding:8px 12px;">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">ASP</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(e.asp||'\u2013')+'</div>'+
             '</div>'+
           '</div>'+
-          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">'+
-            '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:6px;padding:7px 10px;">'+
-              '<div style="font-size:10px;font-weight:600;color:#A07000;margin-bottom:3px;">🟡 ANKUNFT</div>'+
-              '<div style="font-size:12px;">'+escHtml(p.ankunft||'–')+'</div>'+
-            '</div>'+
-            '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:6px;padding:7px 10px;">'+
-              '<div style="font-size:10px;font-weight:600;color:#A04000;margin-bottom:3px;">🟠 SCHMINKEN</div>'+
-              '<div style="font-size:12px;">'+escHtml(p.schminkStart||'–')+' – '+escHtml(p.schminkEnd||'–')+' ('+escHtml(String(p.schminkdauer||40))+' min)</div>'+
-            '</div>'+
-            '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:6px;padding:7px 10px;">'+
-              '<div style="font-size:10px;font-weight:600;color:#A32D2D;margin-bottom:3px;">🔴 TRANSFER</div>'+
-              '<div style="font-size:12px;">'+escHtml(p.transferStart||'–')+' – '+escHtml(p.transferEnd||'–')+' → '+escHtml(p.transferNach||e.ort||'–')+'</div>'+
-              (e.asp?'<div style="font-size:11px;color:#A32D2D;margin-top:3px;">👤 ASP: '+escHtml(e.asp)+'</div>':'')+
-            '</div>'+
-          '</div>'+
-          (p.verletzung?'<div style="margin-top:8px;font-size:12px;color:var(--text2);">🩹 <b>Verletzungsmuster:</b> '+escHtml(p.verletzung)+'</div>':'');
+          (p.verletzung?
+            '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">'+
+              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Verletzungsmuster</div>'+
+              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.verletzung)+'</div>'+
+            '</div>':'');
+        card.appendChild(detail);
         body.appendChild(card);
       });
+
+      // Patient hinzufügen Button
+      const addBtn=document.createElement('div');
+      addBtn.style.cssText='padding:4px 2px;';
+      addBtn.innerHTML='<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',null)" style="font-size:11px;">+ Patient hinzuf\u00fcgen</button>';
+      body.appendChild(addBtn);
     }
     section.appendChild(body);
     el.appendChild(section);
@@ -3873,15 +4010,15 @@ function openRudPatientModal(einsatzId,patientId){
     '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Einsatz: <b>'+escHtml(einsatz.veh+(einsatz.ort?' – '+einsatz.ort:'')+(einsatz.start?' ('+einsatz.start+')':''))+'</b></div>'+
     '<div class="form-row"><label>Patientenname / Bezeichnung</label><input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'"></div>'+
     '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:11px;font-weight:600;color:#A07000;margin-bottom:8px;">🟡 VORBEREITUNG</div>'+
+      '<div style="font-size:12px;font-weight:600;color:#7A5500;margin-bottom:8px;">🟡 VORBEREITUNG</div>'+
       '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
-        '<div class="form-row"><label>Ankunft Patient <span style="font-size:10px;color:var(--text2);">(Einsatz −Transfer −Schminken)</span></label>'+
+        '<div class="form-row"><label>Ankunft Patient</label>'+
           '<input type="time" id="mrud-ankunft" value="'+(p?p.ankunft||'':rudCalcAnkunft(einsatz,40))+'" oninput="rudRecalcSchminken()"></div>'+
         '<div class="form-row"><label>Schminkplatz / Ort</label><input type="text" id="mrud-schminkplatz" value="'+escHtml(p?p.schminkplatz||'':'')+'"></div>'+
       '</div>'+
     '</div>'+
     '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:11px;font-weight:600;color:#A04000;margin-bottom:8px;">🟠 SCHMINKEN</div>'+
+      '<div style="font-size:12px;font-weight:600;color:#7A3000;margin-bottom:8px;">🟠 SCHMINKEN</div>'+
       '<div class="form-row" style="margin-bottom:8px;"><label>Schminkdauer (min) <span style="font-size:10px;color:var(--text2);">– je nach Verletzungsmuster</span></label>'+
         '<input type="number" id="mrud-schminkdauer" value="'+(p?p.schminkdauer||40:40)+'" min="5" max="180" step="5" oninput="rudRecalcFromDauer(\''+einsatz.start+'\')" style="width:90px;"></div>'+
       '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
@@ -3890,7 +4027,7 @@ function openRudPatientModal(einsatzId,patientId){
       '</div>'+
     '</div>'+
     '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:11px;font-weight:600;color:#A32D2D;margin-bottom:8px;">🔴 TRANSFER</div>'+
+      '<div style="font-size:12px;font-weight:600;color:#791F1F;margin-bottom:8px;">🔴 TRANSFER</div>'+
       '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
         '<div class="form-row"><label>Von</label><input type="time" id="mrud-tstart" value="'+(p?p.transferStart||'':rudCalcSchminkEnd(einsatz))+'"></div>'+
         '<div class="form-row"><label>Bis</label><input type="time" id="mrud-tend" value="'+(p?p.transferEnd||'':rudCalcTransferEnd(einsatz))+'"></div>'+
