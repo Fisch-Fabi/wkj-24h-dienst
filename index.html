@@ -854,16 +854,27 @@ function hashPass(str){
 }
 
 function getUsers(){
+  // Prefer S.users if populated (synced from PocketBase), fallback to localStorage
+  if(S.users && S.users.length > 0) return S.users;
   try{ return JSON.parse(localStorage.getItem('wkj-users')||'[]'); }
   catch(e){ return []; }
 }
-function saveUsers(arr){ localStorage.setItem('wkj-users',JSON.stringify(arr)); }
+function saveUsers(arr){
+  localStorage.setItem('wkj-users', JSON.stringify(arr));
+  S.users = arr;
+  save(); // sync to PocketBase
+}
 
 function bootstrapUsers(){
   const users = getUsers();
   if(!users.find(u=>u.username==='fabian')){
-    users.push({username:'fabian', passwordHash:hashPass('wkj2024'), role:'admin', displayName:'Fabian'});
+    users.push({username:'fabian', passwordHash:hashPass('wkj2024'), role:'admin', displayName:'Fabian', perms:{...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
     saveUsers(users);
+  } else {
+    // Sync existing localStorage users into S.users if not already there
+    if(!S.users || S.users.length === 0){
+      S.users = users;
+    }
   }
 }
 
@@ -1255,8 +1266,8 @@ function saveOwnPassword(){
 }
 
 let selectedEinsatzId = null;
-const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '2.9.7'; // App-Version – bei jeder Änderungsrunde erhöhen
+const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
+const APP_VERSION = '2.9.8'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1298,7 +1309,8 @@ let S={
   rudEinsaetze:[],
   essenszeiten:[],
   aufsichten:[],
-  infos:{name:'',datum:'',ort:'',start:'10:00',end:'10:00',verantwortlich:'',notizen:''}
+  infos:{name:'',datum:'',ort:'',start:'10:00',end:'10:00',verantwortlich:'',notizen:''},
+  users:[]
 };
 
 function migrate(data){
@@ -1363,6 +1375,10 @@ function migrate(data){
     if(!data.vehicleTypes) data.vehicleTypes={};
     // Bestehende Fahrzeuge als KTW markieren
     (data.vehicles||[]).forEach(v=>{ if(!data.vehicleTypes[v]) data.vehicleTypes[v]='ktw'; });
+  }
+  if(v < 3){
+    data.version = 3;
+    if(!data.users) data.users=[];
   }
   return data;
 }
@@ -1551,6 +1567,7 @@ async function pbConnect(){
       if(serverData.vehicles){
         S = serverData;
         localStorage.setItem('eventmgr', JSON.stringify(S));
+        if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
         renderAll();
       }
     } else {
@@ -1656,6 +1673,7 @@ function pbSubscribe(){
           if(incoming.vehicles && !_pbSyncing){
             S = incoming;
             localStorage.setItem('eventmgr', JSON.stringify(S));
+            if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
             renderAll();
           }
         }
@@ -1718,6 +1736,7 @@ function pbAutoConnect(){
           if(serverData.vehicles){
             S = serverData;
             localStorage.setItem('eventmgr', JSON.stringify(S));
+            if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
             renderAll();
           }
         }
