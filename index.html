@@ -683,7 +683,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       <div class="card">
         <div class="card-header">
           <span class="card-title">🎭 RUD-Einsatzplanung</span>
-          <button class="btn btn-sm" onclick="exportRudPDF()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
+          <button id="btn-rud-pdf" class="btn btn-sm" onclick="exportRudPDF()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
         </div>
         <div id="rud-list"></div>
         <div id="rud-empty" style="text-align:center;padding:1.5rem;font-size:13px;color:var(--text2);">Keine Einsätze vorhanden. Einsätze zuerst auf der Einsätze-Seite anlegen.</div>
@@ -696,7 +696,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
         <div class="card-header">
           <span class="card-title">Checklisten</span>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-sm" onclick="exportChecklists()">↓ Exportieren</button>
+            <button id="btn-todos-export" class="btn btn-sm" onclick="exportChecklists()">↓ Exportieren</button>
             <button class="btn btn-primary btn-sm" onclick="addChecklist()">+ Liste</button>
           </div>
         </div>
@@ -1092,17 +1092,25 @@ const ALL_PAGES = [
 const DEFAULT_PERMS = {
   pages:   ALL_PAGES.map(p=>p.id),  // visible pages
   write:   ALL_PAGES.map(p=>p.id),  // pages where editing is allowed
+  print:   ALL_PAGES.map(p=>p.id),  // pages where printing is allowed
 };
 
 function getPerms(user){
-  if(!user) return {pages:[], write:[]};
-  if(user.role==='admin') return {pages:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration'], write:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration']};
-  if(user.role==='gast') return {pages:['dashboard'], write:[]};
-  return user.perms || DEFAULT_PERMS;
+  if(!user) return {pages:[], write:[], print:[]};
+  if(user.role==='admin') return {pages:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration'], write:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration'], print:[...ALL_PAGES.map(p=>p.id)]};
+  if(user.role==='gast') return {pages:['dashboard'], write:[], print:[]};
+  const p = user.perms || DEFAULT_PERMS;
+  // Backward-compat: falls ältere Benutzer kein print-Feld haben
+  if(!p.print) p.print = [];
+  return p;
 }
 
 function canSeePage(pageId){
   if(AUTH.role==='admin') return true;
+  // Drucken-Seite: automatisch sichtbar wenn mind. ein Bereich druckbar ist
+  if(pageId === 'drucken'){
+    return ALL_PAGES.some(p=>p.id!=='drucken' && canPrint(p.id));
+  }
   const users = getUsers();
   const me = users.find(u=>u.username===AUTH.username);
   return getPerms(me).pages.includes(pageId);
@@ -1115,6 +1123,17 @@ function canWrite(pageId){
   return getPerms(me).write.includes(pageId);
 }
 
+function canPrint(pageId){
+  if(AUTH.role==='admin') return true;
+  if(!canSeePage(pageId)) return false;
+  // Drucken erlaubt wenn Schreibrecht ODER extra Druckrecht vergeben wurde
+  if(canWrite(pageId)) return true;
+  const users = getUsers();
+  const me = users.find(u=>u.username===AUTH.username);
+  const perms = getPerms(me);
+  return (perms.print||[]).includes(pageId);
+}
+
 // Apply page visibility to nav items
 function applyPagePerms(){
   if(AUTH.role==='admin') return; // admin sees everything
@@ -1124,12 +1143,21 @@ function applyPagePerms(){
   const users = getUsers();
   const me = users.find(u=>u.username===AUTH.username);
   const perms = getPerms(me);
+
+  // Drucken-Seite automatisch anzeigen wenn mind. ein Bereich druckbar ist
+  const anyPrintable = ALL_PAGES.some(p=>p.id!=='drucken' && canPrint(p.id));
+
   ALL_PAGES.forEach(p=>{
     const navEl = [...document.querySelectorAll('.nav-item')].find(n=>{
       const oc = n.getAttribute('onclick')||'';
       return oc.includes("'"+p.id+"'");
     });
-    if(navEl) navEl.style.display = perms.pages.includes(p.id) ? '' : 'none';
+    if(!navEl) return;
+    if(p.id === 'drucken'){
+      navEl.style.display = anyPrintable ? '' : 'none';
+    } else {
+      navEl.style.display = perms.pages.includes(p.id) ? '' : 'none';
+    }
   });
   // Hide write buttons on read-only pages
   applyWritePerms();
@@ -1140,6 +1168,7 @@ function applyWritePerms(){
   ALL_PAGES.forEach(p=>{
     applyWritePermsForPage(p.id);
   });
+  applyPrintPerms();
 }
 
 // Lücke 2: Server-seitige Absicherung – verhindert Schreibzugriff aus Browser-Konsole
@@ -1272,26 +1301,29 @@ function openPermEditor(username){
   const users = getUsers();
   const u = users.find(x=>x.username===username);
   if(!u) return;
-  const perms = u.perms || {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]};
+  const perms = u.perms || {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write], print:[...DEFAULT_PERMS.print]};
+  if(!perms.print) perms.print = [];
 
-  // Group pages
+  // Group pages – Drucken-Bereich ausblenden (wird automatisch aus Druckrechten abgeleitet)
   const groups = {};
-  ALL_PAGES.forEach(p=>{ if(!groups[p.group]) groups[p.group]=[]; groups[p.group].push(p); });
+  ALL_PAGES.filter(p=>p.id!=='drucken').forEach(p=>{ if(!groups[p.group]) groups[p.group]=[]; groups[p.group].push(p); });
 
   let html = '<h2>⚙️ Rechte: '+escHtml(u.displayName||u.username)+'</h2>'+
-    '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Legen Sie fest welche Seiten sichtbar sind und ob der Benutzer dort auch bearbeiten darf.</p>'+
+    '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Legen Sie fest welche Seiten sichtbar sind, ob der Benutzer bearbeiten und drucken darf. <br><span style="font-size:11px;">Hinweis: Bearbeiten beinhaltet automatisch Drucken. Die Drucken-Seite erscheint automatisch wenn mind. ein Bereich druckbar ist.</span></p>'+
     '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
     '<thead><tr>'+
     '<th style="text-align:left;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Bereich</th>'+
     '<th style="text-align:center;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Sichtbar</th>'+
     '<th style="text-align:center;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Bearbeiten</th>'+
+    '<th style="text-align:center;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Drucken</th>'+
     '</tr></thead><tbody>';
 
   Object.entries(groups).forEach(([group, pages])=>{
-    html += '<tr><td colspan="3" style="padding:8px 8px 4px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);">'+escHtml(group)+'</td></tr>';
+    html += '<tr><td colspan="4" style="padding:8px 8px 4px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);">'+escHtml(group)+'</td></tr>';
     pages.forEach(p=>{
       const canSee = perms.pages.includes(p.id);
       const canEdit = perms.write.includes(p.id);
+      const canPrintP = perms.print.includes(p.id);
       html +=
         '<tr style="border-bottom:1px solid var(--border);">'+
         '<td style="padding:8px 8px;">'+escHtml(p.label)+'</td>'+
@@ -1301,6 +1333,11 @@ function openPermEditor(username){
         '</td>'+
         '<td style="text-align:center;padding:8px;">'+
           '<input type="checkbox" data-perm="write" data-page="'+p.id+'" '+(canEdit?'checked':'')+
+          ' '+(canSee?'':'disabled')+
+          ' onchange="permCheckChange(this)" style="width:16px;height:16px;accent-color:#1F3864;cursor:pointer;">'+
+        '</td>'+
+        '<td style="text-align:center;padding:8px;">'+
+          '<input type="checkbox" data-perm="print" data-page="'+p.id+'" '+(canPrintP?'checked':'')+
           ' '+(canSee?'':'disabled')+
           ' onchange="permCheckChange(this)" style="width:16px;height:16px;accent-color:#1F3864;cursor:pointer;">'+
         '</td>'+
@@ -1320,13 +1357,18 @@ function openPermEditor(username){
 }
 
 function permCheckChange(cb){
-  // If "see" unchecked → also uncheck and disable "write"
+  // If "see" unchecked → also uncheck and disable "write" + "print"
   if(cb.dataset.perm==='see'){
     const row = cb.closest('tr');
     const writeCb = row.querySelector('[data-perm="write"]');
+    const printCb = row.querySelector('[data-perm="print"]');
     if(writeCb){
       if(!cb.checked){ writeCb.checked=false; writeCb.disabled=true; }
       else { writeCb.disabled=false; }
+    }
+    if(printCb){
+      if(!cb.checked){ printCb.checked=false; printCb.disabled=true; }
+      else { printCb.disabled=false; }
     }
   }
 }
@@ -1340,13 +1382,14 @@ function permSetAll(on){
 }
 
 function savePerms(username){
-  const pages=[], write=[];
+  const pages=[], write=[], print=[];
   document.querySelectorAll('#modal-content input[data-perm="see"]:checked').forEach(cb=>pages.push(cb.dataset.page));
   document.querySelectorAll('#modal-content input[data-perm="write"]:checked').forEach(cb=>write.push(cb.dataset.page));
+  document.querySelectorAll('#modal-content input[data-perm="print"]:checked').forEach(cb=>print.push(cb.dataset.page));
   const users = getUsers();
   const u = users.find(x=>x.username===username);
   if(!u) return;
-  u.perms = {pages, write};
+  u.perms = {pages, write, print};
   saveUsers(users);
   closeModal(true);
   openSettingsSection('benutzer');
@@ -1386,7 +1429,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.0.4'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.1.2'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1530,6 +1573,7 @@ function save(){
 }
 
 function exportData(){
+  if(AUTH.role!=='admin'){ alert('Nur Administratoren dürfen Daten exportieren.'); return; }
   const json=JSON.stringify(S, null, 2);
   const blob=new Blob([json],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1541,6 +1585,7 @@ function exportData(){
 }
 
 function importData(file){
+  if(AUTH.role!=='admin'){ alert('Nur Administratoren dürfen Daten importieren.'); return; }
   const reader=new FileReader();
   reader.onload=e=>{
     try{
@@ -1976,8 +2021,6 @@ function toOff(t,base=10){const[h,m]=t.split(':').map(Number);let v=h+m/60-base;
 function durStr(s,e){let so=toOff(s),eo=toOff(e);if(eo<=so)eo+=24;const d=eo-so,h=Math.floor(d),m=Math.round((d-h)*60);return m>0?h+'h '+m+'m':h+'h';}
 function uid(){return++S.nextId;}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function escHtmlPlain(s){return String(s);}
-
 function statusBadge(s){
   const map={
     in_planung:   {bg:'#FFF0E0',col:'#B85C00',lbl:'🟠 In Planung'},
@@ -2061,11 +2104,6 @@ function navTo(page){
   if(navItem) navItem.click();
 }
 
-function goToSettings(){
-  const navItem=[...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'einstellungen'"));
-  if(navItem) navItem.click();
-  else showPage('einstellungen',{classList:{add:()=>{},remove:()=>{}}});
-}
 document.addEventListener('click',e=>{
   const menu=document.getElementById('user-menu');
   const icon=document.getElementById('user-icon');
@@ -2255,6 +2293,11 @@ function openSettingsSection(section){
   }
 
   else if(section==='daten'){
+    if(AUTH.role!=='admin'){
+      content.innerHTML = '<div class="card"><div class="card-header"><span class="card-title">🗄️ Daten</span></div>'+
+        '<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px;">Nur für Administratoren verfügbar.</div></div>';
+      return;
+    }
     content.innerHTML =
       '<div class="card"><div class="card-header"><span class="card-title">🗄️ Daten</span></div>'+
       '<div class="settings-row">'+
@@ -2648,6 +2691,7 @@ function renderVehicles(){
 }
 
 function editVehicle(i){
+  if(!guardWrite('fuhrpark')) return;
   const v = S.vehicles[i];
   const typ = vTyp(v);
   openModal('<h2>✏️ Fahrzeug bearbeiten</h2>'+
@@ -2743,6 +2787,7 @@ function renderEinsaetze(){
   });
 }
 function openEinsatzModal(id){
+  if(!guardWrite('einsaetze')) return;
   const b=id?S.einsaetze.find(x=>x.id===id):{veh:S.vehicles[0]||'',start:'10:00',end:'12:00',desc:''};
   const opts=S.vehicles.map(v=>'<option value="'+v+'"'+(v===b.veh?' selected':'')+'>'+v+'</option>').join('');
   openModal('<h2>'+(id?'Einsatz bearbeiten':'Neuer Einsatz')+'</h2>'+
@@ -2807,25 +2852,6 @@ function showOrtDetail(id){
     '<div style="margin-bottom:8px;"><span style="font-size:13px;font-weight:500;">'+escHtml(b.ort||'–')+'</span></div>'+
     '<div style="font-size:13px;color:#555;">'+escHtml(b.adresse||'Keine Adresse angegeben')+'</div>'+
     '<div style="display:flex;justify-content:flex-end;margin-top:16px;"><button class="btn btn-primary" onclick="closeModal(true)">Schliessen</button></div>');
-}
-
-function showAlarmDetail(id){
-  const b=S.einsaetze.find(x=>x.id===id);
-  const k=b.alarm_k||'–', c=b.alarm_c||'–', r=b.alarm_r||'–';
-  openModal('<h2>Alarmierung</h2>'+
-    (b.ort||b.adresse?'<div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;">'+
-    '<div style="font-size:13px;font-weight:500;color:#1F3864;">'+escHtml(b.ort||'')+'</div>'+
-    '<div style="font-size:12px;color:#666;margin-top:2px;">'+escHtml(b.adresse||'Keine Adresse angegeben')+'</div></div>':'')+
-    '<div style="display:flex;gap:16px;align-items:center;justify-content:center;margin:1.5rem 0;">'+
-    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">K</div>'+
-    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(k)+'</div></div>'+
-    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">C</div>'+
-    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(c)+'</div></div>'+
-    '<div style="text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">R</div>'+
-    '<div style="font-size:28px;font-weight:500;color:#1F3864;background:#E6F1FB;padding:10px 18px;border-radius:8px;">'+escHtml(r)+'</div></div>'+
-    '</div>'+
-    '<div style="text-align:center;font-size:16px;font-weight:500;color:#444;margin-bottom:1.5rem;">'+escHtml(k)+' '+escHtml(c)+' '+escHtml(r)+'</div>'+
-    '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="closeModal(true)">Schliessen</button></div>');
 }
 
 /* ══ GANTT ══ */
@@ -3039,6 +3065,7 @@ function renderTodos(){
   });
 }
 function exportChecklists(){
+  if(!canPrint('todos')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
   if(!S.checklists.length){alert('Keine Checklisten vorhanden.');return;}
   const checks=S.checklists.map(cl=>{
     let total=0,done=0;
@@ -3214,31 +3241,13 @@ function toggleSubCollapse(clId,itId){
 }
 function deleteItem(clId,itId){if(!guardWrite('todos')) return; const cl=S.checklists.find(x=>x.id===clId);cl.items=cl.items.filter(x=>x.id!==itId);save();renderTodos();}
 function deleteSubItem(clId,itId,sId){
+  if(!guardWrite('todos')) return;
   const cl=S.checklists.find(x=>x.id===clId);
   const it=cl.items.find(x=>x.id===itId);
   it.sub=(it.sub||[]).filter(x=>x.id!==sId);
   save();renderTodos();
 }
 
-function openAssignModal(tId,veh){
-  const allPlans=Object.values(S.dienstplaene||{}).flat();
-  const t=allPlans.find(x=>parseInt(x.id)===parseInt(tId));
-  if(!t) return;
-  const assigned=t.assignments?.[veh]||[];
-  const chips=S.persons.length
-    ? S.persons.map(p=>{
-        const isA=assigned.includes(p.id);
-        const name=escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''));
-        return '<span onclick="toggleAssign('+tId+',this.dataset.v,'+p.id+')" data-v="'+escHtml(veh)+'" id="chip-'+p.id+'" style="display:inline-flex;align-items:center;padding:5px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(isA?'background:'+cOf(veh)+';color:#fff;border:1px solid '+cOf(veh)+';':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+name+'</span>';
-      }).join('')
-    : '<span style="font-size:12px;color:var(--text2);">Keine Teilnehmer vorhanden</span>';
-  openModal('<h2>'+escHtml(veh)+' – '+escHtml(t.title)+'</h2>'+
-    '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">'+t.start+' – '+t.end+' Uhr</div>'+
-    '<div style="font-size:13px;font-weight:500;margin-bottom:8px;">Personen einteilen – klicken zum Auswählen</div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">'+chips+'</div>'+
-    '<div style="display:flex;justify-content:flex-end;">'+
-    '<button class="btn btn-primary" onclick="closeModal(true)">Fertig</button></div>');
-}
 function buildTurnusModal(t, veh){
   const title = t?escHtml(t.title):'';
   const start = t?t.start:'10:00';
@@ -3305,8 +3314,8 @@ function proceedAddTurnus(){
   if(typ==='fahrer') openModal(buildFahrerTurnusModal(null,veh));
   else openModal(buildTurnusModal(null,veh));
 }
-function addTurnus(veh){openModal(buildTurnusModal(null, veh));}
 function editTurnus(id, veh){
+  if(!guardWrite('dienstplan')) return;
   const numId=parseInt(id);
   const plans=S.dienstplaene[veh]||[];
   const t=plans.find(x=>parseInt(x.id)===numId);
@@ -3538,9 +3547,9 @@ function renderPersons(){
   });
 }
 function addPerson(){openPersonModal(null);}
-function addPersonWithRole(rolle){openPersonModal(null, rolle);}
 function editPerson(id){openPersonModal(S.persons.find(x=>x.id===id));}
 function openPersonModal(p, vorselRolle){
+  if(!guardWrite('teilnehmer')) return;
   const rollen=['Fahrer','Betreuer','Jugend','Helfer','RUD'];
   const selRollen=p?(Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[])):( vorselRolle?[vorselRolle]:[]); 
   const rolleChips=rollen.map(r=>{
@@ -3644,7 +3653,39 @@ function deletePerson(id){if(!guardWrite('teilnehmer')) return; confirmModal('Di
 window.addEventListener('resize',()=>{if(document.getElementById('page-einsaetze').classList.contains('active'))renderGantt();});
 
 /* ══ DRUCK / PDF ══ */
+function applyPrintPerms(){
+  // Drucken-Kacheln ausblenden wenn kein Druckrecht
+  if(AUTH.role==='admin') return;
+  const pageEl = document.getElementById('page-drucken');
+  if(pageEl){
+    pageEl.querySelectorAll('.print-tile').forEach(tile=>{
+      const oc = tile.getAttribute('onclick')||'';
+      const match = oc.match(/printSection\(['"](\w+)['"]\)/);
+      if(!match) return;
+      const section = match[1];
+      if(section === 'all'){
+        // "Alles drucken" nur zeigen wenn mindestens eine Seite druckbar ist
+        const anyPrintable = ALL_PAGES.some(p=>canPrint(p.id));
+        tile.style.display = anyPrintable ? '' : 'none';
+        return;
+      }
+      const allowed = canPrint(section);
+      tile.style.display = allowed ? '' : 'none';
+    });
+  }
+  // Seiten-spezifische Drucken/Export-Buttons
+  const rudBtn = document.getElementById('btn-rud-pdf');
+  if(rudBtn) rudBtn.style.display = canPrint('rud') ? '' : 'none';
+  const todosBtn = document.getElementById('btn-todos-export');
+  if(todosBtn) todosBtn.style.display = canPrint('todos') ? '' : 'none';
+}
+
 function printSection(section){
+  // Guard – nur drucken wenn Druckrecht vorhanden
+  if(section !== 'all' && !canPrint(section)){
+    alert('Du hast keine Berechtigung diesen Bereich zu drucken.');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
   const pageMap={
     infos:'page-infos',
@@ -3658,14 +3699,29 @@ function printSection(section){
     all:null
   };
   if(section==='all'){
-    document.querySelectorAll('.page').forEach(p=>p.classList.add('print-active'));
+    // Nur Seiten mit Druckberechtigung drucken
+    if(AUTH.role==='admin'){
+      document.querySelectorAll('.page').forEach(p=>p.classList.add('print-active'));
+    } else {
+      Object.entries(pageMap).forEach(([sec, pid])=>{
+        if(sec==='all' || !pid) return;
+        if(canPrint(sec)){
+          const el = document.getElementById(pid);
+          if(el) el.classList.add('print-active');
+        }
+      });
+    }
   } else {
     const pid=pageMap[section];
     if(pid) document.getElementById(pid).classList.add('print-active');
   }
-  if(section==='einsaetze'||section==='all') renderGantt();
-  if(section==='freizeit'||section==='all') renderFreizeitGantt();
-  if(section==='rud'||section==='all') renderRudGantt();
+  const printAll = section==='all';
+  const includeEinsaetze = section==='einsaetze' || (printAll && canPrint('einsaetze'));
+  const includeFreizeit  = section==='freizeit'  || (printAll && canPrint('freizeit'));
+  const includeRud       = section==='rud'       || (printAll && canPrint('rud'));
+  if(includeEinsaetze) renderGantt();
+  if(includeFreizeit)  renderFreizeitGantt();
+  if(includeRud)       renderRudGantt();
 
   // Print-Header erstellen
   const existing=document.getElementById('print-header');
@@ -3914,6 +3970,7 @@ function renderFreizeitGantt(){
 
 /* ── Modals Freizeit ── */
 function openFreizeitModal(item){
+  if(!guardWrite('freizeit')) return;
   openModal('<h2>'+(item?'Planung bearbeiten':'Neue Freizeitplanung')+'</h2>'+
     '<div class="form-row"><label>Bezeichnung</label><input type="text" id="mfz-name" value="'+escHtml(item?item.name||'':'')+'"></div>'+
     '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="mfz-start" value="'+(item?item.start:'10:00')+'"></div>'+
@@ -3940,6 +3997,7 @@ function deleteFreizeitPlanung(id){if(!guardWrite('freizeit')) return; confirmMo
 
 /* ── Modals Essen ── */
 function openEssenModal(item){
+  if(!guardWrite('freizeit')) return;
   openModal('<h2>'+(item?'Essenszeit bearbeiten':'Neue Essenszeit')+'</h2>'+
     '<div class="form-row"><label>Mahlzeit</label><input type="text" id="mes-name" placeholder="z.B. Frühstück" value="'+escHtml(item?item.name||'':'')+'"></div>'+
     '<div class="form-row form-row-2"><div><label>Von</label><input type="time" id="mes-start" value="'+(item?item.start:'07:00')+'"></div>'+
@@ -3966,6 +4024,7 @@ function deleteEssen(id){if(!guardWrite('freizeit')) return; confirmModal('Essen
 
 /* ── Modals Aufsicht ── */
 function openAufsichtModal(item){
+  if(!guardWrite('freizeit')) return;
   const betreuer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:[p.rolle||''];return r.some(x=>x.toLowerCase()==='betreuer');});
   const personOpts='<option value="">– bitte wählen –</option>'+(betreuer.length?betreuer.map(p=>'<option value="'+p.id+'"'+(item&&item.personId===p.id?' selected':'')+'>'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</option>').join(''):'<option disabled>Keine Betreuer in Teilnehmerliste</option>');
   openModal('<h2>'+(item?'Aufsicht bearbeiten':'Neue Aufsichtsperson')+'</h2>'+
@@ -4149,7 +4208,8 @@ function renderRudList(){
       // Patient hinzufügen Button
       const addBtn=document.createElement('div');
       addBtn.style.cssText='padding:4px 2px;';
-      addBtn.innerHTML='<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',null)" style="font-size:11px;">+ Patient hinzuf\u00fcgen</button>';
+      const safeId = Number(e.id) || 0;
+      addBtn.innerHTML='<button class="btn btn-sm" onclick="openRudPatientModal('+safeId+',null)" style="font-size:11px;">+ Patient hinzuf\u00fcgen</button>';
       body.appendChild(addBtn);
     }
     section.appendChild(body);
@@ -4159,6 +4219,7 @@ function renderRudList(){
 
 /* ── RUD Patient Modal ── */
 function openRudPatientModal(einsatzId,patientId){
+  if(!guardWrite('rud')) return;
   const einsatz=S.einsaetze.find(e=>e.id===einsatzId);
   if(!einsatz)return;
   if(!S.rudEinsaetze)S.rudEinsaetze=[];
@@ -4401,6 +4462,7 @@ function renderRudGantt(){
 
 /* ══ RUD PDF EXPORT ══ */
 function exportRudPDF(){
+  if(!canPrint('rud')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
   if(typeof window.jspdf === 'undefined'){
     alert('PDF-Bibliothek wird geladen, bitte erneut versuchen.');
     return;
@@ -4412,7 +4474,6 @@ function exportRudPDF(){
   const PW=210, PH=297, ML=15, MR=15, MT=15, CW=PW-ML-MR;
   const RED=[163,45,45], ORANGE=[208,90,26], YELLOW=[180,130,0], BLUE=[31,56,100], GREY=[100,100,100], LIGHTGREY=[220,220,220];
 
-  function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return[r,g,b];}
   function addHeader(title, subtitle){
     doc.setFillColor(...RED);
     doc.rect(0,0,PW,18,'F');
@@ -4698,6 +4759,7 @@ function renderBereiche(){
 }
 
 function editBereichItemText(span, bereichId, itemId){
+  if(!guardWrite('bereiche')) return;
   const current=span.textContent;
   const inp=document.createElement('input');
   inp.type='text';
@@ -4721,6 +4783,7 @@ function editBereichItemText(span, bereichId, itemId){
 }
 
 function addBereichItem(bereichId){
+  if(!guardWrite('bereiche')) return;
   const inp=document.getElementById('new-item-'+bereichId);
   if(!inp)return;
   const text=inp.value.trim();
@@ -4751,6 +4814,7 @@ function addBereich(){ openBereichModal(null); }
 function editBereich(id){ openBereichModal(S.bereiche.find(x=>x.id===id)); }
 
 function openBereichModal(b){
+  if(!guardWrite('bereiche')) return;
   const selectedIds=b?(Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])):[];
   const betreuer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[]);return r.some(x=>x.toLowerCase()==='betreuer');});
   const personChips=betreuer.length
@@ -4777,6 +4841,7 @@ function openBereichModal(b){
 }
 
 function saveBereich(id){
+  if(!guardWrite('bereiche')) return;
   const name=document.getElementById('m-bname').value.trim();
   const personen=[...document.querySelectorAll('#m-bperson-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean);
   const beschreibung=document.getElementById('m-bdesc').value.trim();
@@ -4792,6 +4857,7 @@ function saveBereich(id){
 }
 
 function deleteBereich(id){
+  if(!guardWrite('bereiche')) return;
   confirmModal('Dieser Bereich wird unwiderruflich gelöscht.',function(){
     S.bereiche=S.bereiche.filter(x=>x.id!==id);
     save(); renderBereiche();
@@ -4842,48 +4908,8 @@ function renderConflictWarnings(){
 }
 
 /* ══ DIENSTPLAN-ÜBERSICHT PRO PERSON ══ */
-function renderPersonOverview(){
-  const existing=document.getElementById('person-overview');
-  if(existing) existing.remove();
-  const allT=Object.values(S.dienstplaene||{}).flat();
-  if(!S.persons.length||!allT.length) return;
-  const card=document.createElement('div');
-  card.id='person-overview'; card.className='card';
-
-  const grid = S.persons.map(p=>{
-    const fullName=escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''));
-    const rows=allT.map(t=>{
-      const veh=Object.entries(t.assignments||{}).filter(([v,ids])=>ids.includes(p.id)).map(([v])=>v);
-      if(!veh.length) return '';
-      return '<div style="margin-bottom:4px;">'+
-        '<div style="font-size:11px;color:var(--text2);">'+escHtml(t.title)+' ('+t.start+'–'+t.end+')</div>'+
-        '<div style="font-size:12px;font-weight:500;color:var(--text);">'+veh.map(v=>'<span style="display:inline-block;padding:1px 7px;border-radius:4px;margin:1px;background:'+clOf(v)+';color:'+cOf(v)+';">'+escHtml(v)+'</span>').join('')+'</div>'+
-        '</div>';
-    }).filter(Boolean).join('');
-
-    return '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border);">'+
-      '<div style="font-weight:500;font-size:13px;margin-bottom:6px;color:var(--text);">'+fullName+'</div>'+
-      (rows||'<span style="font-size:12px;color:var(--text2);">Nicht eingeteilt</span>')+
-      '</div>';
-  }).join('');
-
-  card.innerHTML='<div class="card-header"><span class="card-title">Übersicht pro Person</span></div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">'+grid+'</div>';
-  document.getElementById('turnus-list').after(card);
-}
-
 /* ══ TABELLEN SORTIEREN ══ */
 let sortState={col:null,dir:1};
-function sortTable(col){
-  if(sortState.col===col) sortState.dir*=-1; else { sortState.col=col; sortState.dir=1; }
-  S.einsaetze.sort((a,b)=>{
-    const av=a[col]||'', bv=b[col]||'';
-    return av.localeCompare(bv)*sortState.dir;
-  });
-  renderEinsaetze();
-}
-
-
 document.getElementById('gantt').addEventListener('click', function(e){
   const canvas = this;
   const rect = canvas.getBoundingClientRect();
