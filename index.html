@@ -293,6 +293,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       </svg>
       <h1>24h-Dienst WKJ</h1>
     </div>
+    <div id="login-pb-status" style="display:none;font-size:11px;color:#888;text-align:center;margin-bottom:8px;">⏳ Verbinde mit Server...</div>
     <div class="login-error" id="login-error">Benutzername oder Passwort falsch.</div>
     <div class="login-input-wrap">
       <label>Benutzername</label>
@@ -854,15 +855,69 @@ function hashPass(str){
 }
 
 function getUsers(){
-  // Prefer S.users if populated (synced from PocketBase), fallback to localStorage
-  if(S.users && S.users.length > 0) return S.users;
   try{ return JSON.parse(localStorage.getItem('wkj-users')||'[]'); }
   catch(e){ return []; }
 }
 function saveUsers(arr){
   localStorage.setItem('wkj-users', JSON.stringify(arr));
-  S.users = arr;
-  save(); // sync to PocketBase
+  pbSaveUsers(arr); // sync to separate wkj_users collection
+}
+
+async function pbSaveUsers(arr){
+  const url = localStorage.getItem('pb-url');
+  const usersToken = localStorage.getItem('pb-users-token');
+  if(!url || !usersToken) return;
+  try{
+    // Fetch existing records to get their IDs
+    const listRes = await fetch(url+'/api/collections/wkj_users/records?perPage=200',{
+      headers:{'Authorization': usersToken}
+    });
+    if(!listRes.ok) return;
+    const existing = await listRes.json();
+    const existingMap = {};
+    (existing.items||[]).forEach(r=>{ existingMap[r.username]=r.id; });
+
+    for(const u of arr){
+      const payload = {
+        username: u.username,
+        passwordHash: u.passwordHash,
+        role: u.role,
+        displayName: u.displayName||u.username,
+        perms: u.perms||null
+      };
+      if(existingMap[u.username]){
+        // Update existing
+        await fetch(url+'/api/collections/wkj_users/records/'+existingMap[u.username],{
+          method:'PATCH',
+          headers:{'Content-Type':'application/json','Authorization': usersToken},
+          body: JSON.stringify(payload)
+        });
+        delete existingMap[u.username];
+      } else {
+        // Create new
+        await fetch(url+'/api/collections/wkj_users/records',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization': usersToken},
+          body: JSON.stringify(payload)
+        });
+      }
+    }
+    // Delete removed users
+    for(const [uname, id] of Object.entries(existingMap)){
+      await fetch(url+'/api/collections/wkj_users/records/'+id,{
+        method:'DELETE',
+        headers:{'Authorization': usersToken}
+      });
+    }
+  } catch(e){ console.error('pbSaveUsers error:', e); }
+}
+
+function pbSaveReaderPass(){
+  const input = document.getElementById('pb-reader-pass-input');
+  if(!input) return;
+  const pass = input.value.trim();
+  localStorage.setItem('pb-reader-pass', pass);
+  alert('Reader-Passwort gespeichert ✅');
 }
 
 function bootstrapUsers(){
@@ -870,11 +925,6 @@ function bootstrapUsers(){
   if(!users.find(u=>u.username==='fabian')){
     users.push({username:'fabian', passwordHash:hashPass('wkj2024'), role:'admin', displayName:'Fabian', perms:{...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
     saveUsers(users);
-  } else {
-    // Sync existing localStorage users into S.users if not already there
-    if(!S.users || S.users.length === 0){
-      S.users = users;
-    }
   }
 }
 
@@ -959,9 +1009,56 @@ function initAuth(){
       return;
     }
   }catch(e){}
-  // Show login
-  document.getElementById('login-screen').classList.add('show');
-  setTimeout(()=>{ const el=document.getElementById('login-user'); if(el)el.focus(); },100);
+  // Benutzer von separater PocketBase-Collection laden (geschützt, eigener Token)
+  pbFetchUsersForLogin().finally(()=>{
+    document.getElementById('login-screen').classList.add('show');
+    setTimeout(()=>{ const el=document.getElementById('login-user'); if(el)el.focus(); },100);
+  });
+}
+
+async function pbFetchUsersForLogin(){
+  const url = localStorage.getItem('pb-url');
+  if(!url) return;
+  const statusEl = document.getElementById('login-pb-status');
+  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='⏳ Verbinde mit Server...'; }
+  try{
+    // Credentials für den read-only App-Client
+    const readerEmail = localStorage.getItem('pb-reader-email') || 'reader@wkj.local';
+    const readerPass  = localStorage.getItem('pb-reader-pass')  || '';
+    if(!readerPass){ return; } // Noch nicht konfiguriert
+
+    // 1. Als reader@wkj.local einloggen
+    const authRes = await fetch(url+'/api/collections/wkj_app_clients/auth-with-password', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({identity: readerEmail, password: readerPass})
+    });
+    if(!authRes.ok) return;
+    const authData = await authRes.json();
+    const readerToken = authData.token;
+    if(!readerToken) return;
+
+    // 2. Mit Token wkj_users abrufen
+    const usersRes = await fetch(url+'/api/collections/wkj_users/records?perPage=200', {
+      headers:{'Content-Type':'application/json', 'Authorization': readerToken}
+    });
+    if(!usersRes.ok) return;
+    const data = await usersRes.json();
+    if(data.items && data.items.length){
+      const users = data.items.map(r=>({
+        username: r.username,
+        passwordHash: r.passwordHash,
+        role: r.role,
+        displayName: r.displayName||r.username,
+        perms: r.perms||null
+      }));
+      localStorage.setItem('wkj-users', JSON.stringify(users));
+      if(statusEl) statusEl.textContent='✅ Benutzer geladen';
+    }
+  } catch(e){ /* kein PocketBase erreichbar – lokale Benutzer werden verwendet */ }
+  finally{
+    setTimeout(()=>{ if(statusEl) statusEl.style.display='none'; }, 1500);
+  }
 }
 
 /* ── User Management (Admin) ── */
@@ -1266,8 +1363,8 @@ function saveOwnPassword(){
 }
 
 let selectedEinsatzId = null;
-const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '2.9.8'; // App-Version – bei jeder Änderungsrunde erhöhen
+const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
+const APP_VERSION = '3.0.1'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1309,8 +1406,7 @@ let S={
   rudEinsaetze:[],
   essenszeiten:[],
   aufsichten:[],
-  infos:{name:'',datum:'',ort:'',start:'10:00',end:'10:00',verantwortlich:'',notizen:''},
-  users:[]
+  infos:{name:'',datum:'',ort:'',start:'10:00',end:'10:00',verantwortlich:'',notizen:''}
 };
 
 function migrate(data){
@@ -1375,10 +1471,6 @@ function migrate(data){
     if(!data.vehicleTypes) data.vehicleTypes={};
     // Bestehende Fahrzeuge als KTW markieren
     (data.vehicles||[]).forEach(v=>{ if(!data.vehicleTypes[v]) data.vehicleTypes[v]='ktw'; });
-  }
-  if(v < 3){
-    data.version = 3;
-    if(!data.users) data.users=[];
   }
   return data;
 }
@@ -2081,6 +2173,7 @@ function openAdminPage(section){
   if(section==='sync'){
     const pbUrl = localStorage.getItem('pb-url')||'';
     const connected = !!localStorage.getItem('pb-record-id');
+    const readerPass = localStorage.getItem('pb-reader-pass')||'';
     el.innerHTML = backBtn +
       '<div class="card"><div class="card-header"><span class="card-title">🔄 PocketBase Synchronisierung</span>'+
       '<div style="display:flex;align-items:center;gap:8px;"><div id="pb-status-dot" style="width:10px;height:10px;border-radius:50%;background:'+(connected?'#27a85e':'#ccc')+';"></div>'+
@@ -2098,6 +2191,15 @@ function openAdminPage(section){
         '<div style="display:flex;gap:8px;">'+
           '<input type="password" id="pb-pass" placeholder="••••••••" style="width:150px;font-size:12px;">'+
           '<button class="btn btn-primary btn-sm" onclick="pbConnect()">Verbinden</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px;">'+
+        '<div class="settings-row">'+
+          '<div><div class="settings-row-label">Reader-Passwort</div><div class="settings-row-desc">Passwort des <b>reader@wkj.local</b> Benutzers – für Login auf anderen Geräten</div></div>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<input type="password" id="pb-reader-pass-input" placeholder="Passwort..." style="width:180px;font-size:12px;" value="'+escHtml(localStorage.getItem('pb-reader-pass')||'')+'">'+ 
+            '<button class="btn btn-sm" onclick="pbSaveReaderPass()">Speichern</button>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div id="pb-data-info" style="font-size:12px;color:var(--text2);padding:8px 0;">'+
@@ -2192,6 +2294,7 @@ function openSettingsSection(section){
     if(AUTH.role!=='admin') return;
     const pbUrl = localStorage.getItem('pb-url')||'';
     const connected = !!localStorage.getItem('pb-record-id');
+    const readerPass = localStorage.getItem('pb-reader-pass')||'';
     const statusColors = {ok:'#27a85e',error:'#A32D2D',connecting:'#E6A817',off:'#ccc'};
     content.innerHTML =
       '<div class="card"><div class="card-header"><span class="card-title">🔄 PocketBase Synchronisierung</span>'+
@@ -2210,6 +2313,15 @@ function openSettingsSection(section){
         '<div style="display:flex;gap:8px;">'+
           '<input type="password" id="pb-pass" placeholder="••••••••" style="width:150px;font-size:12px;">'+
           '<button class="btn btn-primary btn-sm" onclick="pbConnect()">Verbinden</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px;">'+
+        '<div class="settings-row">'+
+          '<div><div class="settings-row-label">Reader-Passwort</div><div class="settings-row-desc">Passwort des <b>reader@wkj.local</b> Benutzers – für Login auf anderen Geräten</div></div>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<input type="password" id="pb-reader-pass-input" placeholder="Passwort..." style="width:180px;font-size:12px;" value="'+escHtml(localStorage.getItem('pb-reader-pass')||'')+'">'+ 
+            '<button class="btn btn-sm" onclick="pbSaveReaderPass()">Speichern</button>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div id="pb-data-info" style="font-size:12px;color:var(--text2);padding:8px 0;">'+
