@@ -865,12 +865,11 @@ function saveUsers(arr){
 
 async function pbSaveUsers(arr){
   const url = localStorage.getItem('pb-url');
-  const usersToken = localStorage.getItem('pb-users-token');
-  if(!url || !usersToken) return;
+  // Schreiben nur möglich wenn als Admin eingeloggt (Superuser-Token)
+  if(!url || !_pbToken) return;
   try{
-    // Fetch existing records to get their IDs
     const listRes = await fetch(url+'/api/collections/wkj_users/records?perPage=200',{
-      headers:{'Authorization': usersToken}
+      headers:{'Authorization': _pbToken}
     });
     if(!listRes.ok) return;
     const existing = await listRes.json();
@@ -886,27 +885,25 @@ async function pbSaveUsers(arr){
         perms: u.perms||null
       };
       if(existingMap[u.username]){
-        // Update existing
         await fetch(url+'/api/collections/wkj_users/records/'+existingMap[u.username],{
           method:'PATCH',
-          headers:{'Content-Type':'application/json','Authorization': usersToken},
+          headers:{'Content-Type':'application/json','Authorization': _pbToken},
           body: JSON.stringify(payload)
         });
         delete existingMap[u.username];
       } else {
-        // Create new
         await fetch(url+'/api/collections/wkj_users/records',{
           method:'POST',
-          headers:{'Content-Type':'application/json','Authorization': usersToken},
+          headers:{'Content-Type':'application/json','Authorization': _pbToken},
           body: JSON.stringify(payload)
         });
       }
     }
-    // Delete removed users
+    // Gelöschte Benutzer entfernen
     for(const [uname, id] of Object.entries(existingMap)){
       await fetch(url+'/api/collections/wkj_users/records/'+id,{
         method:'DELETE',
-        headers:{'Authorization': usersToken}
+        headers:{'Authorization': _pbToken}
       });
     }
   } catch(e){ console.error('pbSaveUsers error:', e); }
@@ -1017,15 +1014,20 @@ function initAuth(){
 }
 
 async function pbFetchUsersForLogin(){
-  const url = localStorage.getItem('pb-url');
-  if(!url) return;
+  // Feste Defaults – können über Einstellungen überschrieben werden
+  const DEFAULT_PB_URL = 'https://wkj-24h-dienst.duckdns.org';
+  const DEFAULT_READER_EMAIL = 'reader@wkj.local';
+  const DEFAULT_READER_PASS = 'WKJ-reader-2025!';
+
+  const url = localStorage.getItem('pb-url') || DEFAULT_PB_URL;
+  // Bei erstem Start die URL automatisch speichern
+  if(!localStorage.getItem('pb-url')) localStorage.setItem('pb-url', DEFAULT_PB_URL);
+
   const statusEl = document.getElementById('login-pb-status');
   if(statusEl){ statusEl.style.display='block'; statusEl.textContent='⏳ Verbinde mit Server...'; }
   try{
-    // Credentials für den read-only App-Client
-    const readerEmail = localStorage.getItem('pb-reader-email') || 'reader@wkj.local';
-    const readerPass  = localStorage.getItem('pb-reader-pass')  || '';
-    if(!readerPass){ return; } // Noch nicht konfiguriert
+    const readerEmail = localStorage.getItem('pb-reader-email') || DEFAULT_READER_EMAIL;
+    const readerPass  = localStorage.getItem('pb-reader-pass')  || DEFAULT_READER_PASS;
 
     // 1. Als reader@wkj.local einloggen
     const authRes = await fetch(url+'/api/collections/wkj_app_clients/auth-with-password', {
@@ -1033,7 +1035,10 @@ async function pbFetchUsersForLogin(){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({identity: readerEmail, password: readerPass})
     });
-    if(!authRes.ok) return;
+    if(!authRes.ok){
+      if(statusEl) statusEl.textContent='⚠️ Reader-Login fehlgeschlagen';
+      return;
+    }
     const authData = await authRes.json();
     const readerToken = authData.token;
     if(!readerToken) return;
@@ -1042,7 +1047,10 @@ async function pbFetchUsersForLogin(){
     const usersRes = await fetch(url+'/api/collections/wkj_users/records?perPage=200', {
       headers:{'Content-Type':'application/json', 'Authorization': readerToken}
     });
-    if(!usersRes.ok) return;
+    if(!usersRes.ok){
+      if(statusEl) statusEl.textContent='⚠️ Benutzer konnten nicht geladen werden';
+      return;
+    }
     const data = await usersRes.json();
     if(data.items && data.items.length){
       const users = data.items.map(r=>({
@@ -1053,11 +1061,13 @@ async function pbFetchUsersForLogin(){
         perms: r.perms||null
       }));
       localStorage.setItem('wkj-users', JSON.stringify(users));
-      if(statusEl) statusEl.textContent='✅ Benutzer geladen';
+      if(statusEl) statusEl.textContent='✅ '+users.length+' Benutzer geladen';
     }
-  } catch(e){ /* kein PocketBase erreichbar – lokale Benutzer werden verwendet */ }
+  } catch(e){
+    if(statusEl) statusEl.textContent='⚠️ Server nicht erreichbar';
+  }
   finally{
-    setTimeout(()=>{ if(statusEl) statusEl.style.display='none'; }, 1500);
+    setTimeout(()=>{ if(statusEl) statusEl.style.display='none'; }, 2000);
   }
 }
 
@@ -1126,8 +1136,20 @@ function applyPagePerms(){
 }
 
 function applyWritePerms(){
-  // Called after render — hide add/edit buttons on pages user can only read
-  // We mark add/edit buttons with data-page attribute in showPage
+  // Alle Seiten bei Login durchgehen und Write-Perms anwenden
+  ALL_PAGES.forEach(p=>{
+    applyWritePermsForPage(p.id);
+  });
+}
+
+// Lücke 2: Server-seitige Absicherung – verhindert Schreibzugriff aus Browser-Konsole
+function guardWrite(pageId){
+  if(AUTH.role==='admin') return true;
+  if(!canWrite(pageId)){
+    alert('Du hast keine Schreibrechte für diesen Bereich.');
+    return false;
+  }
+  return true;
 }
 
 function openUserMgmt(){
@@ -1364,7 +1386,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.0.1'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.0.4'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -2583,6 +2605,7 @@ function renderInfos(){
 }
 
 function saveInfos(){
+  if(!guardWrite('infos')) return;
   S.infos={
     name:document.getElementById('info-name').value,
     datum:document.getElementById('info-datum').value,
@@ -2640,6 +2663,7 @@ function editVehicle(i){
 }
 
 function saveEditVehicle(i){
+  if(!guardWrite('fuhrpark')) return;
   const oldName = S.vehicles[i];
   const newName = document.getElementById('ev-name').value.trim();
   const newTyp  = document.getElementById('ev-typ').value;
@@ -2662,6 +2686,7 @@ function saveEditVehicle(i){
 }
 
 function deleteVehicleConfirm(i){
+  if(!guardWrite('fuhrpark')) return;
   const v = S.vehicles[i];
   confirmModal('Fahrzeug "'+v+'" und alle zugehörigen Einsätze werden gelöscht.',function(){
     S.vehicles.splice(i,1);
@@ -2681,6 +2706,7 @@ function addVehicle(){openModal('<h2>Neues Fahrzeug</h2>'+
   '<button class="btn btn-primary" onclick="saveVehicle()">Speichern</button></div>');
   setTimeout(()=>document.getElementById('m-vname').focus(),50);}
 function saveVehicle(){
+  if(!guardWrite('fuhrpark')) return;
   const n=document.getElementById('m-vname').value.trim();
   if(!n)return;
   const t=document.getElementById('m-vtyp')?document.getElementById('m-vtyp').value:'ktw';
@@ -2752,6 +2778,7 @@ function openEinsatzModal(id){
     '<button class="btn btn-primary" onclick="saveEinsatz('+(id||0)+')">Speichern</button></div>');
 }
 function saveEinsatz(id){
+  if(!guardWrite('einsaetze')) return;
   const veh=document.getElementById('m-veh').value;
   const status=document.getElementById('m-status').value;
   const start=document.getElementById('m-start').value;
@@ -2772,7 +2799,7 @@ function setEinsatzStatus(id, status){
   const e=S.einsaetze.find(x=>x.id===id);
   if(e){e.status=status;save();renderEinsaetze();renderGantt();renderDashboard();}
 }
-function deleteEinsatz(id){confirmModal('Dieser Einsatz wird unwiderruflich gelöscht.',function(){S.einsaetze=S.einsaetze.filter(x=>x.id!==id);save();renderEinsaetze();renderGantt();});}
+function deleteEinsatz(id){if(!guardWrite('einsaetze')) return; confirmModal('Dieser Einsatz wird unwiderruflich gelöscht.',function(){S.einsaetze=S.einsaetze.filter(x=>x.id!==id);save();renderEinsaetze();renderGantt();});}
 
 function showOrtDetail(id){
   const b=S.einsaetze.find(x=>x.id===id);
@@ -3137,9 +3164,11 @@ function addChecklist(){openModal('<h2>Neue Checkliste</h2>'+
   '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
   '<button class="btn btn-primary" onclick="saveChecklist()">Speichern</button></div>');
   setTimeout(()=>document.getElementById('m-clname').focus(),50);}
-function saveChecklist(){const t=document.getElementById('m-clname').value.trim();if(!t)return;S.checklists.push({id:uid(),title:t,items:[]});closeModal(true);save();renderTodos();}
-function deleteChecklist(id){confirmModal('Diese Checkliste wird unwiderruflich gelöscht.',function(){S.checklists=S.checklists.filter(x=>x.id!==id);save();renderTodos();});}
+function saveChecklist(){
+  if(!guardWrite('todos')) return;const t=document.getElementById('m-clname').value.trim();if(!t)return;S.checklists.push({id:uid(),title:t,items:[]});closeModal(true);save();renderTodos();}
+function deleteChecklist(id){if(!guardWrite('todos')) return; confirmModal('Diese Checkliste wird unwiderruflich gelöscht.',function(){S.checklists=S.checklists.filter(x=>x.id!==id);save();renderTodos();});}
 function addCheckItemInline(clId){
+  if(!guardWrite('todos')) return;
   const inp=document.getElementById('new-item-'+clId);
   const t=inp.value.trim();if(!t)return;
   const cl=S.checklists.find(x=>x.id===clId);
@@ -3149,6 +3178,7 @@ function addCheckItemInline(clId){
   setTimeout(()=>{const el=document.getElementById('new-item-'+clId);if(el)el.focus();},50);
 }
 function addSubItemInline(clId,itId){
+  if(!guardWrite('todos')) return;
   const inp=document.getElementById('new-sub-'+clId+'-'+itId);
   const t=inp.value.trim();if(!t)return;
   const cl=S.checklists.find(x=>x.id===clId);
@@ -3182,7 +3212,7 @@ function toggleSubCollapse(clId,itId){
   it.subCollapsed=!it.subCollapsed;
   save();renderTodos();
 }
-function deleteItem(clId,itId){const cl=S.checklists.find(x=>x.id===clId);cl.items=cl.items.filter(x=>x.id!==itId);save();renderTodos();}
+function deleteItem(clId,itId){if(!guardWrite('todos')) return; const cl=S.checklists.find(x=>x.id===clId);cl.items=cl.items.filter(x=>x.id!==itId);save();renderTodos();}
 function deleteSubItem(clId,itId,sId){
   const cl=S.checklists.find(x=>x.id===clId);
   const it=cl.items.find(x=>x.id===itId);
@@ -3243,6 +3273,7 @@ function toggleModalChip(el){
 
 
 function addTurnusGlobal(){
+  if(!guardWrite('dienstplan')) return;
   if(S.vehicles.length===0){alert('Bitte zuerst Fahrzeuge anlegen.');return;}
   const opts=S.vehicles.map(v=>'<option value="'+escHtml(v)+'">'+escHtml(v)+'</option>').join('');
   const vehSelect=S.vehicles.length===1?'<input type="hidden" id="m-veh-select" value="'+escHtml(S.vehicles[0])+'">':'<div class="form-row"><label>Fahrzeug</label><select id="m-veh-select">'+opts+'</select></div>';
@@ -3309,6 +3340,7 @@ function buildFahrerTurnusModal(t, veh){
     '<button class="btn btn-primary" onclick="saveFahrerTurnus('+(t?t.id:0)+')">Speichern</button></div>';
 }
 function saveFahrerTurnus(id){
+  if(!guardWrite('dienstplan')) return;
   const title=document.getElementById('m-ttitle').value.trim();
   const start=document.getElementById('m-tstart').value;
   const end=document.getElementById('m-tend').value;
@@ -3326,6 +3358,7 @@ function saveFahrerTurnus(id){
   closeModal(true);save();renderDienstplan();
 }
 function saveTurnus(id){
+  if(!guardWrite('dienstplan')) return;
   const title=document.getElementById('m-ttitle').value.trim();
   const start=document.getElementById('m-tstart').value;
   const end=document.getElementById('m-tend').value;
@@ -3346,6 +3379,7 @@ function saveTurnus(id){
 }
 let _delId=null, _delVeh=null;
 function deleteTurnus(id, veh){
+  if(!guardWrite('dienstplan')) return;
   _delId=parseInt(id); _delVeh=veh;
   openModal('<h2>Dienstplan löschen?</h2>'+
     '<p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem;">Dieser Dienstplan wird unwiderruflich gelöscht.</p>'+
@@ -3529,6 +3563,7 @@ function toggleRolleChip(el){
   el.style.cssText='display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;'+(active?'background:var(--bg3);color:var(--text);border:1px solid var(--border);':'background:#1F3864;color:#fff;border:1px solid #1F3864;');
 }
 function savePerson(id){
+  if(!guardWrite('teilnehmer')) return;
   const vorname=document.getElementById('m-pvorname').value.trim();
   const nachname=document.getElementById('m-pnachname').value.trim();
   const rolle=[...document.querySelectorAll('#m-prolle-wrap span[data-selected="1"]')].map(el=>el.dataset.r);
@@ -3604,7 +3639,7 @@ function doExcelImport(){
   alert(added+' Person(en) importiert.');
 }
 
-function deletePerson(id){confirmModal('Diese Person wird aus der Teilnehmerliste gelöscht.',function(){S.persons=S.persons.filter(x=>x.id!==id);save();renderPersons();renderDienstplan();});}
+function deletePerson(id){if(!guardWrite('teilnehmer')) return; confirmModal('Diese Person wird aus der Teilnehmerliste gelöscht.',function(){S.persons=S.persons.filter(x=>x.id!==id);save();renderPersons();renderDienstplan();});}
 
 window.addEventListener('resize',()=>{if(document.getElementById('page-einsaetze').classList.contains('active'))renderGantt();});
 
@@ -3890,6 +3925,7 @@ function openFreizeitModal(item){
 }
 function editFreizeitPlanung(id){openFreizeitModal((S.freizeitPlanungen||[]).find(x=>x.id===id));}
 function saveFreizeitPlanung(id){
+  if(!guardWrite('freizeit')) return;
   const name=document.getElementById('mfz-name').value.trim();
   const start=document.getElementById('mfz-start').value;
   const end=document.getElementById('mfz-end').value;
@@ -3900,7 +3936,7 @@ function saveFreizeitPlanung(id){
   else S.freizeitPlanungen.push({id:uid(),name,start,end,beschreibung});
   closeModal(true);save();renderFreizeit();
 }
-function deleteFreizeitPlanung(id){confirmModal('Planung löschen?',function(){S.freizeitPlanungen=(S.freizeitPlanungen||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+function deleteFreizeitPlanung(id){if(!guardWrite('freizeit')) return; confirmModal('Planung löschen?',function(){S.freizeitPlanungen=(S.freizeitPlanungen||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
 
 /* ── Modals Essen ── */
 function openEssenModal(item){
@@ -3915,6 +3951,7 @@ function openEssenModal(item){
 }
 function editEssen(id){openEssenModal((S.essenszeiten||[]).find(x=>x.id===id));}
 function saveEssen(id){
+  if(!guardWrite('freizeit')) return;
   const name=document.getElementById('mes-name').value.trim();
   const start=document.getElementById('mes-start').value;
   const end=document.getElementById('mes-end').value;
@@ -3925,7 +3962,7 @@ function saveEssen(id){
   else S.essenszeiten.push({id:uid(),name,start,end,beschreibung});
   closeModal(true);save();renderFreizeit();
 }
-function deleteEssen(id){confirmModal('Essenszeit löschen?',function(){S.essenszeiten=(S.essenszeiten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+function deleteEssen(id){if(!guardWrite('freizeit')) return; confirmModal('Essenszeit löschen?',function(){S.essenszeiten=(S.essenszeiten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
 
 /* ── Modals Aufsicht ── */
 function openAufsichtModal(item){
@@ -3942,6 +3979,7 @@ function openAufsichtModal(item){
 }
 function editAufsicht(id){openAufsichtModal((S.aufsichten||[]).find(x=>x.id===id));}
 function saveAufsicht(id){
+  if(!guardWrite('freizeit')) return;
   const personId=parseInt(document.getElementById('mau-person').value)||null;
   const start=document.getElementById('mau-start').value;
   const end=document.getElementById('mau-end').value;
@@ -3952,7 +3990,7 @@ function saveAufsicht(id){
   else S.aufsichten.push({id:uid(),personId,start,end,bereich});
   closeModal(true);save();renderFreizeit();
 }
-function deleteAufsicht(id){confirmModal('Aufsicht löschen?',function(){S.aufsichten=(S.aufsichten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
+function deleteAufsicht(id){if(!guardWrite('freizeit')) return; confirmModal('Aufsicht löschen?',function(){S.aufsichten=(S.aufsichten||[]).filter(x=>x.id!==id);save();renderFreizeit();});}
 
 
 /* ══ RUD ══ */
@@ -4231,6 +4269,7 @@ function rudRecalcSchminken(){
 }
 
 function saveRudPatient(einsatzId,patientId){
+  if(!guardWrite('rud')) return;
   const name=document.getElementById('mrud-name').value.trim();
   if(!name)return;
   if(!S.rudEinsaetze)S.rudEinsaetze=[];
@@ -4261,6 +4300,7 @@ function saveRudPatient(einsatzId,patientId){
 }
 
 function deleteRudPatient(einsatzId,patientId){
+  if(!guardWrite('rud')) return;
   confirmModal('Diesen Patienten löschen?',function(){
     const rudEntry=S.rudEinsaetze&&S.rudEinsaetze.find(r=>r.einsatzId===einsatzId);
     if(rudEntry)rudEntry.patients=(rudEntry.patients||[]).filter(x=>x.id!==patientId);
