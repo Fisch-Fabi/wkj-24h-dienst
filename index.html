@@ -105,6 +105,9 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 
 /* ── Badge ── */
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
+.p-filter-chip{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;background:var(--bg3);color:var(--text);border:1px solid var(--border);transition:all 0.15s;}
+.p-filter-chip:hover{background:var(--bg2);}
+.p-filter-chip.active{background:#1F3864;color:#fff;border-color:#1F3864;}
 
 /* ── Checklist ── */
 .check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
@@ -154,10 +157,10 @@ body:not(.is-admin) .admin-only{display:none!important;}
 /* ── Mobile sidebar ── */
 /* ── Login Screen ── */
 #login-screen{
-  display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;
+  display:flex;position:fixed;inset:0;background:#f0f2f5;z-index:9999;
   align-items:center;justify-content:center;flex-direction:column;
 }
-#login-screen.show{display:flex;}
+#login-screen.hidden{display:none;}
 .login-box{
   background:#fff;border-radius:16px;padding:2rem 2.25rem;width:90%;max-width:380px;
   box-shadow:0 8px 40px rgba(0,0,0,0.12);
@@ -729,6 +732,17 @@ body:not(.is-admin) .admin-only{display:none!important;}
             <button class="btn btn-primary btn-sm" onclick="addPerson()">+ Person</button>
           </div>
         </div>
+        <div id="person-filter-bar" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 10px;align-items:center;">
+          <span style="font-size:12px;color:var(--text2);margin-right:4px;">Filter:</span>
+          <span class="p-filter-chip" data-role="all" onclick="setPersonFilter('all')" style="cursor:pointer;">Alle</span>
+          <span class="p-filter-chip" data-role="Fahrer"   onclick="setPersonFilter('Fahrer')"   style="cursor:pointer;">Fahrer</span>
+          <span class="p-filter-chip" data-role="Betreuer" onclick="setPersonFilter('Betreuer')" style="cursor:pointer;">Betreuer</span>
+          <span class="p-filter-chip" data-role="Jugend"   onclick="setPersonFilter('Jugend')"   style="cursor:pointer;">Jugend</span>
+          <span class="p-filter-chip" data-role="Helfer"   onclick="setPersonFilter('Helfer')"   style="cursor:pointer;">Helfer</span>
+          <span class="p-filter-chip" data-role="RUD"      onclick="setPersonFilter('RUD')"      style="cursor:pointer;">RUD</span>
+          <span class="p-filter-chip" data-role="none"     onclick="setPersonFilter('none')"     style="cursor:pointer;">Ohne Rolle</span>
+          <span id="p-filter-count" style="margin-left:auto;font-size:12px;color:var(--text2);"></span>
+        </div>
         <table><thead><tr><th>Nachname</th><th>Vorname</th><th>Rolle</th><th>Kontakt</th><th>Notizen</th><th></th></tr></thead><tbody id="person-body"></tbody></table>
       </div>
     </div>
@@ -925,7 +939,7 @@ function bootstrapUsers(){
   }
 }
 
-function doLogin(){
+async function doLogin(){
   const uInput = document.getElementById('login-user');
   const pInput = document.getElementById('login-pass');
   const err = document.getElementById('login-error');
@@ -933,8 +947,19 @@ function doLogin(){
   const password = pInput.value;
   err.classList.remove('show');
 
-  const users = getUsers();
-  const user = users.find(u=>u.username===username && u.passwordHash===hashPass(password));
+  // 1. Versuch: lokaler localStorage
+  let users = getUsers();
+  let user = users.find(u=>u.username===username && u.passwordHash===hashPass(password));
+
+  // 2. Versuch: frische Benutzer von PocketBase laden und erneut prüfen
+  if(!user){
+    err.textContent = '⏳ Prüfe Zugangsdaten...';
+    err.classList.add('show');
+    await pbFetchUsersForLogin();
+    users = getUsers();
+    user = users.find(u=>u.username===username && u.passwordHash===hashPass(password));
+  }
+
   if(!user){
     err.textContent = 'Benutzername oder Passwort falsch.';
     err.classList.add('show');
@@ -942,10 +967,11 @@ function doLogin(){
     pInput.focus();
     return;
   }
+  err.classList.remove('show');
   // Store session
   sessionStorage.setItem('wkj-auth', JSON.stringify({loggedIn:true, username:user.username, role:user.role, displayName:user.displayName||user.username}));
   AUTH = {loggedIn:true, username:user.username, role:user.role, displayName:user.displayName||user.username};
-  document.getElementById('login-screen').classList.remove('show');
+  document.getElementById('login-screen').classList.add('hidden');
   applyRoleUI();
   load();
 }
@@ -957,7 +983,7 @@ function abmelden(){
   document.getElementById('login-user').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-error').classList.remove('show');
-  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-user').focus();
 }
 
@@ -1001,6 +1027,7 @@ function initAuth(){
     const sess = JSON.parse(sessionStorage.getItem('wkj-auth')||'null');
     if(sess && sess.loggedIn){
       AUTH = sess;
+      document.getElementById('login-screen').classList.add('hidden');
       applyRoleUI();
       load();
       return;
@@ -1008,7 +1035,7 @@ function initAuth(){
   }catch(e){}
   // Benutzer von separater PocketBase-Collection laden (geschützt, eigener Token)
   pbFetchUsersForLogin().finally(()=>{
-    document.getElementById('login-screen').classList.add('show');
+    document.getElementById('login-screen').classList.remove('hidden');
     setTimeout(()=>{ const el=document.getElementById('login-user'); if(el)el.focus(); },100);
   });
 }
@@ -1429,7 +1456,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.1.2'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.1.5'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -3512,10 +3539,26 @@ function renderDienstplan(){
 
 
 /* ══ TEILNEHMER ══ */
+let _personFilter = 'all';
+function setPersonFilter(role){
+  _personFilter = role;
+  // Active-Status aller Chips updaten
+  document.querySelectorAll('#person-filter-bar .p-filter-chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.role===role);
+  });
+  renderPersons();
+}
+
 function renderPersons(){
   const tb=document.getElementById('person-body');
   if(!tb) return;
   tb.innerHTML='';
+  // Filter-Chips aktiv setzen beim ersten Rendern
+  const chips = document.querySelectorAll('#person-filter-bar .p-filter-chip');
+  if(chips.length && !document.querySelector('#person-filter-bar .p-filter-chip.active')){
+    const defaultChip = [...chips].find(c=>c.dataset.role===_personFilter);
+    if(defaultChip) defaultChip.classList.add('active');
+  }
   const rolleColors={
     Fahrer:  {bg:'#FCEBEB',col:'#A32D2D'},
     Betreuer:{bg:'#EAF3DE',col:'#27500A'},
@@ -3527,7 +3570,20 @@ function renderPersons(){
     const an=(a.nachname||'').localeCompare(b.nachname||'','de');
     return an!==0?an:(a.vorname||'').localeCompare(b.vorname||'','de');
   });
-  sorted.forEach(p=>{
+  // Filter anwenden
+  const filtered = sorted.filter(p=>{
+    if(_personFilter==='all') return true;
+    const rollen = Array.isArray(p.rolle) ? p.rolle : (p.rolle?[p.rolle]:[]);
+    if(_personFilter==='none') return rollen.length===0;
+    return rollen.includes(_personFilter);
+  });
+  // Counter updaten
+  const cntEl = document.getElementById('p-filter-count');
+  if(cntEl){
+    if(_personFilter==='all') cntEl.textContent = filtered.length+' Teilnehmer';
+    else cntEl.textContent = filtered.length+' von '+sorted.length;
+  }
+  filtered.forEach(p=>{
     const rollen=Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[]);
     const rollenBadges=rollen.length
       ? rollen.map(r=>{const c=rolleColors[r]||{bg:'var(--badge-bg)',col:'var(--badge-text)'};return '<span class="badge" style="background:'+c.bg+';color:'+c.col+';margin:1px;">'+escHtml(r)+'</span>';}).join('')
@@ -4228,8 +4284,10 @@ function openRudPatientModal(einsatzId,patientId){
   const p=patientId?(rudEntry.patients||[]).find(x=>x.id===patientId):null;
   const _pid=p?p.id:'';
 
-  const rudPersons=S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>['rud','betreuer'].includes(x.toLowerCase()));});
-  const allPersons=rudPersons.length?rudPersons:S.persons;
+  // Schminker-Auswahl: primär Personen mit Rolle "rud", sonst als Fallback "betreuer"
+  const rudOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='rud');});
+  const betreuerOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='betreuer');});
+  const allPersons = rudOnly.length ? rudOnly : (betreuerOnly.length ? betreuerOnly : S.persons);
   const personChips=allPersons.map(pr=>{
     const sel=p&&(p.persons||[]).includes(pr.id);
     return '<span onclick="toggleModalChip(this)" data-pid="'+pr.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:20px;font-size:12px;margin:3px;cursor:pointer;'+(sel?'background:#A32D2D;color:#fff;border:1px solid #A32D2D;':'background:var(--bg3);color:var(--text);border:1px solid var(--border);')+'">'+escHtml((pr.vorname||'')+(pr.nachname?' '+pr.nachname:''))+'</span>';
