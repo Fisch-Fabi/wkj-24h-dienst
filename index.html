@@ -1456,7 +1456,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.1.5'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.1.8'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1567,6 +1567,55 @@ function migrate(data){
   return data;
 }
 
+async function pbFetchEventData(){
+  // Lädt die Event-Daten (eventmgr) auf beliebigen Geräten via reader-Token
+  const DEFAULT_PB_URL = 'https://wkj-24h-dienst.duckdns.org';
+  const DEFAULT_READER_EMAIL = 'reader@wkj.local';
+  const DEFAULT_READER_PASS = 'WKJ-reader-2025!';
+  const url = localStorage.getItem('pb-url') || DEFAULT_PB_URL;
+  try{
+    const readerEmail = localStorage.getItem('pb-reader-email') || DEFAULT_READER_EMAIL;
+    const readerPass  = localStorage.getItem('pb-reader-pass')  || DEFAULT_READER_PASS;
+    // 1. Als reader einloggen
+    const authRes = await fetch(url+'/api/collections/wkj_app_clients/auth-with-password',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({identity:readerEmail, password:readerPass})
+    });
+    if(!authRes.ok) return false;
+    const authData = await authRes.json();
+    const token = authData.token;
+    if(!token) return false;
+    // 2. eventmgr-Records abrufen
+    const evRes = await fetch(url+'/api/collections/eventmgr/records?perPage=1&sort=-updated',{
+      headers:{'Authorization': token}
+    });
+    if(!evRes.ok) return false;
+    const evData = await evRes.json();
+    if(evData.items && evData.items.length){
+      const rec = evData.items[0];
+      const payload = rec.data || {};
+      // Nur übernehmen wenn Record-Daten vorhanden
+      if(Object.keys(payload).length){
+        localStorage.setItem('eventmgr', JSON.stringify(payload));
+        localStorage.setItem('pb-record-id', rec.id);
+        localStorage.setItem('pb-url', url);
+        S = payload;
+        if(!S.version || S.version < CURRENT_VERSION){
+          S = migrate(S);
+          localStorage.setItem('eventmgr', JSON.stringify(S));
+        }
+        // Globale Variablen für Live-Sync setzen
+        _pbUrl = url;
+        _pbRecordId = rec.id;
+        _pbToken = token; // Reader-Token für SSE-Subscribe + Schreibzugriff
+        pbSetStatus('ok','Verbunden ✓ · Live-Sync aktiv');
+        return true;
+      }
+    }
+  } catch(e){ console.warn('pbFetchEventData Fehler:', e); }
+  return false;
+}
+
 function load(){
   try{
     const d=localStorage.getItem('eventmgr');
@@ -1590,7 +1639,19 @@ function load(){
   updateClock();
   setInterval(updateClock, 30000);
   renderAll();
-  setTimeout(pbAutoConnect, 300);
+  // Für Admins: volle PocketBase-Verbindung (mit Superuser-Token für Schreibzugriff)
+  // Für andere Rollen: Eventdaten via reader-Token laden + Live-Sync (nur lesend)
+  if(AUTH.role === 'admin'){
+    setTimeout(pbAutoConnect, 300);
+  } else {
+    setTimeout(async ()=>{
+      const ok = await pbFetchEventData();
+      if(ok){
+        renderAll();
+        pbSubscribe(); // Live-Sync aktivieren
+      }
+    }, 300);
+  }
 }
 function save(){
   try{
