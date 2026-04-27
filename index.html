@@ -1543,7 +1543,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.4.2'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.4.5'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -3160,9 +3160,6 @@ function openEinsatzModal(id){
   openModal('<h2>'+(id?'Einsatz bearbeiten':'Neuer Einsatz')+'</h2>'+
     '<div id="m-einsatz-wrap" class="'+initialWide+'">'+
     '<div id="m-einsatz-col-left">'+
-    dayField+
-    '<div class="form-row"><label>Fahrzeuge <span style="font-size:11px;color:#888;font-weight:400;">(mehrere möglich)</span></label>'+
-    '<div id="m-veh-wrap" style="display:flex;flex-wrap:wrap;padding:4px 0;">'+(vehCheckboxes||'<span style="color:#888;font-size:12px;">Keine Fahrzeuge angelegt</span>')+'</div></div>'+
     '<div class="form-row"><label>Status</label><select id="m-status">'+
     '<option value="in_planung"'+(b.status==='in_planung'?' selected':'')+'>🟠 In Planung</option>'+
     '<option value="geplant"'+((!b.status||b.status==='geplant')?' selected':'')+'>🟢 Geplant</option>'+
@@ -3170,6 +3167,9 @@ function openEinsatzModal(id){
     '<option value="abgeschlossen"'+(b.status==='abgeschlossen'?' selected':'')+'>⚫ Abgeschlossen</option>'+
     '<option value="abgebrochen"'+(b.status==='abgebrochen'?' selected':'')+'>🔴 Abgebrochen</option>'+
     '</select></div>'+
+    '<div class="form-row"><label>Fahrzeuge <span style="font-size:11px;color:#888;font-weight:400;">(mehrere möglich)</span></label>'+
+    '<div id="m-veh-wrap" style="display:flex;flex-wrap:wrap;padding:4px 0;">'+(vehCheckboxes||'<span style="color:#888;font-size:12px;">Keine Fahrzeuge angelegt</span>')+'</div></div>'+
+    dayField+
     '<div class="form-row form-row-2"><div><label>Start</label><input type="time" id="m-start" value="'+b.start+'"></div>'+
     '<div><label>Ende</label><input type="time" id="m-end" value="'+b.end+'"></div></div>'+
     '<div class="form-row form-row-2"><div><label>Ort</label><input type="text" id="m-ort" value="'+escHtml(b.ort||'')+'"></div>'+
@@ -3369,7 +3369,7 @@ function renderRudPendingSection(){
   const p = patients[idx] || patients[0];
 
   html += '<div id="m-rud-pending-editor">'+
-    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname *</label>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname</label>'+
       '<input type="text" id="mrud-pending-name" value="'+escHtml(p.name||'')+'" oninput="updatePendingRudField(\'name\',this.value)" style="font-size:13px;"></div>'+
     '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Verletzungsmuster</label>'+
       '<textarea id="mrud-pending-verletzung" oninput="updatePendingRudField(\'verletzung\',this.value)" style="font-size:12px;min-height:60px;" placeholder="z.B. offene Fraktur Unterschenkel rechts, ...">'+escHtml(p.verletzung||'')+'</textarea></div>'+
@@ -3436,39 +3436,14 @@ function syncPendingFromDOM(){
 function renderRudPatientEditor(einsatz, p){
   const isNew = !p;
   const pid = p ? p.id : '';
-  // Schminker-Auswahl
-  const rudOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='rud');});
-  const betreuerOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='betreuer');});
-  const allPersons = rudOnly.length ? rudOnly : (betreuerOnly.length ? betreuerOnly : S.persons);
-  const personChips = allPersons.map(pr=>{
-    const sel = p && (p.persons||[]).includes(pr.id);
-    return '<span onclick="toggleModalChip(this)" data-pid="'+pr.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:14px;font-size:11px;margin:2px;cursor:pointer;'+(sel?'background:#A32D2D;color:#fff;border:1px solid #A32D2D;':'background:#fff;color:var(--text);border:1px solid #ddd;')+'">'+escHtml((pr.vorname||'')+(pr.nachname?' '+pr.nachname:''))+'</span>';
-  }).join('');
-
-  // Hinweis-Box wenn Schminkzeiten gesetzt sind (nur Anzeige)
-  let schminkInfo = '';
-  if(p && (p.schminkStart || p.schminkEnd)){
-    schminkInfo = '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#7A3000;">'+
-      '🟠 <b>Schminkzeit:</b> '+escHtml(p.schminkStart||'?')+' – '+escHtml(p.schminkEnd||'?')+
-      (p.schminkplatz?' · '+escHtml(p.schminkplatz):'')+
-      '<div style="font-size:10px;color:#888;margin-top:2px;font-style:italic;">Bearbeitung nur im Bereich „RUD"</div>'+
-    '</div>';
-  } else if(!isNew){
-    schminkInfo = '<div style="background:#F8F8F8;border:1px dashed #ccc;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#888;font-style:italic;">'+
-      '🟠 Schminkzeiten noch nicht gesetzt – kann im Bereich „RUD" ergänzt werden.'+
-    '</div>';
-  }
 
   return '<input type="hidden" id="mrud-pid" value="'+escHtml(pid)+'">'+
     '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname</label>'+
       '<input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'" style="font-size:13px;"></div>'+
-    schminkInfo+
     '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Verletzungsmuster</label>'+
       '<textarea id="mrud-verletzung" style="font-size:12px;min-height:60px;">'+escHtml(p?p.verletzung||'':'')+'</textarea></div>'+
     '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Unfallhergang / Beschreibung</label>'+
       '<textarea id="mrud-unfall" style="font-size:12px;min-height:60px;">'+escHtml(p?p.unfallhergang||'':'')+'</textarea></div>'+
-    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">RUD-Team (Schminker)</label>'+
-      '<div style="border:1px solid #ddd;border-radius:5px;padding:5px;min-height:32px;background:#fff;" id="mrud-chips">'+(personChips||'<span style="font-size:11px;color:#888;font-style:italic;">Keine RUD-Personen angelegt</span>')+'</div></div>'+
     '<div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px dashed #e8d8a0;padding-top:8px;">'+
       (isNew?'':'<button class="btn btn-sm btn-danger" onclick="deleteRudPatientFromEinsatz('+einsatz.id+',\''+pid+'\')" style="font-size:11px;padding:3px 8px;margin-right:auto;">🗑️ Löschen</button>')+
       '<button class="btn btn-sm btn-primary" onclick="saveRudPatientInline('+einsatz.id+')" style="font-size:11px;padding:4px 14px;background:#7a4800;border-color:#7a4800;">'+(isNew?'+ Patient hinzufügen':'✓ Übernehmen')+'</button>'+
@@ -3534,7 +3509,7 @@ function saveRudPatientInline(einsatzId){
     transferStart: existing ? (existing.transferStart||'') : '',
     transferEnd: existing ? (existing.transferEnd||'') : '',
     transferNach: existing ? (existing.transferNach||'') : '',
-    persons: [...document.querySelectorAll('#mrud-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean),
+    persons: existing ? (existing.persons||[]) : [],
     verletzung: document.getElementById('mrud-verletzung').value.trim(),
     unfallhergang: document.getElementById('mrud-unfall')?.value.trim() || ''
   };
