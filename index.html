@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#1F3864">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="24h-Dienst WKJ">
+<meta name="apple-mobile-web-app-title" content="Event-Manager">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<title>24h-Dienst</title>
+<title>Event-Manager</title>
 <style>
 :root{
   --bg:#f0f2f5;--bg2:#fff;--bg3:#fafafa;--text:#222;--text2:#666;--border:#e0e0e0;
@@ -109,6 +109,71 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 .p-filter-chip:hover{background:var(--bg2);}
 .p-filter-chip.active{background:#1F3864;color:#fff;border-color:#1F3864;}
 
+/* RUD Timeline mit Fahrzeug-Lanes */
+.rtl-time-axis{position:relative;height:18px;border-bottom:1px solid #ccc;margin-bottom:6px;margin-left:140px;min-width:600px;}
+.rtl-tick{position:absolute;font-size:10px;color:#888;transform:translateX(-50%);top:0;}
+.rtl-tick::after{content:'';position:absolute;bottom:-4px;left:50%;width:1px;height:4px;background:#ccc;}
+.rtl-veh-lane{position:relative;border-top:1px solid #ddd;padding:8px 0;min-width:600px;display:flex;align-items:stretch;}
+.rtl-veh-lane:first-of-type{border-top:none;}
+.rtl-veh-label{flex:0 0 130px;padding-right:10px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;text-align:right;border-right:2px solid #e5e5e5;}
+.rtl-veh-name{font-size:13px;font-weight:600;}
+.rtl-veh-type{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.3px;margin-top:2px;}
+.rtl-lane-rows{flex:1;padding-left:10px;}
+.rtl-row{position:relative;height:42px;margin-bottom:4px;display:flex;align-items:center;}
+.rtl-row:last-child{margin-bottom:0;}
+.rtl-row-label{flex:0 0 80px;font-size:10px;color:#888;text-align:right;padding-right:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
+.rtl-row-bg{flex:1;position:relative;height:42px;background:#fff;border:1px solid #eee;border-radius:4px;}
+.rtl-bar{position:absolute;border-radius:4px;font-size:11px;color:#fff;padding:0 6px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;font-weight:500;cursor:pointer;text-overflow:ellipsis;box-shadow:0 1px 2px rgba(0,0,0,0.1);}
+.rtl-bar.einsatz-trauma{background:#A32D2D;height:34px;top:4px;}
+.rtl-bar.einsatz-intern{background:#0C447C;height:34px;top:4px;}
+.rtl-bar.einsatz-other{background:#5F5E5A;height:34px;top:4px;}
+.rtl-bar.schmink{background:#7a4800;font-size:10px;}
+.rtl-bar:hover{filter:brightness(1.1);}
+.rtl-bar small{font-weight:400;opacity:0.85;margin-left:4px;}
+.rtl-empty{padding:30px;text-align:center;color:#888;font-size:12px;font-style:italic;}
+.rtl-empty-row{color:#bbb;font-size:11px;text-align:center;line-height:42px;font-style:italic;}
+.pat-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;display:inline-block;}
+.pat-tag.trauma{background:#FCEBEB;color:#A32D2D;}
+.pat-tag.intern{background:#E6F1FB;color:#0C447C;}
+.day-badge{font-size:10px;background:#1F3864;color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:6px;}
+.day-badge.so{background:#27500A;}
+
+/* RUD Einsatz-Karten (neues Design) */
+.rud-einsatz-card{background:#fff;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;overflow:hidden;display:flex;}
+.rud-einsatz-card .farbleiste{flex:0 0 6px;}
+.rud-einsatz-card.trauma .farbleiste{background:#A32D2D;}
+.rud-einsatz-card.intern .farbleiste{background:#0C447C;}
+.rud-einsatz-card.other .farbleiste{background:#1F3864;}
+.rud-einsatz-content{flex:1;padding:14px 16px;}
+.rud-einsatz-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+.rud-einsatz-title{font-size:15px;color:#1F3864;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rud-einsatz-loc{font-size:12px;color:#888;margin-top:3px;}
+.rud-einsatz-veh{font-size:11px;color:#555;margin-top:2px;font-weight:500;}
+.rud-einsatz-time{font-size:13px;color:#444;font-weight:500;background:#f5f5f5;padding:4px 12px;border-radius:6px;white-space:nowrap;}
+
+/* Patient-Karten im Grid */
+.rud-pat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-top:8px;}
+.rud-pat-card{background:#fafafa;border:1px solid #e5e5e5;border-radius:6px;padding:10px 12px;}
+.rud-pat-card.trauma{border-left:3px solid #A32D2D;}
+.rud-pat-card.intern{border-left:3px solid #0C447C;}
+.rud-pat-card.other{border-left:3px solid #5F5E5A;}
+.rud-pat-name{font-weight:600;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px;gap:8px;}
+.rud-pat-name .name-text{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.rud-pat-meta{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;color:#000;line-height:1.4;}
+.rud-pat-meta b{color:#000;font-weight:600;}
+.rud-pat-injury{margin-top:6px;padding-top:6px;border-top:1px dashed #ddd;font-size:13px;color:#000;line-height:1.4;}
+.rud-pat-injury b{color:#000;font-weight:600;}
+.rud-pat-injury .rud-pat-section{margin-bottom:4px;}
+.rud-pat-injury .rud-pat-section:last-child{margin-bottom:0;}
+.rud-pat-actions{display:flex;gap:4px;flex-shrink:0;}
+.rud-btn-mini{font-size:11px;padding:3px 7px;background:#fff;border:1px solid #ddd;border-radius:3px;cursor:pointer;color:#444;}
+.rud-btn-mini:hover{background:#f0f0f0;}
+.rud-btn-mini.danger:hover{background:#FCEBEB;color:#A32D2D;border-color:#f09595;}
+.rud-add-pat{margin-top:10px;text-align:right;}
+.rud-add-pat button{font-size:12px;padding:5px 12px;background:#fff;border:1px solid #1F3864;color:#1F3864;border-radius:4px;cursor:pointer;font-weight:500;}
+.rud-add-pat button:hover{background:#1F3864;color:#fff;}
+.rud-pat-empty{text-align:center;padding:14px;font-size:12px;color:#888;font-style:italic;background:#fafafa;border-radius:6px;}
+
 /* ── Checklist ── */
 .check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
 .check-item:last-child{border-bottom:none;}
@@ -117,7 +182,14 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 /* ── Modal ── */
 .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;}
 .modal-backdrop.open{display:flex;}
-.modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;transition:max-width 0.25s ease;}
+.modal.wide{max-width:980px;}
+.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.modal-2col > div{min-width:0;}
+@media(max-width:768px){
+  .modal.wide{max-width:95%;}
+  .modal-2col{grid-template-columns:1fr;gap:0;}
+}
 .modal h2{font-size:16px;font-weight:500;margin-bottom:1rem;}
 .form-row{margin-bottom:12px;}
 .form-row label{display:block;font-size:12px;color:var(--text);margin-bottom:4px;}
@@ -294,7 +366,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
         <path d="M24 10L12 16v10c0 7 5.4 13.5 12 15 6.6-1.5 12-8 12-15V16L24 10z" fill="white" fill-opacity="0.9"/>
         <path d="M21 24l2 2 4-4" stroke="#1F3864" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1>24h-Dienst WKJ</h1>
+      <h1 id="login-event-name">Event-Manager</h1>
     </div>
     <div id="login-pb-status" style="display:none;font-size:11px;color:#888;text-align:center;margin-bottom:8px;">⏳ Verbinde mit Server...</div>
     <div class="login-error" id="login-error">Benutzername oder Passwort falsch.</div>
@@ -313,8 +385,8 @@ body:not(.is-admin) .admin-only{display:none!important;}
 <!-- ── Sidebar ── -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <h1>24h-Dienst</h1>
-    <p>Verwaltungs-Tool</p>
+    <h1 id="sidebar-event-name">Event-Manager</h1>
+    <p id="sidebar-event-sub">Verwaltungs-Tool</p>
   </div>
   <nav class="sidebar-nav">
 
@@ -458,7 +530,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
               <div>
                 <div id="um-username" style="font-weight:500;font-size:13px;color:var(--text);">Gast</div>
                 <div id="um-role-badge" style="margin-top:3px;"></div>
-                <div id="um-eventname" style="font-size:11px;color:var(--text2);margin-top:1px;">24h-Dienst</div>
+                <div id="um-eventname" style="font-size:11px;color:var(--text2);margin-top:1px;">Event</div>
               </div>
             </div>
           </div>
@@ -579,7 +651,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
             <button class="btn btn-primary btn-sm" onclick="saveInfos()">Speichern</button>
           </div>
         </div>
-        <div class="form-row"><label>Eventname</label><input type="text" id="info-name" placeholder="z.B. 24h-Dienst 2025"></div>
+        <div class="form-row"><label>Eventname</label><input type="text" id="info-name" placeholder="z.B. 24h-Dienst 2026, Sommerfest, Übung..."></div>
         <div class="form-row">
           <label>Von</label>
           <div style="display:flex;gap:8px;">
@@ -678,14 +750,17 @@ body:not(.is-admin) .admin-only{display:none!important;}
     <div class="page" id="page-rud">
       <div class="card" style="padding:0.75rem 1rem;">
         <div class="card-header">
-          <span class="card-title">Timeline</span>
-          <div id="rud-legend" style="display:flex;gap:14px;flex-wrap:wrap;"></div>
+          <span class="card-title">📊 Timeline – Fahrzeuge / Einsätze / RUD</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div id="rud-day-tabs" style="display:flex;gap:4px;background:#eee;padding:4px;border-radius:8px;"></div>
+          </div>
         </div>
-        <div style="overflow-x:auto;"><canvas id="rud-gantt"></canvas></div>
+        <div id="rud-timeline-container" style="overflow-x:auto;background:#fafafa;border-radius:6px;padding:8px 10px;"></div>
+        <div id="rud-legend" style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 12px 0;font-size:11px;color:#666;border-top:1px dashed #e0e0e0;margin-top:8px;"></div>
       </div>
       <div class="card">
         <div class="card-header">
-          <span class="card-title">🎭 RUD-Einsatzplanung</span>
+          <span class="card-title">🎭 Einsätze &amp; Patienten</span>
           <button id="btn-rud-pdf" class="btn btn-sm" onclick="exportRudPDF()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
         </div>
         <div id="rud-list"></div>
@@ -1022,6 +1097,16 @@ function initAuth(){
   // Set login version
   const lv = document.getElementById('login-version');
   if(lv) lv.textContent = '1.0';
+  // Eventname früh setzen (aus localStorage falls vorhanden)
+  try{
+    const stored = JSON.parse(localStorage.getItem('eventmgr')||'{}');
+    if(stored && stored.infos){
+      // S temporär mit infos befüllen damit applyEventBranding funktioniert
+      if(typeof S === 'undefined' || !S){ window.S = {}; }
+      if(!S.infos) S.infos = stored.infos;
+      applyEventBranding();
+    }
+  }catch(e){}
   // Check session
   try{
     const sess = JSON.parse(sessionStorage.getItem('wkj-auth')||'null');
@@ -1251,6 +1336,7 @@ function openAddUser(){
 }
 
 function addUser(){
+  if(AUTH.role!=='admin'){alert('Nur Administratoren dürfen Benutzer anlegen.'); return;}
   const display = document.getElementById('nu-display').value.trim();
   const name = document.getElementById('nu-name').value.trim().toLowerCase();
   const pass = document.getElementById('nu-pass').value;
@@ -1266,6 +1352,7 @@ function addUser(){
 }
 
 function deleteUser(username){
+  if(AUTH.role!=='admin'){alert('Nur Administratoren dürfen Benutzer löschen.'); return;}
   confirmModal('Benutzer "'+username+'" wirklich löschen?', function(){
     let users = getUsers().filter(u=>u.username!==username);
     saveUsers(users);
@@ -1455,8 +1542,8 @@ function saveOwnPassword(){
 }
 
 let selectedEinsatzId = null;
-const CURRENT_VERSION = 2; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.1.8'; // App-Version – bei jeder Änderungsrunde erhöhen
+const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
+const APP_VERSION = '3.4.2'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1564,7 +1651,114 @@ function migrate(data){
     // Bestehende Fahrzeuge als KTW markieren
     (data.vehicles||[]).forEach(v=>{ if(!data.vehicleTypes[v]) data.vehicleTypes[v]='ktw'; });
   }
+  // Version 2 → 3: Einsatz.veh (string) → Einsatz.vehs (array)
+  // Doppelt angelegte Einsätze (gleiche Zeit/Ort/Art mit unterschiedlichem veh) zusammenführen
+  // WICHTIG: Auch rudEinsaetze, dienstplaene etc. werden auf die gemergte ID umgemappt
+  if(v < 3){
+    data.version = 3;
+    const einsaetze = data.einsaetze || [];
+    // idMap: alte Einsatz-ID → neue Einsatz-ID (nach Merge)
+    const idMap = {};
+    const merged = {};
+    einsaetze.forEach(e=>{
+      const key = (e.start||'')+'|'+(e.end||'')+'|'+(e.ort||'')+'|'+(e.art||'')+'|'+(e.desc||'').slice(0,40);
+      if(!merged[key]){
+        const copy = Object.assign({}, e);
+        copy.vehs = e.veh ? [e.veh] : [];
+        delete copy.veh;
+        merged[key] = copy;
+        idMap[e.id] = copy.id; // Self-Mapping
+      } else {
+        // Gleicher Einsatz – nur Fahrzeug ergänzen
+        if(e.veh && !merged[key].vehs.includes(e.veh)){
+          merged[key].vehs.push(e.veh);
+        }
+        idMap[e.id] = merged[key].id; // Alte ID → erste/Master-ID
+      }
+    });
+    data.einsaetze = Object.values(merged);
+
+    // RUD-Einsätze: einsatzId neu mappen + Patienten der zusammengelegten Einsätze mergen
+    if(Array.isArray(data.rudEinsaetze)){
+      const rudMerged = {};
+      data.rudEinsaetze.forEach(r=>{
+        const newId = idMap[r.einsatzId] !== undefined ? idMap[r.einsatzId] : r.einsatzId;
+        if(!rudMerged[newId]){
+          rudMerged[newId] = {einsatzId:newId, patients:[]};
+        }
+        // Patienten zusammenführen, Duplikate vermeiden (gleicher Name)
+        (r.patients||[]).forEach(p=>{
+          const exists = rudMerged[newId].patients.some(x=>(x.name||'')===(p.name||'') && (x.schminkStart||'')===(p.schminkStart||''));
+          if(!exists) rudMerged[newId].patients.push(p);
+        });
+      });
+      data.rudEinsaetze = Object.values(rudMerged);
+    }
+
+    // Dienstplaene: keys wie "einsatzId-..." remappen falls nötig
+    // (wird hier nicht gebraucht da dienstplaene nach Fahrzeug/Turnus organisiert sind)
+  }
+  // Reparatur: verwaiste rudEinsaetze (verweisen auf gelöschte Einsätze) reattachen
+  // Läuft bei jedem Load – heilt auch bereits migrierte Datenbestände
+  repairOrphanedRud(data);
   return data;
+}
+
+// Findet rudEinsaetze die auf gelöschte Einsatz-IDs verweisen und versucht sie zu reattachen
+function repairOrphanedRud(data){
+  if(!Array.isArray(data.rudEinsaetze) || !Array.isArray(data.einsaetze)) return;
+
+  // Auto-Migration: Einsätze die Patient-Daten haben aber kein rudActive-Feld → als RUD-aktiv markieren
+  // (damit bestehende Daten nach Update der App nicht plötzlich verschwinden)
+  const einsatzeMitPatienten = new Set();
+  data.rudEinsaetze.forEach(r=>{
+    if((r.patients||[]).length > 0) einsatzeMitPatienten.add(r.einsatzId);
+  });
+  data.einsaetze.forEach(e=>{
+    if(e.rudActive === undefined && einsatzeMitPatienten.has(e.id)){
+      e.rudActive = true;
+    }
+  });
+
+  const validIds = new Set(data.einsaetze.map(e=>e.id));
+  const orphans = data.rudEinsaetze.filter(r=>!validIds.has(r.einsatzId));
+  if(!orphans.length) return; // alles gut
+
+  // Für jedes verwaiste rudEinsatz-Objekt schauen wir ob es einen passenden Einsatz gibt
+  // (gleiche Zeit/Ort sollte über die zusammengeführten Einsätze passen)
+  // Da wir die Original-Daten nicht mehr haben, attachen wir an den nächstpassenden Einsatz
+  // oder konsolidieren auf existierenden rudEinsatz mit gleicher Master-ID
+  const survivingMap = {};
+  data.rudEinsaetze.filter(r=>validIds.has(r.einsatzId)).forEach(r=>{
+    survivingMap[r.einsatzId] = r;
+  });
+
+  orphans.forEach(orphan=>{
+    // Heuristik: finde Einsatz dessen ID == orphan.einsatzId-1, ...-2 etc.
+    // (typischerweise wurde beim Merge die niedrigste ID behalten)
+    let target = null;
+    for(let delta=1; delta<=20; delta++){
+      const candId = orphan.einsatzId - delta;
+      if(validIds.has(candId)){ target = candId; break; }
+    }
+    if(target === null){
+      // Fallback: ersten Einsatz nehmen
+      target = data.einsaetze[0]?.id;
+    }
+    if(target === null || target === undefined) return;
+
+    if(!survivingMap[target]){
+      survivingMap[target] = {einsatzId:target, patients:[]};
+    }
+    (orphan.patients||[]).forEach(p=>{
+      const exists = survivingMap[target].patients.some(x=>(x.name||'')===(p.name||'') && (x.schminkStart||'')===(p.schminkStart||''));
+      if(!exists) survivingMap[target].patients.push(p);
+    });
+  });
+
+  // rudEinsaetze neu zusammensetzen: nur überlebende + reparierte
+  data.rudEinsaetze = Object.values(survivingMap);
+  console.log('[Repair] '+orphans.length+' verwaiste rudEinsaetze reattached');
 }
 
 async function pbFetchEventData(){
@@ -1624,6 +1818,15 @@ function load(){
       if(!data.version || data.version < CURRENT_VERSION){
         data=migrate(data);
         localStorage.setItem('eventmgr',JSON.stringify(data));
+      } else {
+        // Auch bei aktueller Version: Repair für verwaiste RUD-Daten ausführen
+        if(typeof repairOrphanedRud === 'function'){
+          const before = JSON.stringify(data.rudEinsaetze||[]);
+          repairOrphanedRud(data);
+          if(JSON.stringify(data.rudEinsaetze||[]) !== before){
+            localStorage.setItem('eventmgr',JSON.stringify(data));
+          }
+        }
       }
       S=data;
     }
@@ -1668,7 +1871,7 @@ function exportData(){
   const a=document.createElement('a');
   const date=new Date();
   const stamp=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
-  a.href=url; a.download='24h-dienst-daten-'+stamp+'.json';
+  const eventSlug = ((S.infos&&S.infos.name)?S.infos.name:'event').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'event'; a.href=url; a.download=eventSlug+'-daten-'+stamp+'.json';
   a.click(); URL.revokeObjectURL(url);
 }
 
@@ -2108,6 +2311,24 @@ function isTransport(v){return vTyp(v)==='transport';}
 function toOff(t,base=10){const[h,m]=t.split(':').map(Number);let v=h+m/60-base;if(v<0)v+=24;return v;}
 function durStr(s,e){let so=toOff(s),eo=toOff(e);if(eo<=so)eo+=24;const d=eo-so,h=Math.floor(d),m=Math.round((d-h)*60);return m>0?h+'h '+m+'m':h+'h';}
 function uid(){return++S.nextId;}
+// Backward-compat: lese Fahrzeuge eines Einsatzes (alt: e.veh = string, neu: e.vehs = array)
+function getEinsatzVehs(e){
+  if(!e) return [];
+  if(Array.isArray(e.vehs)) return e.vehs.filter(Boolean);
+  if(e.veh) return [e.veh];
+  return [];
+}
+// Erzeugt HTML mit Fahrzeug-Badges für einen Einsatz (mehrere Fahrzeuge möglich)
+function vehBadgesHtml(e){
+  const vehs = getEinsatzVehs(e);
+  if(!vehs.length) return '<span class="badge" style="background:#f0f0f0;color:#888;">–</span>';
+  return vehs.map(v=>'<span class="badge" style="background:'+clOf(v)+';color:'+cOf(v)+';margin-right:3px;">'+escHtml(v)+'</span>').join('');
+}
+// Lesbare Fahrzeug-Liste als Text (z.B. für Druck/PDF)
+function vehListText(e){
+  const vehs = getEinsatzVehs(e);
+  return vehs.length ? vehs.join(' + ') : '–';
+}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function statusBadge(s){
   const map={
@@ -2172,7 +2393,7 @@ function toggleUserMenu(){
   if(userMenuOpen) updateUserMenu();
 }
 function updateUserMenu(){
-  const name=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  const name=S.infos&&S.infos.name?S.infos.name:'Event';
   const el=document.getElementById('um-eventname');
   if(el) el.textContent=name;
   // username and role badge are handled by applyRoleUI()
@@ -2491,7 +2712,7 @@ function openSettingsSection(section){
       '</div>'+
       '<div class="settings-row">'+
         '<div class="settings-row-label">Name</div>'+
-        '<div style="font-size:13px;color:var(--text2);">24h-Dienst Verwaltungs-Tool · WKJ</div>'+
+        '<div style="font-size:13px;color:var(--text2);">Event-Manager · Verwaltungs-Tool</div>'+
       '</div>'+
       '<div class="settings-row">'+
         '<div class="settings-row-label">Angemeldet als</div>'+
@@ -2529,6 +2750,7 @@ function closeInlineAddUser(){
 }
 
 function addUserInline(){
+  if(AUTH.role!=='admin'){alert('Nur Administratoren dürfen Benutzer anlegen.'); return;}
   const display = document.getElementById('nu-display').value.trim();
   const name = document.getElementById('nu-name').value.trim().toLowerCase();
   const pass = document.getElementById('nu-pass').value;
@@ -2553,6 +2775,8 @@ function confirmDeleteUser(username){
 
 function openModal(html){
   const mc=document.getElementById('modal-content');
+  // Reset wide class - jedes Modal startet normal breit
+  mc.classList.remove('wide');
   mc.innerHTML=html;
   document.getElementById('modal-backdrop').classList.add('open');
   mc._keyHandler=function(e){
@@ -2614,7 +2838,7 @@ function renderDashboard(){
 
   function einsatzRow(b){
     const tr=document.createElement('tr');
-    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+    tr.innerHTML='<td>'+vehBadgesHtml(b)+'</td>'+
       '<td style="font-size:12px;white-space:nowrap;">'+b.start+'</td><td style="font-size:12px;white-space:nowrap;">'+b.end+'</td>'+
       '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
       '<td style="white-space:nowrap;"><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
@@ -2679,7 +2903,7 @@ function renderDashboard(){
 
   function einsatzRowBeendet(b){
     const tr=document.createElement('tr');
-    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+    tr.innerHTML='<td>'+vehBadgesHtml(b)+'</td>'+
       '<td style="font-size:12px;white-space:nowrap;">'+b.start+'</td><td style="font-size:12px;white-space:nowrap;">'+b.end+'</td>'+
       '<td style="font-size:12px;">'+escHtml(b.ort||'–')+'</td>'+
       '<td style="white-space:nowrap;"><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
@@ -2733,6 +2957,23 @@ function renderInfos(){
   document.getElementById('view-ort-val').textContent=f.ort||'–';
   document.getElementById('view-verantwortlich-val').textContent=f.verantwortlich||'–';
   document.getElementById('view-notizen-val').textContent=f.notizen||'–';
+  applyEventBranding();
+}
+
+// Aktualisiert alle Stellen wo der Eventname angezeigt wird (Sidebar, Tab-Title, Login-Header)
+function applyEventBranding(){
+  const eventName = (S.infos && S.infos.name) ? S.infos.name : 'Event-Manager';
+  // Sidebar
+  const sb = document.getElementById('sidebar-event-name');
+  if(sb) sb.textContent = eventName;
+  // Login
+  const lg = document.getElementById('login-event-name');
+  if(lg) lg.textContent = eventName;
+  // Browser-Tab-Title
+  document.title = eventName;
+  // User-Menü
+  const um = document.getElementById('um-eventname');
+  if(um) um.textContent = eventName;
 }
 
 function saveInfos(){
@@ -2763,7 +3004,7 @@ function renderVehicles(){
     const typ = vTyp(v);
     const color = COLORS[i%8];
     const colorL = COLORS_L[i%8];
-    const einsatzCount = S.einsaetze.filter(e=>e.veh===v).length;
+    const einsatzCount = S.einsaetze.filter(e=>getEinsatzVehs(e).includes(v)).length;
     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);margin-bottom:8px;">'+
       '<div style="width:12px;height:36px;border-radius:3px;background:'+color+';flex-shrink:0;"></div>'+
       '<div style="flex:1;min-width:0;">'+
@@ -2805,7 +3046,13 @@ function saveEditVehicle(i){
     if(!S.vehicleTypes) S.vehicleTypes={};
     S.vehicleTypes[newName] = newTyp;
     delete S.vehicleTypes[oldName];
-    S.einsaetze.forEach(b=>{ if(b.veh===oldName) b.veh=newName; });
+    S.einsaetze.forEach(b=>{
+      if(Array.isArray(b.vehs)){
+        b.vehs = b.vehs.map(v => v===oldName ? newName : v);
+      } else if(b.veh===oldName){
+        b.veh=newName;
+      }
+    });
     if(S.dienstplaene && S.dienstplaene[oldName]){
       S.dienstplaene[newName]=S.dienstplaene[oldName];
       delete S.dienstplaene[oldName];
@@ -2820,14 +3067,23 @@ function saveEditVehicle(i){
 function deleteVehicleConfirm(i){
   if(!guardWrite('fuhrpark')) return;
   const v = S.vehicles[i];
-  confirmModal('Fahrzeug "'+v+'" und alle zugehörigen Einsätze werden gelöscht.',function(){
+  confirmModal('Fahrzeug "'+v+'" wird gelöscht. Einsätze die nur diesem Fahrzeug zugewiesen sind werden mitgelöscht.',function(){
     S.vehicles.splice(i,1);
     if(S.vehicleTypes) delete S.vehicleTypes[v];
-    S.einsaetze=S.einsaetze.filter(b=>b.veh!==v);
+    // Aus allen Einsätzen das Fahrzeug entfernen
+    S.einsaetze.forEach(b=>{
+      if(Array.isArray(b.vehs)){
+        b.vehs = b.vehs.filter(x => x !== v);
+      } else if(b.veh === v){
+        b.vehs = []; b.veh = '';
+      }
+    });
+    // Einsätze ohne Fahrzeug entfernen
+    S.einsaetze = S.einsaetze.filter(b => getEinsatzVehs(b).length > 0);
     save(); renderAll();
   });
 }
-function addVehicle(){openModal('<h2>Neues Fahrzeug</h2>'+
+function addVehicle(){if(!guardWrite('fuhrpark')) return; openModal('<h2>Neues Fahrzeug</h2>'+
   '<div class="form-row"><label>Name</label><input type="text" id="m-vname" placeholder="z.B. WK573"></div>'+
   '<div class="form-row"><label>Typ</label><select id="m-vtyp">'+
   '<option value="ktw">🚑 KTW – Einsatzfahrzeug</option>'+
@@ -2860,12 +3116,13 @@ function renderEinsaetze(){
     const tr=document.createElement('tr');
     tr.id='einsatz-row-'+b.id;
     const isSelected = b.id === selectedEinsatzId;
-    tr.style.cssText = isSelected ? 'background:'+clOf(b.veh)+';outline:2px solid '+cOf(b.veh)+';outline-offset:-1px;transition:background 0.2s;' : 'transition:background 0.2s;';
-    tr.innerHTML='<td><span class="badge" style="background:'+clOf(b.veh)+';color:'+cOf(b.veh)+'">'+escHtml(b.veh)+'</span></td>'+
+    const firstVeh = getEinsatzVehs(b)[0] || '';
+    tr.style.cssText = isSelected ? 'background:'+clOf(firstVeh)+';outline:2px solid '+cOf(firstVeh)+';outline-offset:-1px;transition:background 0.2s;' : 'transition:background 0.2s;';
+    tr.innerHTML='<td>'+vehBadgesHtml(b)+'</td>'+
       '<td>'+statusDropdown(b.id, b.status)+'</td>'+
       '<td>'+b.start+'</td><td>'+b.end+'</td><td style="color:var(--text2);font-size:12px;">'+durStr(b.start,b.end)+'</td>'+
       '<td style="max-width:120px;font-size:12px;color:#185FA5;cursor:pointer;text-decoration:underline dotted;" onclick="showOrtDetail('+b.id+')">'+escHtml(b.ort||'–')+'</td>'+
-      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span>'+(b.rudActive===true?' <span class="badge" title="RUD aktiv" style="background:#FFF1E0;color:#7a4800;font-size:10px;margin-left:4px;">🎭 RUD</span>':'')+'</td>'+
       '<td style="max-width:180px;font-size:12px;color:#555;">'+escHtml(b.desc||'')+'</td>'+
       '<td style="max-width:120px;font-size:12px;color:#555;">'+escHtml(b.asp||'')+'</td>'+
       '</td>'+
@@ -2876,10 +3133,36 @@ function renderEinsaetze(){
 }
 function openEinsatzModal(id){
   if(!guardWrite('einsaetze')) return;
-  const b=id?S.einsaetze.find(x=>x.id===id):{veh:S.vehicles[0]||'',start:'10:00',end:'12:00',desc:''};
-  const opts=S.vehicles.map(v=>'<option value="'+v+'"'+(v===b.veh?' selected':'')+'>'+v+'</option>').join('');
+  // Pending-Buffer leeren wenn neuer Einsatz oder anderer Einsatz wird geöffnet
+  if(!id){
+    _pendingRudPatients = [];
+    _pendingActiveIdx = 0;
+  }
+  const b=id?S.einsaetze.find(x=>x.id===id):{vehs:S.vehicles.length?[S.vehicles[0]]:[],start:'10:00',end:'12:00',desc:''};
+  const selectedVehs = Array.isArray(b.vehs) ? b.vehs : (b.veh?[b.veh]:[]);
+  const vehCheckboxes = S.vehicles.map(v=>{
+    const checked = selectedVehs.includes(v) ? 'checked' : '';
+    return '<label style="display:inline-flex;align-items:center;gap:5px;margin:3px 8px 3px 0;padding:4px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:5px;cursor:pointer;font-size:13px;">'+
+      '<input type="checkbox" class="m-veh-cb" value="'+escHtml(v)+'" '+checked+' style="margin:0;">'+escHtml(v)+
+      '</label>';
+  }).join('');
+  // Tag-Auswahl-Dropdown (nur bei mehrtägigen Events nötig)
+  const eventDays = getEventDays();
+  let dayField = '';
+  if(eventDays.length > 1){
+    // Default: aus existierender e.day oder aus Heuristik
+    const currentDay = b.day !== undefined ? b.day : (id ? einsatzDay(b) : 0);
+    const dayOpts = eventDays.map((d,i)=>'<option value="'+i+'"'+(currentDay===i?' selected':'')+'>'+escHtml(d.label)+'</option>').join('');
+    dayField = '<div class="form-row"><label>Tag</label><select id="m-day">'+dayOpts+'</select></div>';
+  }
+  const initialWide = b.rudActive === true ? 'modal-2col' : '';
+  const sectionDisplay = b.rudActive === true ? '' : 'display:none;';
   openModal('<h2>'+(id?'Einsatz bearbeiten':'Neuer Einsatz')+'</h2>'+
-    '<div class="form-row"><label>Fahrzeug</label><select id="m-veh">'+opts+'</select></div>'+
+    '<div id="m-einsatz-wrap" class="'+initialWide+'">'+
+    '<div id="m-einsatz-col-left">'+
+    dayField+
+    '<div class="form-row"><label>Fahrzeuge <span style="font-size:11px;color:#888;font-weight:400;">(mehrere möglich)</span></label>'+
+    '<div id="m-veh-wrap" style="display:flex;flex-wrap:wrap;padding:4px 0;">'+(vehCheckboxes||'<span style="color:#888;font-size:12px;">Keine Fahrzeuge angelegt</span>')+'</div></div>'+
     '<div class="form-row"><label>Status</label><select id="m-status">'+
     '<option value="in_planung"'+(b.status==='in_planung'?' selected':'')+'>🟠 In Planung</option>'+
     '<option value="geplant"'+((!b.status||b.status==='geplant')?' selected':'')+'>🟢 Geplant</option>'+
@@ -2906,13 +3189,29 @@ function openEinsatzModal(id){
     Array.from({length:20},(_,i)=>'C'+String(i+1).padStart(2,'0')).map(v=>'<option value="'+v+'"'+(b.alarm_c===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'+
     '<div><label>R</label><select id="m-ar"><option value="">–</option>'+
     ['V','G','R'].map(v=>'<option value="'+v+'"'+(b.alarm_r===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'+
+    '<div style="border-top:1px solid #eee;margin:12px 0;padding-top:12px;">'+
+      '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">'+
+        '<input type="checkbox" id="m-rud-active" '+(b.rudActive===true?'checked':'')+' onchange="toggleRudSection('+(id||0)+')" style="width:16px;height:16px;accent-color:#1F3864;cursor:pointer;">'+
+        '🎭 RUD aktivieren <span style="font-size:11px;color:#888;font-weight:400;">(Patientenvorbereitung & Schminken)</span>'+
+      '</label>'+
+    '</div>'+
+    '</div>'+ // Ende m-einsatz-col-left
+    '<div id="m-rud-section" style="'+sectionDisplay+'background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:12px;">'+
+      renderRudSectionInModal(id)+
+    '</div>'+
+    '</div>'+ // Ende m-einsatz-wrap
     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
     '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
     '<button class="btn btn-primary" onclick="saveEinsatz('+(id||0)+')">Speichern</button></div>');
+  // Wenn RUD initial aktiv: Modal-Wide-Klasse setzen
+  if(b.rudActive === true){
+    const mc = document.getElementById('modal-content');
+    if(mc) mc.classList.add('wide');
+  }
 }
 function saveEinsatz(id){
   if(!guardWrite('einsaetze')) return;
-  const veh=document.getElementById('m-veh').value;
+  const vehs=[...document.querySelectorAll('.m-veh-cb:checked')].map(cb=>cb.value);
   const status=document.getElementById('m-status').value;
   const start=document.getElementById('m-start').value;
   const end=document.getElementById('m-end').value;
@@ -2924,10 +3223,390 @@ function saveEinsatz(id){
   const alarm_k=document.getElementById('m-ak').value;
   const alarm_c=document.getElementById('m-ac').value;
   const alarm_r=document.getElementById('m-ar').value;
-  if(id){const b=S.einsaetze.find(x=>x.id===id);b.veh=veh;b.status=status;b.start=start;b.end=end;b.ort=ort;b.adresse=adresse;b.art=art;b.desc=desc;b.asp=asp;b.alarm_k=alarm_k;b.alarm_c=alarm_c;b.alarm_r=alarm_r;}
-  else{S.einsaetze.push({id:uid(),veh,status,start,end,ort,adresse,art,desc,asp,alarm_k,alarm_c,alarm_r});}
-  closeModal(true);save();renderEinsaetze();renderGantt();
+  // Tag-Index aus Dropdown lesen (falls vorhanden, sonst Heuristik in einsatzDay)
+  const dayEl = document.getElementById('m-day');
+  const day = dayEl ? parseInt(dayEl.value) : undefined;
+  // RUD-Aktivierung
+  const rudActiveEl = document.getElementById('m-rud-active');
+  const rudActive = rudActiveEl ? rudActiveEl.checked : false;
+  if(id){
+    const b=S.einsaetze.find(x=>x.id===id);
+    b.vehs=vehs;delete b.veh;b.status=status;b.start=start;b.end=end;b.ort=ort;b.adresse=adresse;b.art=art;b.desc=desc;b.asp=asp;b.alarm_k=alarm_k;b.alarm_c=alarm_c;b.alarm_r=alarm_r;
+    if(day!==undefined)b.day=day;else delete b.day;
+    b.rudActive=rudActive;
+    // Wenn RUD deaktiviert wird: zugehörige rudEinsaetze-Daten entfernen
+    if(!rudActive && Array.isArray(S.rudEinsaetze)){
+      S.rudEinsaetze = S.rudEinsaetze.filter(r=>r.einsatzId !== id);
+    }
+  }
+  else{
+    const ne={id:uid(),vehs,status,start,end,ort,adresse,art,desc,asp,alarm_k,alarm_c,alarm_r,rudActive};
+    if(day!==undefined)ne.day=day;
+    S.einsaetze.push(ne);
+    // Pending RUD-Patienten übernehmen wenn RUD aktiviert ist
+    if(rudActive && Array.isArray(_pendingRudPatients) && _pendingRudPatients.length > 0){
+      // Vor Übernahme: aktuelle DOM-Werte syncen
+      try{ syncPendingFromDOM(); }catch(e){}
+      if(!S.rudEinsaetze) S.rudEinsaetze = [];
+      const rudEntry = {einsatzId: ne.id, patients: []};
+      _pendingRudPatients.forEach(pp=>{
+        // Nur Patienten mit Namen übernehmen
+        if(!pp.name || !pp.name.trim()) return;
+        rudEntry.patients.push({
+          id: String(uid()),
+          name: pp.name.trim(),
+          verletzung: pp.verletzung||'',
+          unfallhergang: pp.unfallhergang||'',
+          // Schminkzeiten leer – werden später ergänzt
+          ankunft: '', schminkplatz: '',
+          schminkdauer: 40,
+          schminkStart: '', schminkEnd: '',
+          transferStart: '', transferEnd: '',
+          transferNach: ne.ort||'',
+          persons: []
+        });
+      });
+      if(rudEntry.patients.length > 0){
+        S.rudEinsaetze.push(rudEntry);
+      }
+    }
+    // Buffer leeren
+    _pendingRudPatients = [];
+    _pendingActiveIdx = 0;
+  }
+  closeModal(true);save();renderEinsaetze();renderGantt();renderRud();
 }
+
+// Toggle für RUD-Bereich im Einsatz-Modal
+function toggleRudSection(einsatzId){
+  const cb = document.getElementById('m-rud-active');
+  const sec = document.getElementById('m-rud-section');
+  const modal = document.getElementById('modal-content');
+  if(!cb || !sec) return;
+  if(cb.checked){
+    sec.style.display = '';
+    sec.innerHTML = renderRudSectionInModal(einsatzId);
+    if(modal) modal.classList.add('wide');
+    // Layout auf 2 Spalten umstellen
+    const wrap = document.getElementById('m-einsatz-wrap');
+    if(wrap) wrap.classList.add('modal-2col');
+  } else {
+    sec.style.display = 'none';
+    if(modal) modal.classList.remove('wide');
+    const wrap = document.getElementById('m-einsatz-wrap');
+    if(wrap) wrap.classList.remove('modal-2col');
+  }
+}
+
+// Buffer für RUD-Patienten die schon vor dem Speichern eines neuen Einsatzes eingegeben werden
+let _pendingRudPatients = [];
+
+// Rendert den RUD-Bereich (Patient-Liste + Inline-Editor) innerhalb des Einsatz-Modals
+function renderRudSectionInModal(einsatzId){
+  // Wenn neuer Einsatz (id=0): Mini-Formular mit den wichtigsten Feldern
+  if(!einsatzId){
+    return renderRudPendingSection();
+  }
+  const einsatz = S.einsaetze.find(e=>e.id===einsatzId);
+  const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===einsatzId) || {patients:[]};
+  const patients = rudEntry.patients || [];
+
+  // Header mit Patient-Anzahl
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #e8d8a0;padding-bottom:8px;">'+
+    '<div style="font-size:13px;font-weight:600;color:#7A5500;">🎭 RUD – Patienten ('+patients.length+')</div>'+
+    '<button class="btn btn-sm" onclick="addNewRudPatientInline('+einsatzId+')" style="font-size:11px;padding:3px 10px;background:#7a4800;color:#fff;border-color:#7a4800;">+ Neu</button>'+
+  '</div>';
+
+  // Liste der vorhandenen Patienten (Tabs/Cards)
+  if(patients.length > 0){
+    html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;" id="m-rud-patient-tabs">';
+    patients.forEach((p, idx)=>{
+      const isActive = idx === 0; // Erster Patient ist initial aktiv
+      html += '<button onclick="selectRudPatientInline('+einsatzId+',\''+p.id+'\')" data-pid="'+p.id+'" class="m-rud-tab'+(isActive?' active':'')+'" style="font-size:11px;padding:4px 10px;border:1px solid '+(isActive?'#7a4800':'#e8d8a0')+';background:'+(isActive?'#7a4800':'#fff')+';color:'+(isActive?'#fff':'#7A5500')+';border-radius:4px;cursor:pointer;font-weight:500;">'+
+        escHtml(p.name||'Patient '+(idx+1))+
+      '</button>';
+    });
+    html += '</div>';
+    // Editor für ersten Patient
+    html += '<div id="m-rud-editor">'+renderRudPatientEditor(einsatz, patients[0])+'</div>';
+  } else {
+    // Kein Patient da → leerer Editor für neuen Patient
+    html += '<div id="m-rud-editor">'+renderRudPatientEditor(einsatz, null)+'</div>';
+  }
+
+  return html;
+}
+
+// Erzeugt das Editor-HTML für einen einzelnen Patienten (oder einen leeren neuen)
+// Rendert das Mini-Formular für RUD bei einem noch nicht gespeicherten Einsatz
+function renderRudPendingSection(){
+  const patients = _pendingRudPatients || [];
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #e8d8a0;padding-bottom:8px;">'+
+    '<div style="font-size:13px;font-weight:600;color:#7A5500;">🎭 RUD – Patienten ('+patients.length+')</div>'+
+    '<button class="btn btn-sm" onclick="addPendingRudPatient()" style="font-size:11px;padding:3px 10px;background:#7a4800;color:#fff;border-color:#7a4800;">+ Neu</button>'+
+  '</div>';
+
+  if(!patients.length){
+    // Erste Eingabe ist direkt sichtbar – auto-add eines leeren Patient
+    _pendingRudPatients = [{tempId: 'p1', name:'', verletzung:'', unfallhergang:''}];
+    return renderRudPendingSection(); // rekursiv neu rendern
+  }
+
+  // Patient-Tabs (wenn mehrere)
+  if(patients.length > 1){
+    html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">';
+    patients.forEach((p, idx)=>{
+      const isActive = idx === (_pendingActiveIdx||0);
+      html += '<button onclick="selectPendingRudPatient('+idx+')" class="m-rud-tab'+(isActive?' active':'')+'" style="font-size:11px;padding:4px 10px;border:1px solid '+(isActive?'#7a4800':'#e8d8a0')+';background:'+(isActive?'#7a4800':'#fff')+';color:'+(isActive?'#fff':'#7A5500')+';border-radius:4px;cursor:pointer;font-weight:500;">'+
+        escHtml(p.name||'Patient '+(idx+1))+
+      '</button>';
+    });
+    html += '</div>';
+  }
+
+  // Aktiver Patient
+  const idx = _pendingActiveIdx || 0;
+  const p = patients[idx] || patients[0];
+
+  html += '<div id="m-rud-pending-editor">'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname *</label>'+
+      '<input type="text" id="mrud-pending-name" value="'+escHtml(p.name||'')+'" oninput="updatePendingRudField(\'name\',this.value)" style="font-size:13px;"></div>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Verletzungsmuster</label>'+
+      '<textarea id="mrud-pending-verletzung" oninput="updatePendingRudField(\'verletzung\',this.value)" style="font-size:12px;min-height:60px;" placeholder="z.B. offene Fraktur Unterschenkel rechts, ...">'+escHtml(p.verletzung||'')+'</textarea></div>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Unfallhergang / Beschreibung</label>'+
+      '<textarea id="mrud-pending-unfall" oninput="updatePendingRudField(\'unfallhergang\',this.value)" style="font-size:12px;min-height:60px;" placeholder="z.B. Sturz beim Klettern aus 4m Höhe...">'+escHtml(p.unfallhergang||'')+'</textarea></div>'+
+    (patients.length>1?'<div style="display:flex;justify-content:flex-end;border-top:1px dashed #e8d8a0;padding-top:8px;">'+
+      '<button class="btn btn-sm btn-danger" onclick="removePendingRudPatient('+idx+')" style="font-size:11px;padding:3px 8px;">🗑️ Diesen Patient entfernen</button>'+
+    '</div>':'')+
+  '</div>';
+
+  return html;
+}
+
+let _pendingActiveIdx = 0;
+
+function addPendingRudPatient(){
+  if(!Array.isArray(_pendingRudPatients)) _pendingRudPatients = [];
+  const newP = {tempId: 'p'+(_pendingRudPatients.length+1)+'-'+Date.now(), name:'', verletzung:'', unfallhergang:''};
+  _pendingRudPatients.push(newP);
+  _pendingActiveIdx = _pendingRudPatients.length - 1;
+  // Sync aktuelle Werte im DOM zurück in den Buffer (vor dem Re-Render)
+  syncPendingFromDOM();
+  // Section neu rendern
+  const sec = document.getElementById('m-rud-section');
+  if(sec) sec.innerHTML = renderRudPendingSection();
+}
+
+function selectPendingRudPatient(idx){
+  syncPendingFromDOM();
+  _pendingActiveIdx = idx;
+  const sec = document.getElementById('m-rud-section');
+  if(sec) sec.innerHTML = renderRudPendingSection();
+}
+
+function removePendingRudPatient(idx){
+  if(!confirm('Patient entfernen?')) return;
+  _pendingRudPatients.splice(idx, 1);
+  if(_pendingActiveIdx >= _pendingRudPatients.length) _pendingActiveIdx = Math.max(0, _pendingRudPatients.length-1);
+  const sec = document.getElementById('m-rud-section');
+  if(sec) sec.innerHTML = renderRudPendingSection();
+}
+
+function updatePendingRudField(field, value){
+  // Live-Update des aktiven Patienten im Buffer (damit Tab-Wechsel die Daten behält)
+  const idx = _pendingActiveIdx || 0;
+  if(_pendingRudPatients[idx]){
+    _pendingRudPatients[idx][field] = value;
+  }
+}
+
+function syncPendingFromDOM(){
+  // Liest die DOM-Werte und überträgt in den Buffer (wird vor Re-Render aufgerufen)
+  const idx = _pendingActiveIdx || 0;
+  const p = _pendingRudPatients[idx];
+  if(!p) return;
+  const nameEl = document.getElementById('mrud-pending-name');
+  const verlEl = document.getElementById('mrud-pending-verletzung');
+  const unfEl = document.getElementById('mrud-pending-unfall');
+  if(nameEl) p.name = nameEl.value;
+  if(verlEl) p.verletzung = verlEl.value;
+  if(unfEl) p.unfallhergang = unfEl.value;
+}
+
+function renderRudPatientEditor(einsatz, p){
+  const isNew = !p;
+  const pid = p ? p.id : '';
+  // Schminker-Auswahl
+  const rudOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='rud');});
+  const betreuerOnly = S.persons.filter(pr=>{const ro=Array.isArray(pr.rolle)?pr.rolle:[pr.rolle||''];return ro.some(x=>x.toLowerCase()==='betreuer');});
+  const allPersons = rudOnly.length ? rudOnly : (betreuerOnly.length ? betreuerOnly : S.persons);
+  const personChips = allPersons.map(pr=>{
+    const sel = p && (p.persons||[]).includes(pr.id);
+    return '<span onclick="toggleModalChip(this)" data-pid="'+pr.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:14px;font-size:11px;margin:2px;cursor:pointer;'+(sel?'background:#A32D2D;color:#fff;border:1px solid #A32D2D;':'background:#fff;color:var(--text);border:1px solid #ddd;')+'">'+escHtml((pr.vorname||'')+(pr.nachname?' '+pr.nachname:''))+'</span>';
+  }).join('');
+
+  // Hinweis-Box wenn Schminkzeiten gesetzt sind (nur Anzeige)
+  let schminkInfo = '';
+  if(p && (p.schminkStart || p.schminkEnd)){
+    schminkInfo = '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#7A3000;">'+
+      '🟠 <b>Schminkzeit:</b> '+escHtml(p.schminkStart||'?')+' – '+escHtml(p.schminkEnd||'?')+
+      (p.schminkplatz?' · '+escHtml(p.schminkplatz):'')+
+      '<div style="font-size:10px;color:#888;margin-top:2px;font-style:italic;">Bearbeitung nur im Bereich „RUD"</div>'+
+    '</div>';
+  } else if(!isNew){
+    schminkInfo = '<div style="background:#F8F8F8;border:1px dashed #ccc;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#888;font-style:italic;">'+
+      '🟠 Schminkzeiten noch nicht gesetzt – kann im Bereich „RUD" ergänzt werden.'+
+    '</div>';
+  }
+
+  return '<input type="hidden" id="mrud-pid" value="'+escHtml(pid)+'">'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname</label>'+
+      '<input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'" style="font-size:13px;"></div>'+
+    schminkInfo+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Verletzungsmuster</label>'+
+      '<textarea id="mrud-verletzung" style="font-size:12px;min-height:60px;">'+escHtml(p?p.verletzung||'':'')+'</textarea></div>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Unfallhergang / Beschreibung</label>'+
+      '<textarea id="mrud-unfall" style="font-size:12px;min-height:60px;">'+escHtml(p?p.unfallhergang||'':'')+'</textarea></div>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">RUD-Team (Schminker)</label>'+
+      '<div style="border:1px solid #ddd;border-radius:5px;padding:5px;min-height:32px;background:#fff;" id="mrud-chips">'+(personChips||'<span style="font-size:11px;color:#888;font-style:italic;">Keine RUD-Personen angelegt</span>')+'</div></div>'+
+    '<div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px dashed #e8d8a0;padding-top:8px;">'+
+      (isNew?'':'<button class="btn btn-sm btn-danger" onclick="deleteRudPatientFromEinsatz('+einsatz.id+',\''+pid+'\')" style="font-size:11px;padding:3px 8px;margin-right:auto;">🗑️ Löschen</button>')+
+      '<button class="btn btn-sm btn-primary" onclick="saveRudPatientInline('+einsatz.id+')" style="font-size:11px;padding:4px 14px;background:#7a4800;border-color:#7a4800;">'+(isNew?'+ Patient hinzufügen':'✓ Übernehmen')+'</button>'+
+    '</div>';
+}
+
+// Wenn ein Patient-Tab angeklickt wird
+function selectRudPatientInline(einsatzId, patientId){
+  const einsatz = S.einsaetze.find(e=>e.id===einsatzId);
+  const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===einsatzId);
+  if(!einsatz || !rudEntry) return;
+  const p = (rudEntry.patients||[]).find(x=>x.id===patientId);
+  if(!p) return;
+  // Tabs updaten
+  document.querySelectorAll('.m-rud-tab').forEach(tab=>{
+    const isActive = tab.dataset.pid === patientId;
+    tab.classList.toggle('active', isActive);
+    tab.style.background = isActive ? '#7a4800' : '#fff';
+    tab.style.color = isActive ? '#fff' : '#7A5500';
+    tab.style.borderColor = isActive ? '#7a4800' : '#e8d8a0';
+  });
+  // Editor neu rendern
+  const ed = document.getElementById('m-rud-editor');
+  if(ed) ed.innerHTML = renderRudPatientEditor(einsatz, p);
+}
+
+// Neuer Patient – leeren Editor anzeigen
+function addNewRudPatientInline(einsatzId){
+  const einsatz = S.einsaetze.find(e=>e.id===einsatzId);
+  if(!einsatz) return;
+  // Tabs deaktivieren (kein aktiver Patient – wir legen einen neuen an)
+  document.querySelectorAll('.m-rud-tab').forEach(tab=>{
+    tab.classList.remove('active');
+    tab.style.background = '#fff';
+    tab.style.color = '#7A5500';
+    tab.style.borderColor = '#e8d8a0';
+  });
+  const ed = document.getElementById('m-rud-editor');
+  if(ed) ed.innerHTML = renderRudPatientEditor(einsatz, null);
+}
+
+// Speichert den aktuell im Editor angezeigten Patienten
+function saveRudPatientInline(einsatzId){
+  if(!guardWrite('rud')) return;
+  const name = document.getElementById('mrud-name').value.trim();
+  if(!name){ alert('Bitte Patientenname eingeben.'); return; }
+  if(!S.rudEinsaetze) S.rudEinsaetze = [];
+  let rudEntry = S.rudEinsaetze.find(r=>r.einsatzId===einsatzId);
+  if(!rudEntry){ rudEntry = {einsatzId, patients:[]}; S.rudEinsaetze.push(rudEntry); }
+  const pid = document.getElementById('mrud-pid').value;
+  // Vorhandenen Patienten finden um Schmink-/Transfer-Daten zu erhalten
+  const existing = pid ? (rudEntry.patients||[]).find(x=>x.id===pid) : null;
+  const obj = {
+    id: pid || String(uid()),
+    name,
+    // Schmink-/Transfer-Felder aus existing übernehmen oder leer lassen für neue Patienten
+    // (Bearbeitung dieser Felder erfolgt nur im Bereich „RUD")
+    ankunft: existing ? (existing.ankunft||'') : '',
+    schminkplatz: existing ? (existing.schminkplatz||'') : '',
+    schminkdauer: existing ? (existing.schminkdauer||40) : 40,
+    schminkStart: existing ? (existing.schminkStart||'') : '',
+    schminkEnd: existing ? (existing.schminkEnd||'') : '',
+    transferStart: existing ? (existing.transferStart||'') : '',
+    transferEnd: existing ? (existing.transferEnd||'') : '',
+    transferNach: existing ? (existing.transferNach||'') : '',
+    persons: [...document.querySelectorAll('#mrud-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean),
+    verletzung: document.getElementById('mrud-verletzung').value.trim(),
+    unfallhergang: document.getElementById('mrud-unfall')?.value.trim() || ''
+  };
+  if(pid){
+    const idx = (rudEntry.patients||[]).findIndex(x=>x.id===pid);
+    if(idx>=0) rudEntry.patients[idx] = obj; else rudEntry.patients.push(obj);
+  } else {
+    if(!rudEntry.patients) rudEntry.patients = [];
+    rudEntry.patients.push(obj);
+  }
+  save();
+  // Liste neu rendern (Tabs + Editor mit gespeichertem Patient)
+  const sec = document.getElementById('m-rud-section');
+  if(sec) sec.innerHTML = renderRudSectionInModal(einsatzId);
+  // Den gerade gespeicherten Patient als aktiv markieren
+  setTimeout(()=>{ selectRudPatientInline(einsatzId, obj.id); }, 0);
+  renderRud();
+}
+
+// Wrapper: öffnet das RUD-Patient-Modal aus dem Einsatz-Modal heraus
+// Nach dem Speichern/Schließen wird das Einsatz-Modal wieder geöffnet
+function openRudPatientFromEinsatz(einsatzId, patientId){
+  // Erst Einsatz-Modal-State zwischenspeichern (Werte aus den Feldern)
+  saveEinsatzModalDraft(einsatzId);
+  // Modal schließen ohne save (wir wollen das Einsatz-Modal danach wieder öffnen)
+  closeModal(false);
+  // RUD-Patient-Modal öffnen
+  openRudPatientModal(einsatzId, patientId === 'null' ? null : (patientId||null));
+  // Hook: nach saveRudPatient/closeModal soll Einsatz-Modal wieder auf
+  _einsatzModalReturnId = einsatzId;
+}
+
+let _einsatzModalReturnId = null;
+let _einsatzModalDraft = null;
+
+function saveEinsatzModalDraft(einsatzId){
+  // Liest die aktuellen Werte aus den Modal-Feldern und speichert sie als Draft
+  // damit beim Wiederöffnen die Eingaben erhalten bleiben
+  try{
+    _einsatzModalDraft = {
+      einsatzId,
+      vehs: [...document.querySelectorAll('.m-veh-cb:checked')].map(cb=>cb.value),
+      status: document.getElementById('m-status')?.value,
+      start: document.getElementById('m-start')?.value,
+      end: document.getElementById('m-end')?.value,
+      ort: document.getElementById('m-ort')?.value,
+      adresse: document.getElementById('m-adresse')?.value,
+      art: document.getElementById('m-art')?.value,
+      desc: document.getElementById('m-desc')?.value,
+      asp: document.getElementById('m-asp')?.value,
+      alarm_k: document.getElementById('m-ak')?.value,
+      alarm_c: document.getElementById('m-ac')?.value,
+      alarm_r: document.getElementById('m-ar')?.value,
+      day: document.getElementById('m-day')?.value,
+      rudActive: document.getElementById('m-rud-active')?.checked
+    };
+  }catch(e){}
+}
+
+function deleteRudPatientFromEinsatz(einsatzId, patientId){
+  if(!guardWrite('rud')) return;
+  if(!confirm('Patient wirklich löschen?')) return;
+  const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===einsatzId);
+  if(rudEntry){
+    rudEntry.patients = (rudEntry.patients||[]).filter(p=>p.id!==patientId);
+    save();
+    // Liste in der Modal-Section neu rendern
+    const sec = document.getElementById('m-rud-section');
+    if(sec) sec.innerHTML = renderRudSectionInModal(einsatzId);
+  }
+}
+
 function setEinsatzStatus(id, status){
   const e=S.einsaetze.find(x=>x.id===id);
   if(e){e.status=status;save();renderEinsaetze();renderGantt();renderDashboard();}
@@ -3041,30 +3720,38 @@ function renderGantt(){
   });
 
   // ── Einsatz-Balken (obere Zone) ──
+  // ── Einsatz-Balken (obere Zone) ──
   S.einsaetze.forEach(b=>{
-    const vi=S.vehicles.indexOf(b.veh);if(vi<0)return;
+    const vehs = getEinsatzVehs(b);
+    if(!vehs.length) return;
     let so=toOff(b.start),eo=toOff(b.end);if(eo<=so)eo+=24;if(eo>24)eo=24;
     const x1=xOf(so),bW=Math.max(xOf(eo)-x1,2);
-    const y=PT+vi*RH+EY;
     const isSel=b.id===selectedEinsatzId;
-    ctx.fillStyle=cOf(b.veh);
-    ctx.globalAlpha=isSel?1.0:0.85;
-    rrect(ctx,x1,y,bW,EH,4);ctx.fill();
-    ctx.globalAlpha=1.0;
-    if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=2;rrect(ctx,x1+1,y+1,bW-2,EH-2,3);ctx.stroke();}
-    if(bW>30){
-      const line1=b.ort||'';
-      const line2=b.art||durStr(b.start,b.end);
-      ctx.save();ctx.beginPath();ctx.rect(x1+2,y,bW-4,EH);ctx.clip();
-      ctx.fillStyle='#fff';ctx.textAlign='center';
-      if(line1&&line2){
-        ctx.font='500 11px sans-serif';ctx.fillText(line1,x1+bW/2,y+EH/2-4);
-        ctx.font='400 10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fillText(line2,x1+bW/2,y+EH/2+10);
-      } else {
-        ctx.font='500 11px sans-serif';ctx.fillText(line1||line2,x1+bW/2,y+EH/2+4);
+    // Für jedes zugewiesene Fahrzeug eine Lane zeichnen
+    vehs.forEach(veh=>{
+      const vi=S.vehicles.indexOf(veh);
+      if(vi<0) return;
+      const y=PT+vi*RH+EY;
+      ctx.fillStyle=cOf(veh);
+      ctx.globalAlpha=isSel?1.0:0.85;
+      rrect(ctx,x1,y,bW,EH,4);ctx.fill();
+      ctx.globalAlpha=1.0;
+      if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=2;rrect(ctx,x1+1,y+1,bW-2,EH-2,3);ctx.stroke();}
+      if(bW>30){
+        const line1=b.ort||'';
+        const sharedHint = vehs.length>1 ? ' ('+vehs.length+' Fz.)' : '';
+        const line2=(b.art||durStr(b.start,b.end))+sharedHint;
+        ctx.save();ctx.beginPath();ctx.rect(x1+2,y,bW-4,EH);ctx.clip();
+        ctx.fillStyle='#fff';ctx.textAlign='center';
+        if(line1&&line2){
+          ctx.font='500 11px sans-serif';ctx.fillText(line1,x1+bW/2,y+EH/2-4);
+          ctx.font='400 10px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fillText(line2,x1+bW/2,y+EH/2+10);
+        } else {
+          ctx.font='500 11px sans-serif';ctx.fillText(line1||line2,x1+bW/2,y+EH/2+4);
+        }
+        ctx.restore();
       }
-      ctx.restore();
-    }
+    });
   });
 
   ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,n*RH);
@@ -3200,7 +3887,7 @@ function doExportChecklists(){
   else if(_exportFmt==='pdf') exportChecklistsPdf(lists);
 }
 function exportChecklistsTxt(lists){
-  const eventName=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  const eventName=S.infos&&S.infos.name?S.infos.name:'Event';
   let txt=eventName+' – Checklisten\n'+'='.repeat(40)+'\n\n';
   lists.forEach(cl=>{
     let total=0,done=0;
@@ -3236,7 +3923,7 @@ function exportChecklistsXlsx(lists){
 }
 function exportChecklistsPdf(lists){
   closeModal(true);
-  const eventName=S.infos&&S.infos.name?S.infos.name:'24h-Dienst';
+  const eventName=S.infos&&S.infos.name?S.infos.name:'Event';
   // Temporäres Print-Div
   const old=document.getElementById('pdf-print-div');
   if(old) old.remove();
@@ -3273,7 +3960,7 @@ function exportChecklistsPdf(lists){
     div.remove();
   },150);
 }
-function addChecklist(){openModal('<h2>Neue Checkliste</h2>'+
+function addChecklist(){if(!guardWrite('todos')) return; openModal('<h2>Neue Checkliste</h2>'+
   '<div class="form-row"><label>Name</label><input type="text" id="m-clname" placeholder="z.B. Vorbereitung"></div>'+
   '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
   '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
@@ -3847,7 +4534,7 @@ function printSection(section){
   const printHeader=document.createElement('div');
   printHeader.id='print-header';
   printHeader.innerHTML=
-    '<h1 style="font-size:18px;font-weight:600;margin-bottom:4px;">24h-Dienst – '+escHtml(info.name||'Bericht')+'</h1>'+
+    '<h1 style="font-size:18px;font-weight:600;margin-bottom:4px;">'+escHtml(info.name||'Event-Bericht')+'</h1>'+
     '<p style="font-size:12px;color:#666;margin:0;">'+
       [info.datum,info.ort?'Ort: '+info.ort:'',info.verantwortlich?'Verantwortlich: '+info.verantwortlich:''].filter(Boolean).map(escHtml).join(' &nbsp;|&nbsp; ')+
     '</p>'+
@@ -4175,6 +4862,7 @@ const RUD_COLORS={schminken:{bg:'#D05A1A',label:'🟠 Schminken'}};
 function renderRud(){
   renderRudConflicts();
   renderRudList();
+  renderRudDayTabs();
   renderRudGantt();
 }
 
@@ -4224,113 +4912,125 @@ function renderRudList(){
   const em=document.getElementById('rud-empty');
   if(!el)return;
   el.innerHTML='';
-  const einsaetze=S.einsaetze||[];
-  if(!einsaetze.length){em.style.display='block';return;}
+  // Nur Einsätze mit aktivem RUD anzeigen
+  const einsaetze=(S.einsaetze||[]).filter(e=>e.rudActive===true);
+  if(!einsaetze.length){
+    em.style.display='block';
+    em.innerHTML='Keine Einsätze mit aktivem RUD. Aktiviere RUD beim Erstellen oder Bearbeiten eines Einsatzes.';
+    return;
+  }
   em.style.display='none';
 
-  einsaetze.forEach(e=>{
+  // Sortieren nach Tag (SA zuerst) + Startzeit
+  const sorted = [...einsaetze].sort((a,b)=>{
+    const da = einsatzDay(a), db = einsatzDay(b);
+    if(da !== db) return da==='sa' ? -1 : 1;
+    return (a.start||'').localeCompare(b.start||'');
+  });
+
+  sorted.forEach(e=>{
     const rudEntry=(S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id)||{einsatzId:e.id,patients:[]};
     const patients=rudEntry.patients||[];
 
-    const section=document.createElement('div');
-    section.style.cssText='border:1.5px solid #A32D2D;border-radius:12px;overflow:hidden;margin-bottom:14px;';
+    // Art-Klasse für Farbleiste
+    const artCls = e.art==='Trauma' ? 'trauma' : (e.art==='Internistisch' ? 'intern' : 'other');
+    const dayBadge = einsatzDay(e)==='so'
+      ? '<span class="day-badge so">SO</span>'
+      : '<span class="day-badge">SA</span>';
+    const vehs = getEinsatzVehs(e);
+    const vehBadgesHtml = vehs.length
+      ? vehs.map(v=>'<span class="badge" style="background:'+clOf(v)+';color:'+cOf(v)+';font-size:10px;">'+escHtml(v)+'</span>').join(' ')
+      : '';
+    const artBadge = e.art
+      ? '<span class="pat-tag '+(e.art==='Trauma'?'trauma':(e.art==='Internistisch'?'intern':''))+'" style="'+(e.art!=='Trauma'&&e.art!=='Internistisch'?'background:#eee;color:#666;':'')+'">'+escHtml(e.art)+'</span>'
+      : '';
 
-    // Einsatz header
-    const header=document.createElement('div');
-    header.style.cssText='background:#A32D2D;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;';
-    header.innerHTML=
-      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
-        (e.start?'<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.start)+'</span>':'')+
-        (e.ort?'<span style="font-size:13px;color:rgba(255,255,255,0.9);">'+escHtml(e.ort)+'</span>':'<span style="font-weight:600;font-size:14px;color:#fff;">'+escHtml(e.veh)+'</span>')+
-        '<span style="font-size:11px;background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;border-radius:20px;">'+patients.length+' Patient'+(patients.length!==1?'en':'')+'</span>'+
+    const card = document.createElement('div');
+    card.id = 'rud-einsatz-'+e.id;
+    card.className = 'rud-einsatz-card '+artCls;
+
+    // Farbleiste
+    const farb = document.createElement('div');
+    farb.className = 'farbleiste';
+    card.appendChild(farb);
+
+    // Content
+    const content = document.createElement('div');
+    content.className = 'rud-einsatz-content';
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'rud-einsatz-head';
+    const titleHtml =
+      '<div>'+
+        '<div class="rud-einsatz-title">'+
+          escHtml('Einsatz: '+(e.ort||e.art||'#'+e.id))+
+          dayBadge+
+          artBadge+
+        '</div>'+
+        (e.ort?'<div class="rud-einsatz-loc">📍 '+escHtml(e.ort)+(e.adresse?', '+escHtml(e.adresse):'')+'</div>':'')+
+        (vehs.length?'<div class="rud-einsatz-veh">🚑 Fahrzeug'+(vehs.length>1?'e':'')+': '+vehBadgesHtml+'</div>':'')+
       '</div>'+
-      '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',null)" style="color:#fff;border-color:rgba(255,255,255,0.4);font-size:11px;padding:3px 10px;">+ Patient</button>';
-    section.appendChild(header);
+      '<div class="rud-einsatz-time">🕒 '+escHtml((e.start||'?')+' – '+(e.end||'?'))+'</div>';
+    head.innerHTML = titleHtml;
+    content.appendChild(head);
 
-    // Patient accordion list
-    const body=document.createElement('div');
-    body.style.cssText='background:var(--bg2);padding:8px 10px;display:flex;flex-direction:column;gap:6px;';
-
+    // Patient-Liste
     if(!patients.length){
-      body.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;color:var(--text2);font-style:italic;">Noch keine Patienten \u2013 klicke \u201e+ Patient\u201c</div>';
+      const empty = document.createElement('div');
+      empty.className = 'rud-pat-empty';
+      empty.textContent = 'Noch keine Patienten zugewiesen';
+      content.appendChild(empty);
     } else {
-      patients.forEach((p,idx)=>{
-        const accId='rud-acc-'+e.id+'-'+p.id;
-        const schminkerNames=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?(per.vorname||'')+(per.nachname?' '+per.nachname:''):null;}).filter(Boolean).join(', ');
-
-        const card=document.createElement('div');
-        card.style.cssText='border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);';
-
-        // Akkordeon-Kopfzeile
-        const cardHeader=document.createElement('div');
-        cardHeader.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;user-select:none;';
-        cardHeader.onclick=()=>{
-          const detail=document.getElementById(accId);
-          const chev=document.getElementById(accId+'-chev');
-          const open=detail.style.display==='block';
-          detail.style.display=open?'none':'block';
-          chev.textContent=open?'+':'-'; chev.style.transform=open?'':'rotate(45deg)';
-        };
-        cardHeader.innerHTML=
-          '<span id="'+accId+'-chev" style="font-size:11px;color:var(--text2);flex-shrink:0;transition:transform 0.15s;display:inline-block;">+</span>'+
-          '<span style="font-size:13px;font-weight:500;color:var(--text);flex:1;">'+escHtml(p.name)+'</span>'+
-          '<div style="display:flex;gap:5px;flex-shrink:0;" onclick="event.stopPropagation()">'+
-            '<button class="btn btn-sm" onclick="openRudPatientModal('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">\u270f\ufe0f</button>'+
-            '<button class="btn btn-sm btn-danger" onclick="deleteRudPatient('+e.id+',\''+p.id+'\')" style="font-size:11px;padding:2px 8px;">\u2715</button>'+
-          '</div>';
-        card.appendChild(cardHeader);
-
-        // Akkordeon-Detail
-        const detail=document.createElement('div');
-        detail.id=accId;
-        detail.style.cssText='display:none;border-top:1px solid var(--border);padding:10px 12px;background:var(--bg2);';
-        detail.innerHTML=
-          '<div style="display:flex;flex-wrap:nowrap;gap:0;overflow-x:auto;">'+
-            '<div style="flex:1;min-width:100px;padding:8px 12px;border-right:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminker/in</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(schminkerNames||'\u2013')+'</div>'+
-            '</div>'+
-            '<div style="flex:1;min-width:90px;padding:8px 12px;border-right:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminkort</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.schminkplatz||'\u2013')+'</div>'+
-            '</div>'+
-            '<div style="flex:1;min-width:80px;padding:8px 12px;border-right:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Ankunft</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.ankunft||'\u2013')+'</div>'+
-            '</div>'+
-            '<div style="flex:1;min-width:110px;padding:8px 12px;border-right:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Schminken</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.schminkStart||'\u2013')+' \u2013 '+escHtml(p.schminkEnd||'\u2013')+'</div>'+
-              '<div style="font-size:11px;color:var(--text2);">'+escHtml(String(p.schminkdauer||40))+' min</div>'+
-            '</div>'+
-            '<div style="flex:1;min-width:110px;padding:8px 12px;border-right:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Transfer</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.transferStart||'\u2013')+' \u2013 '+escHtml(p.transferEnd||'\u2013')+'</div>'+
-              '<div style="font-size:11px;color:var(--text2);">\u2192 '+escHtml(p.transferNach||e.ort||'\u2013')+'</div>'+
-            '</div>'+
-            '<div style="flex:1;min-width:70px;padding:8px 12px;">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">ASP</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(e.asp||'\u2013')+'</div>'+
+      const list = document.createElement('div');
+      list.className = 'rud-pat-list';
+      patients.forEach(p=>{
+        const schminkerNames=(p.persons||[])
+          .map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?(per.vorname||'')+(per.nachname?' '+per.nachname:''):null;})
+          .filter(Boolean).join(', ');
+        const patArt = e.art==='Trauma' ? 'trauma' : (e.art==='Internistisch' ? 'intern' : 'other');
+        const patArtTag = e.art
+          ? '<span class="pat-tag '+(e.art==='Trauma'?'trauma':(e.art==='Internistisch'?'intern':''))+'" style="'+(e.art!=='Trauma'&&e.art!=='Internistisch'?'background:#eee;color:#666;':'')+'">'+escHtml(e.art)+'</span>'
+          : '';
+        const patCard = document.createElement('div');
+        patCard.className = 'rud-pat-card '+patArt;
+        patCard.innerHTML =
+          '<div class="rud-pat-name">'+
+            '<span class="name-text">'+escHtml(p.name||'?')+' '+patArtTag+'</span>'+
+            '<div class="rud-pat-actions">'+
+              '<button class="rud-btn-mini" onclick="openRudPatientModal('+e.id+',\''+p.id+'\')" title="Bearbeiten">✏️</button>'+
+              '<button class="rud-btn-mini danger" onclick="deleteRudPatient('+e.id+',\''+p.id+'\')" title="Löschen">✕</button>'+
             '</div>'+
           '</div>'+
-          (p.verletzung?
-            '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">'+
-              '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;">Verletzungsmuster</div>'+
-              '<div style="font-size:13px;color:var(--text);">'+escHtml(p.verletzung)+'</div>'+
-            '</div>':'');
-        card.appendChild(detail);
-        body.appendChild(card);
+          '<div class="rud-pat-meta">'+
+            '<b>Schminker:</b><span>'+escHtml(schminkerNames||'–')+'</span>'+
+            '<b>Schmink-Ort:</b><span>'+escHtml(p.schminkplatz||'–')+
+              (p.schminkStart?' · '+escHtml(p.schminkStart||'')+'–'+escHtml(p.schminkEnd||''):'')+
+            '</span>'+
+            (p.transferStart?'<b>Transfer:</b><span>'+escHtml(p.transferStart||'')+'–'+escHtml(p.transferEnd||'')+
+              (p.transferNach?' → '+escHtml(p.transferNach):(e.ort?' → '+escHtml(e.ort):''))+
+            '</span>':'')+
+            (p.ankunft?'<b>Ankunft:</b><span>'+escHtml(p.ankunft)+'</span>':'')+
+            (e.asp?'<b>ASP:</b><span>'+escHtml(e.asp)+'</span>':'')+
+          '</div>'+
+          ((p.verletzung||p.unfallhergang)?'<div class="rud-pat-injury">'+
+            (p.verletzung?'<div class="rud-pat-section"><b>Verletzungsmuster:</b> '+escHtml(p.verletzung)+'</div>':'')+
+            (p.unfallhergang?'<div class="rud-pat-section"><b>Unfallhergang:</b> '+escHtml(p.unfallhergang)+'</div>':'')+
+          '</div>':'');
+        list.appendChild(patCard);
       });
-
-      // Patient hinzufügen Button
-      const addBtn=document.createElement('div');
-      addBtn.style.cssText='padding:4px 2px;';
-      const safeId = Number(e.id) || 0;
-      addBtn.innerHTML='<button class="btn btn-sm" onclick="openRudPatientModal('+safeId+',null)" style="font-size:11px;">+ Patient hinzuf\u00fcgen</button>';
-      body.appendChild(addBtn);
+      content.appendChild(list);
     }
-    section.appendChild(body);
-    el.appendChild(section);
+
+    // Add Patient Button
+    const addWrap = document.createElement('div');
+    addWrap.className = 'rud-add-pat';
+    const safeId = Number(e.id) || 0;
+    addWrap.innerHTML = '<button onclick="openRudPatientModal('+safeId+',null)">+ Patient hinzufügen</button>';
+    content.appendChild(addWrap);
+
+    card.appendChild(content);
+    el.appendChild(card);
   });
 }
 
@@ -4356,41 +5056,55 @@ function openRudPatientModal(einsatzId,patientId){
 
   openModal(
     '<h2>'+(p?'Patient bearbeiten':'Neuer Patient')+'</h2>'+
-    '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Einsatz: <b>'+escHtml(einsatz.veh+(einsatz.ort?' – '+einsatz.ort:'')+(einsatz.start?' ('+einsatz.start+')':''))+'</b></div>'+
-    '<div class="form-row"><label>Patientenname / Bezeichnung</label><input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'"></div>'+
-    '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:12px;font-weight:600;color:#7A5500;margin-bottom:8px;">🟡 VORBEREITUNG</div>'+
-      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
-        '<div class="form-row"><label>Ankunft Patient</label>'+
-          '<input type="time" id="mrud-ankunft" value="'+(p?p.ankunft||'':rudCalcAnkunft(einsatz,40))+'" oninput="rudRecalcSchminken()"></div>'+
-        '<div class="form-row"><label>Schminkplatz / Ort</label><input type="text" id="mrud-schminkplatz" value="'+escHtml(p?p.schminkplatz||'':'')+'"></div>'+
+    '<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Einsatz: <b>'+escHtml(vehListText(einsatz)+(einsatz.ort?' – '+einsatz.ort:'')+(einsatz.start?' ('+einsatz.start+')':''))+'</b></div>'+
+    '<div class="form-row" style="margin-bottom:8px;"><label style="font-size:11px;">Patientenname</label><input type="text" id="mrud-name" value="'+escHtml(p?p.name||'':'')+'" style="font-size:13px;"></div>'+
+    '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#7A5500;margin-bottom:6px;">🟡 VORBEREITUNG</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Ankunft Patient</label>'+
+          '<input type="time" id="mrud-ankunft" value="'+(p?p.ankunft||'':rudCalcAnkunft(einsatz,40))+'" oninput="rudRecalcSchminken()" style="font-size:12px;"></div>'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Schminkplatz / Ort</label><input type="text" id="mrud-schminkplatz" value="'+escHtml(p?p.schminkplatz||'':'')+'" style="font-size:12px;"></div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:12px;font-weight:600;color:#7A3000;margin-bottom:8px;">🟠 SCHMINKEN</div>'+
-      '<div class="form-row" style="margin-bottom:8px;"><label>Schminkdauer (min) <span style="font-size:10px;color:var(--text2);">– je nach Verletzungsmuster</span></label>'+
-        '<input type="number" id="mrud-schminkdauer" value="'+(p?p.schminkdauer||40:40)+'" min="5" max="180" step="5" oninput="rudRecalcFromDauer(\''+einsatz.start+'\')" style="width:90px;"></div>'+
-      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
-        '<div class="form-row"><label>Von</label><input type="time" id="mrud-sstart" value="'+(p?p.schminkStart||'':rudCalcAnkunft(einsatz,40))+'"></div>'+
-        '<div class="form-row"><label>Bis</label><input type="time" id="mrud-send" value="'+(p?p.schminkEnd||'':rudCalcSchminkEnd(einsatz))+'"></div>'+
+    '<div style="background:#FFF0E6;border:1px solid #F0A070;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#7A3000;margin-bottom:6px;">🟠 SCHMINKEN</div>'+
+      '<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:end;">'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Dauer (min)</label>'+
+          '<input type="number" id="mrud-schminkdauer" value="'+(p?p.schminkdauer||40:40)+'" min="5" max="180" step="5" oninput="rudRecalcFromDauer(\''+einsatz.start+'\')" style="width:70px;font-size:12px;"></div>'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Von</label><input type="time" id="mrud-sstart" value="'+(p?p.schminkStart||'':rudCalcAnkunft(einsatz,40))+'" style="font-size:12px;"></div>'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Bis</label><input type="time" id="mrud-send" value="'+(p?p.schminkEnd||'':rudCalcSchminkEnd(einsatz))+'" style="font-size:12px;"></div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 12px;margin-bottom:10px;">'+
-      '<div style="font-size:12px;font-weight:600;color:#791F1F;margin-bottom:8px;">🔴 TRANSFER</div>'+
-      '<div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
-        '<div class="form-row"><label>Von</label><input type="time" id="mrud-tstart" value="'+(p?p.transferStart||'':rudCalcSchminkEnd(einsatz))+'"></div>'+
-        '<div class="form-row"><label>Bis</label><input type="time" id="mrud-tend" value="'+(p?p.transferEnd||'':rudCalcTransferEnd(einsatz))+'"></div>'+
+    '<div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'+
+      '<div style="font-size:11px;font-weight:600;color:#791F1F;margin-bottom:6px;">🔴 TRANSFER</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;">'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Von</label><input type="time" id="mrud-tstart" value="'+(p?p.transferStart||'':rudCalcSchminkEnd(einsatz))+'" style="font-size:12px;"></div>'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Bis</label><input type="time" id="mrud-tend" value="'+(p?p.transferEnd||'':rudCalcTransferEnd(einsatz))+'" style="font-size:12px;"></div>'+
+        '<div class="form-row" style="margin-bottom:0;"><label style="font-size:11px;">Ziel-Ort</label>'+
+          '<input type="text" id="mrud-tnach" value="'+escHtml(p?p.transferNach||einsatz.ort||'':einsatz.ort||'')+'" style="background:var(--bg3);font-size:12px;"></div>'+
       '</div>'+
-      '<div class="form-row"><label>Ziel-Ort <span style="font-size:10px;color:var(--text2);">(vom Einsatz)</span></label>'+
-        '<input type="text" id="mrud-tnach" value="'+escHtml(p?p.transferNach||einsatz.ort||'':einsatz.ort||'')+'" style="background:var(--bg3);"></div>'+
     '</div>'+
-    '<div class="form-row"><label>RUD-Team</label>'+
-      '<div style="border:1px solid var(--input-border);border-radius:6px;padding:8px;min-height:40px;" id="mrud-chips">'+personChips+'</div></div>'+
-    '<div class="form-row"><label>Verletzungsmuster</label><textarea id="mrud-verletzung">'+escHtml(p?p.verletzung||'':'')+'</textarea></div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
-    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<div class="form-row" style="margin-bottom:6px;"><label style="font-size:11px;">RUD-Team</label>'+
+      '<div style="border:1px solid var(--input-border);border-radius:6px;padding:5px;min-height:32px;" id="mrud-chips">'+personChips+'</div></div>'+
+    '<div class="form-row" style="margin-bottom:6px;"><label style="font-size:11px;">Verletzungsmuster</label><textarea id="mrud-verletzung" style="font-size:13px;min-height:60px;" placeholder="z.B. offene Fraktur Unterschenkel rechts, ...">'+escHtml(p?p.verletzung||'':'')+'</textarea></div>'+
+    '<div class="form-row" style="margin-bottom:6px;"><label style="font-size:11px;">Unfallhergang / Beschreibung</label><textarea id="mrud-unfall" style="font-size:13px;min-height:60px;" placeholder="z.B. Sturz beim Klettern aus 4m Höhe...">'+escHtml(p?p.unfallhergang||'':'')+'</textarea></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
+    '<button class="btn" onclick="closeRudPatientModal()">Abbrechen</button>'+
     '<button class="btn btn-primary" onclick="saveRudPatient('+einsatzId+',\''+_pid+'\')">Speichern</button></div>'
   );
+}
+
+// Schließt das RUD-Patient-Modal und kehrt ggf. zum Einsatz-Modal zurück
+function closeRudPatientModal(){
+  closeModal(true);
+  if(_einsatzModalReturnId){
+    const ret = _einsatzModalReturnId;
+    _einsatzModalReturnId = null;
+    setTimeout(()=>{
+      openEinsatzModal(ret);
+      restoreEinsatzModalDraft();
+    }, 50);
+  }
 }
 
 function rudCalcAnkunft(einsatz,dauer){
@@ -4468,6 +5182,7 @@ function saveRudPatient(einsatzId,patientId){
     transferNach:document.getElementById('mrud-tnach').value.trim(),
     persons:[...document.querySelectorAll('#mrud-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean),
     verletzung:document.getElementById('mrud-verletzung').value.trim(),
+    unfallhergang:document.getElementById('mrud-unfall')?.value.trim() || '',
   };
   if(patientId){
     const idx=(rudEntry.patients||[]).findIndex(x=>x.id===patientId);
@@ -4477,6 +5192,41 @@ function saveRudPatient(einsatzId,patientId){
     rudEntry.patients.push(obj);
   }
   closeModal(true);save();renderRud();
+  // Wenn aus Einsatz-Modal aufgerufen: zurück zum Einsatz-Modal mit Draft
+  if(_einsatzModalReturnId){
+    const ret = _einsatzModalReturnId;
+    _einsatzModalReturnId = null;
+    setTimeout(()=>{
+      openEinsatzModal(ret);
+      restoreEinsatzModalDraft();
+    }, 50);
+  }
+}
+
+function restoreEinsatzModalDraft(){
+  if(!_einsatzModalDraft) return;
+  const d = _einsatzModalDraft;
+  _einsatzModalDraft = null;
+  try{
+    if(d.status){const e=document.getElementById('m-status'); if(e)e.value=d.status;}
+    if(d.start){const e=document.getElementById('m-start'); if(e)e.value=d.start;}
+    if(d.end){const e=document.getElementById('m-end'); if(e)e.value=d.end;}
+    if(d.ort!==undefined){const e=document.getElementById('m-ort'); if(e)e.value=d.ort;}
+    if(d.adresse!==undefined){const e=document.getElementById('m-adresse'); if(e)e.value=d.adresse;}
+    if(d.art!==undefined){const e=document.getElementById('m-art'); if(e)e.value=d.art;}
+    if(d.desc!==undefined){const e=document.getElementById('m-desc'); if(e)e.value=d.desc;}
+    if(d.asp!==undefined){const e=document.getElementById('m-asp'); if(e)e.value=d.asp;}
+    if(d.alarm_k!==undefined){const e=document.getElementById('m-ak'); if(e)e.value=d.alarm_k;}
+    if(d.alarm_c!==undefined){const e=document.getElementById('m-ac'); if(e)e.value=d.alarm_c;}
+    if(d.alarm_r!==undefined){const e=document.getElementById('m-ar'); if(e)e.value=d.alarm_r;}
+    if(d.day!==undefined){const e=document.getElementById('m-day'); if(e)e.value=d.day;}
+    // Vehicle-Checkboxen
+    if(Array.isArray(d.vehs)){
+      document.querySelectorAll('.m-veh-cb').forEach(cb=>{
+        cb.checked = d.vehs.includes(cb.value);
+      });
+    }
+  }catch(e){}
 }
 
 function deleteRudPatient(einsatzId,patientId){
@@ -4489,93 +5239,344 @@ function deleteRudPatient(einsatzId,patientId){
 }
 
 /* ── RUD Gantt ── */
-function renderRudGantt(){
-  const canvas=document.getElementById('rud-gantt');
-  if(!canvas)return;
-  const wrap=canvas.parentElement;
-  const TOTAL=26,BASE=8,LW=120,PT=44,PB=16;
-  const allPatients=getAllRudPatients();
+// Aktiver Tag-Index in der RUD-Timeline (0 = erster Tag, 1 = zweiter Tag, ...)
+let _rudActiveDay = 0;
 
-  // One row per unique schminker
-  const personMap={};
-  allPatients.forEach(p=>{
-    (p.persons||[]).forEach(pid=>{
-      if(!personMap[pid])personMap[pid]=[];
-      personMap[pid].push(p);
-    });
-  });
-  const unassigned=allPatients.filter(p=>!(p.persons&&p.persons.length));
-  const rows=Object.entries(personMap).map(([pid,entries])=>{
-    const pr=S.persons.find(x=>x.id===parseInt(pid));
-    return{label:pr?((pr.vorname||'')+(pr.nachname?' '+pr.nachname:'')):'?',entries};
-  });
-  if(unassigned.length)rows.push({label:'Nicht zugewiesen',entries:unassigned});
+// Liefert ein Array mit den Event-Tagen basierend auf S.infos.datum/datumEnd
+// Falls keine Daten gesetzt: leeres Array (Fallback auf Standard sa/so)
+function getEventDays(){
+  const di = S.infos||{};
+  if(!di.datum) return [];
+  const start = new Date(di.datum);
+  const end   = di.datumEnd ? new Date(di.datumEnd) : start;
+  if(isNaN(start.getTime())) return [];
+  if(isNaN(end.getTime())) return [{date:start, label:formatDayLabel(start)}];
+  const days = [];
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  let safety = 0;
+  while(cur <= last && safety++ < 31){
+    days.push({date: new Date(cur), label: formatDayLabel(cur)});
+    cur.setDate(cur.getDate()+1);
+  }
+  return days;
+}
 
-  const n=Math.max(rows.length,1);
-  const RH=60,W=Math.max(wrap.clientWidth||700,700),H=PT+n*RH+PB;
-  const dpr=window.devicePixelRatio||1;
-  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
-  const cW=W-LW-8;
-  ctx.clearRect(0,0,W,H);
-  function xOf(h){return LW+(h/TOTAL)*cW;}
-  function toRudOff(t){if(!t)return null;const[h,m]=t.split(':').map(Number);let v=h+m/60-BASE;if(v<0)v+=24;return v;}
+function formatDayLabel(d){
+  const wd = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return wd[d.getDay()]+' '+dd+'.'+mm+'.';
+}
 
-  rows.forEach((_,i)=>{
-    const rowY=PT+i*RH;
-    ctx.fillStyle=i%2===0?'rgba(255,255,255,0)':'rgba(0,0,0,0.025)';
-    ctx.fillRect(LW,rowY,cW,RH);
-    ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1;ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(LW,rowY+RH);ctx.lineTo(LW+cW,rowY+RH);ctx.stroke();
-  });
+// Liefert das Zeitfenster für einen Tag-Index (in Float-Stunden, kann >24 sein bei Tag 0)
+function getDayTimeWindow(dayIdx){
+  const days = getEventDays();
+  const eventStart = (S.infos&&S.infos.start) || '08:00';
+  const eventEnd   = (S.infos&&S.infos.end)   || '18:00';
+  function tToH(t){ if(!t) return null; const [h,m]=t.split(':').map(Number); return h+m/60; }
 
-  for(let h=0;h<=TOTAL;h+=0.5){
-    const x=xOf(h),full=h%1===0;
-    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=full?1:0.5;ctx.setLineDash(full?[]:[2,3]);
-    ctx.beginPath();ctx.moveTo(x,PT);ctx.lineTo(x,PT+n*RH);ctx.stroke();ctx.setLineDash([]);
-    if(full){ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign='center';
-      ctx.fillText(String(Math.round((BASE+h)%24)).padStart(2,'0')+':00',x,PT-8);}
+  if(!days.length){
+    // Fallback: kein Event-Datum gesetzt
+    if(dayIdx === 0) return {startH:6, endH:24, label:'Tag 1'};
+    if(dayIdx === 1) return {startH:0, endH:18, label:'Tag 2'};
+    return {startH:0, endH:24, label:'Tag '+(dayIdx+1)};
+  }
+  const totalDays = days.length;
+  const isFirst = dayIdx === 0;
+  const isLast  = dayIdx === totalDays-1;
+
+  let startH, endH;
+  if(isFirst){
+    // Erster Tag: 2h vor Event-Start
+    const sh = tToH(eventStart);
+    startH = sh!==null ? Math.max(0, Math.floor(sh-2)) : 6;
+  } else {
+    startH = 0;
+  }
+  if(isLast){
+    // Letzter Tag: 2h nach Event-Ende
+    const eh = tToH(eventEnd);
+    endH = eh!==null ? Math.min(24, Math.ceil(eh+2)) : 24;
+    if(totalDays === 1 && endH < startH) endH = 24;
+  } else {
+    endH = 24;
+  }
+  // Sonderfall: Single-Day-Event – Start 2h davor, Ende 2h danach
+  if(totalDays === 1){
+    const sh = tToH(eventStart);
+    const eh = tToH(eventEnd);
+    if(sh!==null) startH = Math.max(0, Math.floor(sh-2));
+    if(eh!==null) endH   = Math.min(24, Math.ceil(eh+2));
+    if(endH <= startH) endH = 24;
   }
 
-  const mx=xOf(24-BASE);
-  ctx.strokeStyle='rgba(184,105,28,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
-  ctx.beginPath();ctx.moveTo(mx,PT-2);ctx.lineTo(mx,PT+n*RH+2);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#854F0B';ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText('00:00',mx,PT-8);
+  return {startH, endH, label: days[dayIdx]?.label || ('Tag '+(dayIdx+1))};
+}
 
-  rows.forEach((row,i)=>{
-    const rowY=PT+i*RH;
-    ctx.fillStyle='#A32D2D';ctx.font='bold 11px sans-serif';ctx.textAlign='right';
-    ctx.fillText(row.label,LW-6,rowY+RH/2+4);
+// Rendert die Tag-Tabs dynamisch basierend auf den Event-Daten
+function renderRudDayTabs(){
+  const wrap = document.getElementById('rud-day-tabs');
+  if(!wrap) return;
+  const days = getEventDays();
+  let buttons;
+  if(!days.length){
+    // Fallback: 2 Tabs Sa/So
+    buttons = [{idx:0, label:'Tag 1'},{idx:1, label:'Tag 2'}];
+  } else {
+    buttons = days.map((d,i)=>({idx:i, label:d.label}));
+  }
+  // Aktiven Index ggf. clampen
+  if(_rudActiveDay >= buttons.length) _rudActiveDay = 0;
+  wrap.innerHTML = buttons.map(b=>{
+    const active = b.idx === _rudActiveDay;
+    const style = active
+      ? 'background:#1F3864;color:#fff;border:none;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;border-radius:5px;'
+      : 'background:transparent;color:#555;border:none;padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;border-radius:5px;';
+    return '<button class="rud-day-btn'+(active?' active':'')+'" data-day="'+b.idx+'" onclick="setRudDay('+b.idx+')" style="'+style+'">'+escHtml(b.label)+'</button>';
+  }).join('');
+}
+
+function setRudDay(dayIdx){
+  _rudActiveDay = parseInt(dayIdx) || 0;
+  renderRudDayTabs();
+  renderRudGantt();
+}
+
+// Bestimmt zu welchem Tag-Index ein Einsatz gehört
+function einsatzDay(e){
+  // Wenn explizit ein Tag gespeichert wurde, diesen nehmen
+  if(e && typeof e.day === 'number') return e.day;
+  const days = getEventDays();
+  if(!days.length){
+    // Fallback alte Logik
+    const start = e.start || '10:00';
+    const [h] = start.split(':').map(Number);
+    return h < 6 ? 1 : 0;
+  }
+  if(days.length === 1) return 0;
+  // Schwelle = Event-Start-Stunde
+  // Alles VOR Event-Start gehört zum Folgetag (z.B. Sonntagmorgen vor Event-Ende)
+  const eventStart = (S.infos&&S.infos.start) || '08:00';
+  const [esh, esm] = eventStart.split(':').map(Number);
+  const thresholdH = esh + esm/60;
+  const start = e.start || '10:00';
+  const [h, m] = start.split(':').map(Number);
+  const valH = h + m/60;
+  if(valH < thresholdH) return 1; // zweiter Tag
+  return 0; // erster Tag
+}
+
+function renderRudGantt(){
+  const container = document.getElementById('rud-timeline-container');
+  if(!container) return;
+
+  // Tag-Tabs ggf. neu rendern (falls noch nicht da oder Event-Daten geändert)
+  if(!document.querySelector('#rud-day-tabs .rud-day-btn')){
+    renderRudDayTabs();
+  }
+
+  // Einsätze des aktuellen Tags filtern
+  // Einsätze des aktuellen Tags filtern – nur Einsätze mit aktivem RUD
+  const allEinsaetze = (S.einsaetze||[]).filter(e=>einsatzDay(e)===_rudActiveDay && e.rudActive===true);
+
+  // Zeitfenster aus Event-Infos holen
+  const win = getDayTimeWindow(_rudActiveDay);
+  let startH = win.startH;
+  let endH   = win.endH;
+
+  // Helper: Zeit-String → Float-Stunde
+  function tToH(t){
+    if(!t) return null;
+    const [h,m] = t.split(':').map(Number);
+    return h + m/60;
+  }
+
+  // RUD-Patient-Map vorbereiten
+  const rudByEinsatz = {};
+  (S.rudEinsaetze||[]).forEach(r=>{ rudByEinsatz[r.einsatzId] = r.patients||[]; });
+
+  // Hinweis: Die Timeline-Grenzen werden NICHT mehr automatisch erweitert.
+  // Schminkzeiten oder Einsätze außerhalb des berechneten Fensters
+  // (Event-Start - 2h bis Event-Ende + 2h) werden geclamped/abgeschnitten.
+  // Das Fenster richtet sich strikt nach den Event-Infos.
+  const totalH = endH - startH;
+
+  // Tick-Stunden (alle 2h)
+  const ticks = [];
+  for(let h=startH; h<=endH; h+=2) ticks.push(h);
+
+  // X-Position berechnen (in Prozent)
+  function xPct(timeStr){
+    const val = tToH(timeStr);
+    if(val===null) return null;
+    // Außerhalb des Fensters → clampen
+    if(val < startH || val > endH) return null;
+    return ((val - startH) / totalH) * 100;
+  }
+
+  // Zeitachse oben
+  const minWidth = Math.max(800, S.vehicles.length*50);
+  let html = '<div class="rtl-time-axis" style="min-width:'+minWidth+'px;">';
+  ticks.forEach(h=>{
+    const pct = ((h - startH) / totalH) * 100;
+    html += '<div class="rtl-tick" style="left:'+pct+'%;">'+String(h%24).padStart(2,'0')+':00</div>';
   });
+  html += '</div>';
 
-  const BY=8,BH=RH-16;
-  rows.forEach((row,i)=>{
-    const rowY=PT+i*RH;
-    row.entries.forEach(p=>{
-      const so=toRudOff(p.schminkStart),eo=toRudOff(p.schminkEnd);
-      if(so===null||eo===null)return;
-      const eoAdj=eo<=so?eo+24:eo;
-      const soC=Math.max(0,Math.min(so,TOTAL)),eoC=Math.max(0,Math.min(eoAdj,TOTAL));
-      if(eoC<=soC)return;
-      const x1=xOf(soC),bW=Math.max(xOf(eoC)-x1,2);
-      ctx.fillStyle='#D05A1A';ctx.globalAlpha=0.85;
-      rrect(ctx,x1,rowY+BY,bW,BH,4);ctx.fill();
-      ctx.globalAlpha=1;
-      if(bW>24){
-        ctx.save();ctx.beginPath();ctx.rect(x1+3,rowY+BY,bW-6,BH);ctx.clip();
-        ctx.fillStyle='#fff';ctx.font='500 10px sans-serif';ctx.textAlign='center';
-        ctx.fillText(p.name||'?',x1+bW/2,rowY+BY+BH/2-3);
-        ctx.font='400 9px sans-serif';ctx.fillStyle='rgba(255,255,255,0.85)';
-        ctx.fillText((p.schminkStart||'')+'–'+(p.schminkEnd||''),x1+bW/2,rowY+BY+BH/2+9);
-        ctx.restore();
-      }
+  // Wenn keine Fahrzeuge
+  if(!S.vehicles.length){
+    html += '<div class="rtl-empty">Keine Fahrzeuge angelegt</div>';
+    container.innerHTML = html;
+    return;
+  }
+
+  // RUD-Patient-Map: ist bereits oben (im dynamischen Zeitfenster-Block) definiert
+
+  // Pro Fahrzeug eine Lane (Transport-Fahrzeuge überspringen – sie haben keine Einsätze)
+  S.vehicles.forEach(veh=>{
+    const typ = vTyp(veh);
+    if(typ === 'transport') return; // Transport-Fahrzeuge in RUD nicht anzeigen
+    const typLabel = 'Einsatzfahrzeug';
+    const vehColor = cOf(veh);
+
+    // Einsätze die dieses Fahrzeug zugewiesen haben
+    const vehEinsaetze = allEinsaetze.filter(e=>getEinsatzVehs(e).includes(veh));
+
+    html += '<div class="rtl-veh-lane" style="min-width:'+minWidth+'px;">';
+    html += '<div class="rtl-veh-label" style="border-right-color:'+vehColor+';">';
+    html += '<div class="rtl-veh-name" style="color:'+vehColor+';">'+escHtml(veh)+'</div>';
+    html += '<div class="rtl-veh-type">'+typLabel+'</div>';
+    html += '</div>';
+    html += '<div class="rtl-lane-rows">';
+
+    // Zeile 1: Einsätze
+    html += '<div class="rtl-row">';
+    html += '<div class="rtl-row-label">Einsätze</div>';
+    html += '<div class="rtl-row-bg">';
+    if(!vehEinsaetze.length){
+      html += '<div class="rtl-empty-row">— keine Einsätze —</div>';
+    } else {
+      vehEinsaetze.forEach(e=>{
+        const x1 = xPct(e.start);
+        const x2 = xPct(e.end);
+        if(x1===null || x2===null) return;
+        const w = Math.max(x2-x1, 2);
+        const cls = e.art==='Trauma' ? 'einsatz-trauma' : (e.art==='Internistisch' ? 'einsatz-intern' : 'einsatz-other');
+        const patCount = (rudByEinsatz[e.id]||[]).length;
+        const title = (e.ort||e.art||'Einsatz')+' · '+e.start+'–'+e.end+(patCount?' · '+patCount+' Patient(en)':'');
+        // Zwei-Zeilen-Layout: oben Ort, unten Uhrzeit + Pat-Anzahl
+        const labelHtml = '<span style="display:flex;flex-direction:column;line-height:1.15;width:100%;overflow:hidden;">'+
+          '<span style="font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(e.ort||e.art||'Einsatz')+'</span>'+
+          '<span style="font-size:9px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(e.start+'–'+e.end)+(patCount?' · '+patCount+' Pat.':'')+'</span>'+
+        '</span>';
+        html += '<div class="rtl-bar '+cls+'" style="left:'+x1+'%;width:'+w+'%;padding:2px 6px;" title="'+escHtml(title)+'" onclick="scrollToEinsatz('+e.id+')">'+
+          labelHtml+
+        '</div>';
+      });
+    }
+    html += '</div></div>';
+
+    // Zeile 2: RUD/Schminker – alle Patienten chronologisch sortiert
+    html += '<div class="rtl-row">';
+    html += '<div class="rtl-row-label">Schmink</div>';
+    html += '<div class="rtl-row-bg">';
+    // Alle Patienten dieses Fahrzeugs sammeln (sortiert nach Schminkstart)
+    const allPats = [];
+    vehEinsaetze.forEach(e=>{
+      const pats = rudByEinsatz[e.id]||[];
+      pats.forEach(p=>{
+        if(p.schminkStart && p.schminkEnd){
+          allPats.push({...p, einsatzId:e.id});
+        }
+      });
     });
+    allPats.sort((a,b)=>{
+      const ta = (a.schminkStart||'').replace(':','');
+      const tb = (b.schminkStart||'').replace(':','');
+      return ta.localeCompare(tb);
+    });
+
+    if(!allPats.length){
+      html += '<div class="rtl-empty-row">— keine Schminkzeiten —</div>';
+    } else {
+      // Smart-Stacking: Bars die sich überlappen kommen auf separate Spuren
+      function toMin(t){ if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
+      const lanes = []; // pro Lane: Array von {start, end}
+      const patWithLane = allPats.map(p=>{
+        const s = toMin(p.schminkStart), e = toMin(p.schminkEnd);
+        if(s===null||e===null) return {p, lane:0};
+        let chosenLane = -1;
+        for(let i=0;i<lanes.length;i++){
+          // Lane frei wenn alle bisherigen Einträge vor unserem Start enden
+          if(lanes[i].every(slot => slot.end <= s)){
+            chosenLane = i; break;
+          }
+        }
+        if(chosenLane === -1){
+          chosenLane = lanes.length;
+          lanes.push([]);
+        }
+        lanes[chosenLane].push({start:s, end:e});
+        return {p, lane:chosenLane};
+      });
+      const totalLanes = Math.max(lanes.length, 1);
+      // Mehr Platz pro Lane (bis zu 3 Lanes auf einer hohen Zeile)
+      const showLanes = Math.min(totalLanes, 3);
+      // Bei 1 Lane: 36px Höhe; bei 2: 18px; bei 3: 14px
+      const laneHeight = showLanes>2 ? 14 : (showLanes>1 ? 18 : 36);
+      patWithLane.forEach(({p, lane})=>{
+        const x1 = xPct(p.schminkStart);
+        const x2 = xPct(p.schminkEnd);
+        if(x1===null || x2===null) return;
+        const w = Math.max(x2-x1, 2);
+        const visualLane = Math.min(lane, showLanes-1);
+        const top = 3 + visualLane * (laneHeight + 2);
+        const title = (p.name||'?')+' · '+(p.schminkStart||'')+'–'+(p.schminkEnd||'')+(p.schminkOrt?' @ '+p.schminkOrt:'');
+        // Label-Inhalt je nach Lane-Höhe
+        let labelText;
+        if(laneHeight >= 30){
+          // Genug Platz: zwei Zeilen (Name oben, Zeit unten)
+          labelText = '<span style="display:flex;flex-direction:column;line-height:1.15;width:100%;overflow:hidden;">'+
+            '<span style="font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(p.name||'?')+'</span>'+
+            '<span style="font-size:9px;opacity:0.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml((p.schminkStart||'')+'–'+(p.schminkEnd||''))+'</span>'+
+          '</span>';
+        } else {
+          // Wenig Platz: nur Name
+          labelText = escHtml(p.name||'?');
+        }
+        const fontSize = laneHeight < 16 ? '9px' : '10px';
+        html += '<div class="rtl-bar schmink" style="left:'+x1+'%;width:'+w+'%;top:'+top+'px;height:'+laneHeight+'px;font-size:'+fontSize+';line-height:1.1;padding:'+(laneHeight>=30?'2px 6px':'0 6px')+';" title="'+escHtml(title)+'" onclick="scrollToEinsatz('+p.einsatzId+')">'+
+          labelText+
+        '</div>';
+      });
+    }
+    html += '</div></div>';
+
+    html += '</div></div>';
   });
 
-  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=0.5;ctx.strokeRect(LW,PT,cW,n*RH);
-  const leg=document.getElementById('rud-legend');
-  if(leg)leg.innerHTML='<span style="display:flex;align-items:center;gap:5px;font-size:12px;color:#666;"><span style="width:10px;height:10px;border-radius:2px;background:#D05A1A;display:inline-block;"></span>🟠 Schminken</span>';
+  container.innerHTML = html;
+
+  // Legende
+  const leg = document.getElementById('rud-legend');
+  if(leg){
+    leg.innerHTML =
+      '<span style="display:flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:#7a4800;display:inline-block;"></i> Schminken</span>'+
+      '<span style="display:flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:#A32D2D;display:inline-block;"></i> Einsatz Trauma</span>'+
+      '<span style="display:flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:#0C447C;display:inline-block;"></i> Einsatz Internistisch</span>'+
+      '<span style="display:flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:#5F5E5A;display:inline-block;"></i> Einsatz Andere</span>';
+  }
+}
+
+function scrollToEinsatz(einsatzId){
+  const el = document.getElementById('rud-einsatz-'+einsatzId);
+  if(el){
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.style.transition = 'background 0.5s';
+    el.style.background = '#fffbe6';
+    setTimeout(()=>{ el.style.background=''; }, 1500);
+  }
 }
 
 
@@ -4698,7 +5699,7 @@ function exportRudPDF(){
       if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML,y-0.5,CW,5.5,'F');}
       doc.setTextColor(0,0,0);
       doc.text((p.name||'–').substring(0,18),ML+2,y+3.5);
-      doc.text((p.einsatz.veh+(p.einsatz.ort?' / '+p.einsatz.ort:'')).substring(0,22),ML+40,y+3.5);
+      doc.text((vehListText(p.einsatz)+(p.einsatz.ort?' / '+p.einsatz.ort:'')).substring(0,22),ML+40,y+3.5);
       doc.text(p.ankunft||'–',ML+90,y+3.5);
       doc.text((p.schminkStart||'–')+'–'+(p.schminkEnd||'–'),ML+108,y+3.5);
       doc.text((p.transferStart||'–')+'–'+(p.transferEnd||'–'),ML+133,y+3.5);
@@ -4750,7 +5751,7 @@ function exportRudPDF(){
       doc.text(p.name||'–',ML+4,y+7);
       // Einsatz ref
       doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
-      doc.text('Einsatz: '+(p.einsatz.veh+(p.einsatz.ort?' – '+p.einsatz.ort:'')),ML+4,y+12);
+      doc.text('Einsatz: '+(vehListText(p.einsatz)+(p.einsatz.ort?' – '+p.einsatz.ort:'')),ML+4,y+12);
       doc.setTextColor(0,0,0);
       // Three phase boxes
       const bw=(CW-8)/3,bx1=ML+4,bx2=bx1+bw+2,bx3=bx2+bw+2;
@@ -4797,7 +5798,7 @@ function exportRudPDF(){
   for(let i=1;i<=pageCount;i++){
     doc.setPage(i);
     doc.setFontSize(7);doc.setTextColor(...GREY);
-    doc.text('RUD Export – 24h-Dienst WKJ',ML,PH-8);
+    doc.text('RUD Export – '+((S.infos&&S.infos.name)?S.infos.name:'Event'),ML,PH-8);
     doc.text('Seite '+i+' / '+pageCount,PW-MR,PH-8,{align:'right'});
     doc.setTextColor(0,0,0);
   }
@@ -5039,10 +6040,17 @@ document.getElementById('gantt').addEventListener('click', function(e){
   function xOf(h){return LW+(h/TOTAL)*chartW;}
   let hit = null;
   S.einsaetze.forEach(b=>{
-    const vi=S.vehicles.indexOf(b.veh); if(vi<0)return;
+    const vehs = getEinsatzVehs(b);
+    if(!vehs.length) return;
     let so=toOff(b.start),eo=toOff(b.end); if(eo<=so)eo+=24; if(eo>24)eo=24;
-    const x1=xOf(so),x2=xOf(eo),y=PT+vi*RH+EY;
-    if(mx>=x1&&mx<=x2&&my>=y&&my<=y+EH) hit=b.id;
+    const x1=xOf(so),x2=xOf(eo);
+    // Prüfen für jede Lane des Einsatzes
+    for(const veh of vehs){
+      const vi=S.vehicles.indexOf(veh);
+      if(vi<0) continue;
+      const y=PT+vi*RH+EY;
+      if(mx>=x1&&mx<=x2&&my>=y&&my<=y+EH){ hit=b.id; break; }
+    }
   });
   selectedEinsatzId = (hit===selectedEinsatzId)?null:hit;
   renderEinsaetze();
