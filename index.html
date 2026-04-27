@@ -233,6 +233,18 @@ body:not(.is-admin) .admin-only{display:none!important;}
   align-items:center;justify-content:center;flex-direction:column;
 }
 #login-screen.hidden{display:none;}
+#app-loading{
+  display:flex;position:fixed;inset:0;background:#f0f2f5;z-index:10000;
+  align-items:center;justify-content:center;flex-direction:column;
+}
+#app-loading.hidden{display:none;}
+.app-loading-spinner{
+  width:42px;height:42px;border:3px solid #d8dde5;border-top-color:#1F3864;
+  border-radius:50%;animation:appLoadingSpin 0.8s linear infinite;margin-bottom:18px;
+}
+@keyframes appLoadingSpin{to{transform:rotate(360deg);}}
+.app-loading-text{font-size:14px;color:#1F3864;font-weight:500;}
+.app-loading-sub{font-size:12px;color:#888;margin-top:4px;}
 .login-box{
   background:#fff;border-radius:16px;padding:2rem 2.25rem;width:90%;max-width:380px;
   box-shadow:0 8px 40px rgba(0,0,0,0.12);
@@ -358,7 +370,14 @@ body:not(.is-admin) .admin-only{display:none!important;}
 <body>
 
 <!-- ── Login Screen ── -->
-<div id="login-screen">
+<!-- ── App Loading Overlay (zeigt sich initial) ── -->
+<div id="app-loading">
+  <div class="app-loading-spinner"></div>
+  <div class="app-loading-text" id="app-loading-text">Lade Daten...</div>
+  <div class="app-loading-sub" id="app-loading-sub">Verbinde mit Server</div>
+</div>
+
+<div id="login-screen" class="hidden">
   <div class="login-box">
     <div class="login-logo">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -368,7 +387,6 @@ body:not(.is-admin) .admin-only{display:none!important;}
       </svg>
       <h1 id="login-event-name">Event-Manager</h1>
     </div>
-    <div id="login-pb-status" style="display:none;font-size:11px;color:#888;text-align:center;margin-bottom:8px;">⏳ Verbinde mit Server...</div>
     <div class="login-error" id="login-error">Benutzername oder Passwort falsch.</div>
     <div class="login-input-wrap">
       <label>Benutzername</label>
@@ -943,6 +961,66 @@ function hashPass(str){
   return 'h'+Math.abs(h).toString(36)+'x'+(str.length*7).toString(36);
 }
 
+// Generiert ein sicheres lesbares Passwort (10 Zeichen, ohne verwirrende 0/O/1/l/I)
+function generatePassword(length){
+  const len = length || 10;
+  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let pwd = '';
+  // crypto.getRandomValues falls verfügbar, sonst Math.random
+  if(window.crypto && window.crypto.getRandomValues){
+    const arr = new Uint32Array(len);
+    window.crypto.getRandomValues(arr);
+    for(let i=0;i<len;i++) pwd += chars[arr[i] % chars.length];
+  } else {
+    for(let i=0;i<len;i++) pwd += chars[Math.floor(Math.random()*chars.length)];
+  }
+  return pwd;
+}
+
+// Setzt ein generiertes Passwort ins Feld nu-pass und macht es sichtbar
+function regenerateUserPassword(){
+  const el = document.getElementById('nu-pass');
+  if(!el) return;
+  el.value = generatePassword(10);
+  el.type = 'text'; // sichtbar damit der Admin's lesen kann
+}
+
+// Kopiert den Wert von nu-pass in die Zwischenablage
+function copyUserPassword(){
+  const el = document.getElementById('nu-pass');
+  if(!el || !el.value) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(el.value).then(()=>{
+      const btn = document.getElementById('nu-pass-copy-btn');
+      if(btn){ const orig=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=orig, 1200); }
+    });
+  } else {
+    el.select(); document.execCommand('copy');
+  }
+}
+
+// Setzt ein generiertes Passwort ins Edit-User-Feld eu-pass und macht es sichtbar
+function regenerateEditUserPassword(){
+  const el = document.getElementById('eu-pass');
+  if(!el) return;
+  el.value = generatePassword(10);
+  el.type = 'text';
+}
+
+// Kopiert den Wert von eu-pass in die Zwischenablage
+function copyEditUserPassword(){
+  const el = document.getElementById('eu-pass');
+  if(!el || !el.value){ alert('Kein Passwort zum Kopieren – bitte erst generieren oder eingeben.'); return; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(el.value).then(()=>{
+      const btn = document.getElementById('eu-pass-copy-btn');
+      if(btn){ const orig=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=orig, 1200); }
+    });
+  } else {
+    el.select(); document.execCommand('copy');
+  }
+}
+
 function getUsers(){
   try{ return JSON.parse(localStorage.getItem('wkj-users')||'[]'); }
   catch(e){ return []; }
@@ -1112,6 +1190,7 @@ function initAuth(){
     const sess = JSON.parse(sessionStorage.getItem('wkj-auth')||'null');
     if(sess && sess.loggedIn){
       AUTH = sess;
+      document.getElementById('app-loading').classList.add('hidden');
       document.getElementById('login-screen').classList.add('hidden');
       applyRoleUI();
       load();
@@ -1120,6 +1199,7 @@ function initAuth(){
   }catch(e){}
   // Benutzer von separater PocketBase-Collection laden (geschützt, eigener Token)
   pbFetchUsersForLogin().finally(()=>{
+    document.getElementById('app-loading').classList.add('hidden');
     document.getElementById('login-screen').classList.remove('hidden');
     setTimeout(()=>{ const el=document.getElementById('login-user'); if(el)el.focus(); },100);
   });
@@ -1135,8 +1215,14 @@ async function pbFetchUsersForLogin(){
   // Bei erstem Start die URL automatisch speichern
   if(!localStorage.getItem('pb-url')) localStorage.setItem('pb-url', DEFAULT_PB_URL);
 
-  const statusEl = document.getElementById('login-pb-status');
-  if(statusEl){ statusEl.style.display='block'; statusEl.textContent='⏳ Verbinde mit Server...'; }
+  // Status im Loading-Overlay anzeigen
+  const setStatus = (txt, sub) => {
+    const t = document.getElementById('app-loading-text');
+    const s = document.getElementById('app-loading-sub');
+    if(t && txt) t.textContent = txt;
+    if(s && sub !== undefined) s.textContent = sub;
+  };
+  setStatus('Lade Daten...', 'Verbinde mit Server');
   try{
     const readerEmail = localStorage.getItem('pb-reader-email') || DEFAULT_READER_EMAIL;
     const readerPass  = localStorage.getItem('pb-reader-pass')  || DEFAULT_READER_PASS;
@@ -1148,7 +1234,7 @@ async function pbFetchUsersForLogin(){
       body: JSON.stringify({identity: readerEmail, password: readerPass})
     });
     if(!authRes.ok){
-      if(statusEl) statusEl.textContent='⚠️ Reader-Login fehlgeschlagen';
+      setStatus('Verbindungsfehler', 'Reader-Login fehlgeschlagen');
       return;
     }
     const authData = await authRes.json();
@@ -1156,11 +1242,12 @@ async function pbFetchUsersForLogin(){
     if(!readerToken) return;
 
     // 2. Mit Token wkj_users abrufen
+    setStatus('Lade Daten...', 'Benutzerdaten werden geladen');
     const usersRes = await fetch(url+'/api/collections/wkj_users/records?perPage=200', {
       headers:{'Content-Type':'application/json', 'Authorization': readerToken}
     });
     if(!usersRes.ok){
-      if(statusEl) statusEl.textContent='⚠️ Benutzer konnten nicht geladen werden';
+      setStatus('Verbindungsfehler', 'Benutzer konnten nicht geladen werden');
       return;
     }
     const data = await usersRes.json();
@@ -1173,13 +1260,9 @@ async function pbFetchUsersForLogin(){
         perms: r.perms||null
       }));
       localStorage.setItem('wkj-users', JSON.stringify(users));
-      if(statusEl) statusEl.textContent='✅ '+users.length+' Benutzer geladen';
     }
   } catch(e){
-    if(statusEl) statusEl.textContent='⚠️ Server nicht erreichbar';
-  }
-  finally{
-    setTimeout(()=>{ if(statusEl) statusEl.style.display='none'; }, 2000);
+    setStatus('Verbindungsfehler', 'Server nicht erreichbar');
   }
 }
 
@@ -1207,10 +1290,28 @@ const DEFAULT_PERMS = {
   print:   ALL_PAGES.map(p=>p.id),  // pages where printing is allowed
 };
 
+// Liefert sinnvolle Default-Permissions je nach Rolle beim Anlegen eines Benutzers
+function buildDefaultPermsForRole(role){
+  if(role === 'gast'){
+    // Gast: nur Dashboard, Infos, Freizeit, Einsätze sichtbar – keine Bearbeitung/Druck
+    return {pages: ['dashboard','infos','freizeit','einsaetze'], write: [], print: []};
+  }
+  // Betreuer/Admin: alle Rechte (Admin wird bei getPerms ohnehin überschrieben)
+  return {pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write], print:[...DEFAULT_PERMS.print]};
+}
+
 function getPerms(user){
   if(!user) return {pages:[], write:[], print:[]};
   if(user.role==='admin') return {pages:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration'], write:[...ALL_PAGES.map(p=>p.id),'einstellungen','administration'], print:[...ALL_PAGES.map(p=>p.id)]};
-  if(user.role==='gast') return {pages:['dashboard'], write:[], print:[]};
+  // Gast: Default ist nur Dashboard/Infos/Freizeit/Einsätze sichtbar – kann pro User angepasst werden
+  if(user.role==='gast'){
+    if(user.perms) {
+      const p = user.perms;
+      if(!p.print) p.print = [];
+      return p;
+    }
+    return {pages: ['dashboard','infos','freizeit','einsaetze'], write:[], print:[]};
+  }
   const p = user.perms || DEFAULT_PERMS;
   // Backward-compat: falls ältere Benutzer kein print-Feld haben
   if(!p.print) p.print = [];
@@ -1271,6 +1372,21 @@ function applyPagePerms(){
       navEl.style.display = perms.pages.includes(p.id) ? '' : 'none';
     }
   });
+  // Gruppen ohne sichtbare Items komplett ausblenden + offene Gruppen automatisch aufklappen
+  ['allgemein','einsatz','sonstiges'].forEach(g=>{
+    const items = document.getElementById('group-'+g);
+    if(!items) return;
+    const groupWrap = items.closest('.nav-group');
+    const visibleItems = [...items.querySelectorAll('.nav-item')].filter(n=>n.style.display!=='none');
+    if(visibleItems.length === 0){
+      // Keine sichtbaren Items → ganze Gruppe verstecken
+      if(groupWrap) groupWrap.style.display = 'none';
+    } else {
+      // Mind. ein sichtbares Item → Gruppe automatisch aufklappen
+      _navGroupOpen[g] = true;
+    }
+  });
+  applyNavGroups();
   // Hide write buttons on read-only pages
   applyWritePerms();
 }
@@ -1303,7 +1419,6 @@ function openUserMgmt(){
     '<td style="padding:7px 10px;">'+roleBadge(u.role,false)+'</td>'+
     '<td style="padding:7px 10px;display:flex;gap:6px;">'+
       '<button class="btn btn-sm" onclick="openEditUser(\''+escHtml(u.username)+'\')">✏️ Bearbeiten</button>'+
-      (u.role!=='admin'?'<button class="btn btn-sm" onclick="openPermEditor(\''+escHtml(u.username)+'\')">⚙️ Rechte</button>':'')+
       (u.username!==AUTH.username?'<button class="btn btn-sm btn-danger" onclick="deleteUser(\''+escHtml(u.username)+'\')">Löschen</button>':'<span style="font-size:11px;color:var(--text2);">Ich</span>')+
     '</td>'+
     '</tr>'
@@ -1323,11 +1438,17 @@ function openUserMgmt(){
 
 function openAddUser(){
   if(AUTH.role!=='admin') return;
+  const initialPwd = generatePassword(10);
   openModal(
     '<h2>➕ Neuer Benutzer</h2>'+
     '<div class="form-row-2"><div class="form-row"><label>Anzeigename</label><input type="text" id="nu-display" placeholder="Max Mustermann"></div>'+
     '<div class="form-row"><label>Benutzername</label><input type="text" id="nu-name" placeholder="max"></div></div>'+
-    '<div class="form-row-2"><div class="form-row"><label>Passwort</label><input type="password" id="nu-pass" placeholder="Min. 4 Zeichen"></div>'+
+    '<div class="form-row-2"><div class="form-row"><label>Passwort <span style="font-size:11px;color:var(--text2);font-weight:400;">(automatisch generiert)</span></label>'+
+      '<div style="display:flex;gap:4px;">'+
+        '<input type="text" id="nu-pass" value="'+initialPwd+'" style="flex:1;font-family:monospace;letter-spacing:0.5px;">'+
+        '<button type="button" class="btn btn-sm" onclick="regenerateUserPassword()" title="Neu generieren" style="padding:0 10px;">🔄</button>'+
+        '<button type="button" id="nu-pass-copy-btn" class="btn btn-sm" onclick="copyUserPassword()" title="In Zwischenablage kopieren" style="padding:0 10px;">📋</button>'+
+      '</div></div>'+
     '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option><option value="gast">Gast</option></select></div></div>'+
     '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
     '<button class="btn" onclick="openUserMgmt()">← Zurück</button>'+
@@ -1345,10 +1466,37 @@ function addUser(){
   if(pass.length<4){ alert('Passwort muss mindestens 4 Zeichen haben.'); return; }
   const users = getUsers();
   if(users.find(u=>u.username===name)){ alert('Dieser Benutzername ist bereits vergeben.'); return; }
-  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms: {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
+  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms: buildDefaultPermsForRole(role)});
   saveUsers(users);
   closeModal(true);
-  openUserMgmt();
+  showCredentialsModal(name, pass, display||name);
+}
+
+// Zeigt die Anmeldedaten nach dem Anlegen eines Benutzers an
+function showCredentialsModal(username, password, displayName){
+  openModal(
+    '<h2>✅ Benutzer angelegt</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Bitte teile <b>'+escHtml(displayName)+'</b> die folgenden Anmeldedaten mit. Sie werden danach <b>nicht mehr angezeigt</b>.</p>'+
+    '<div style="background:#FFF8E6;border:1px solid #F0D080;border-radius:8px;padding:14px;margin-bottom:14px;">'+
+      '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:14px;">'+
+        '<div style="font-weight:600;color:#7A5500;">Benutzer:</div>'+
+        '<div style="font-family:monospace;letter-spacing:0.5px;">'+escHtml(username)+'</div>'+
+        '<div style="font-weight:600;color:#7A5500;">Passwort:</div>'+
+        '<div style="font-family:monospace;letter-spacing:0.5px;">'+escHtml(password)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+      '<button class="btn btn-sm" onclick="copyCredentials(\''+escHtml(username)+'\',\''+escHtml(password)+'\')">📋 Beide kopieren</button>'+
+      '<button class="btn btn-primary" onclick="closeModal(true);openUserMgmt();">Schließen</button>'+
+    '</div>'
+  );
+}
+
+function copyCredentials(username, password){
+  const txt = 'Benutzer: '+username+'\nPasswort: '+password;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt);
+  }
 }
 
 function deleteUser(username){
@@ -1365,56 +1513,6 @@ function openEditUser(username){
   const users = getUsers();
   const u = users.find(x=>x.username===username);
   if(!u) return;
-  openModal(
-    '<h2>✏️ Benutzer bearbeiten</h2>'+
-    '<div class="form-row"><label>Anzeigename</label><input type="text" id="eu-display" value="'+escHtml(u.displayName||u.username)+'" placeholder="Max Mustermann"></div>'+
-    '<div class="form-row"><label>Benutzername</label><input type="text" id="eu-name" value="'+escHtml(u.username)+'" placeholder="max"></div>'+
-    '<div class="form-row"><label>Rolle</label><select id="eu-role">'+
-      '<option value="betreuer"'+(u.role==='betreuer'?' selected':'')+'>Betreuer</option>'+
-      '<option value="admin"'+(u.role==='admin'?' selected':'')+'>Admin</option>'+
-      '<option value="gast"'+(u.role==='gast'?' selected':'')+'>Gast</option>'+
-    '</select></div>'+
-    '<div class="form-row"><label>Neues Passwort <span style="font-size:11px;color:var(--text2);">(leer lassen = unverändert)</span></label>'+
-    '<input type="password" id="eu-pass" placeholder="Min. 4 Zeichen"></div>'+
-    '<div id="eu-err" style="display:none;color:#A32D2D;font-size:12px;margin-bottom:8px;"></div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
-    '<button class="btn" onclick="openUserMgmt()">← Zurück</button>'+
-    '<button class="btn btn-primary" onclick="saveEditUser(\''+escHtml(username)+'\')" >Speichern</button></div>'
-  );
-}
-
-function saveEditUser(oldUsername){
-  const display = document.getElementById('eu-display').value.trim();
-  const newName = document.getElementById('eu-name').value.trim().toLowerCase();
-  const role    = document.getElementById('eu-role').value;
-  const pass    = document.getElementById('eu-pass').value;
-  const errEl   = document.getElementById('eu-err');
-  const showErr = msg=>{ errEl.textContent=msg; errEl.style.display='block'; };
-
-  if(!newName){ showErr('Benutzername darf nicht leer sein.'); return; }
-  if(pass && pass.length<4){ showErr('Passwort muss mindestens 4 Zeichen haben.'); return; }
-
-  const users = getUsers();
-  // Check duplicate username (only if changed)
-  if(newName !== oldUsername && users.find(u=>u.username===newName)){
-    showErr('Dieser Benutzername ist bereits vergeben.'); return;
-  }
-  const u = users.find(x=>x.username===oldUsername);
-  if(!u) return;
-  u.displayName = display || newName;
-  u.username    = newName;
-  u.role        = role;
-  if(pass) u.passwordHash = hashPass(pass);
-  saveUsers(users);
-  closeModal(true);
-  openUserMgmt();
-}
-
-/* ── Permission Editor ── */
-function openPermEditor(username){
-  const users = getUsers();
-  const u = users.find(x=>x.username===username);
-  if(!u) return;
   const perms = u.perms || {...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write], print:[...DEFAULT_PERMS.print]};
   if(!perms.print) perms.print = [];
 
@@ -1422,8 +1520,30 @@ function openPermEditor(username){
   const groups = {};
   ALL_PAGES.filter(p=>p.id!=='drucken').forEach(p=>{ if(!groups[p.group]) groups[p.group]=[]; groups[p.group].push(p); });
 
-  let html = '<h2>⚙️ Rechte: '+escHtml(u.displayName||u.username)+'</h2>'+
-    '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Legen Sie fest welche Seiten sichtbar sind, ob der Benutzer bearbeiten und drucken darf. <br><span style="font-size:11px;">Hinweis: Bearbeiten beinhaltet automatisch Drucken. Die Drucken-Seite erscheint automatisch wenn mind. ein Bereich druckbar ist.</span></p>'+
+  // Stammdaten-Sektion
+  let html = '<h2>✏️ Benutzer bearbeiten: '+escHtml(u.displayName||u.username)+'</h2>'+
+    '<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Stammdaten</div>'+
+    '<div class="form-row-2">'+
+      '<div class="form-row"><label>Anzeigename</label><input type="text" id="eu-display" value="'+escHtml(u.displayName||u.username)+'" placeholder="Max Mustermann"></div>'+
+      '<div class="form-row"><label>Benutzername</label><input type="text" id="eu-name" value="'+escHtml(u.username)+'" placeholder="max"></div>'+
+    '</div>'+
+    '<div class="form-row-2">'+
+      '<div class="form-row"><label>Rolle</label><select id="eu-role">'+
+        '<option value="betreuer"'+(u.role==='betreuer'?' selected':'')+'>Betreuer</option>'+
+        '<option value="admin"'+(u.role==='admin'?' selected':'')+'>Admin</option>'+
+        '<option value="gast"'+(u.role==='gast'?' selected':'')+'>Gast</option>'+
+      '</select></div>'+
+      '<div class="form-row"><label>Neues Passwort <span style="font-size:11px;color:var(--text2);font-weight:400;">(leer = unverändert)</span></label>'+
+        '<div style="display:flex;gap:4px;">'+
+          '<input type="password" id="eu-pass" placeholder="••••••••" style="flex:1;">'+
+          '<button type="button" class="btn btn-sm" onclick="regenerateEditUserPassword()" title="Neues Passwort generieren" style="padding:0 10px;">🔄</button>'+
+          '<button type="button" id="eu-pass-copy-btn" class="btn btn-sm" onclick="copyEditUserPassword()" title="In Zwischenablage kopieren" style="padding:0 10px;">📋</button>'+
+        '</div></div>'+
+    '</div>'+
+    '<div id="eu-err" style="display:none;color:#A32D2D;font-size:12px;margin-bottom:8px;"></div>'+
+    // Rechte-Sektion
+    '<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:18px 0 8px;border-top:1px solid var(--border);padding-top:14px;">Rechte</div>'+
+    '<p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Welche Seiten sichtbar sind, ob bearbeitet/gedruckt werden darf. <span style="font-size:11px;">Hinweis: Die Drucken-Seite erscheint automatisch wenn mind. ein Bereich druckbar ist.</span></p>'+
     '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
     '<thead><tr>'+
     '<th style="text-align:left;padding:6px 8px;color:var(--text2);font-size:11px;background:var(--bg3);">Bereich</th>'+
@@ -1461,13 +1581,56 @@ function openPermEditor(username){
 
   html += '</tbody></table>'+
     '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">'+
-    '<button class="btn btn-sm" onclick="permSetAll(true)">Alle aktivieren</button>'+
     '<div style="display:flex;gap:8px;">'+
-    '<button class="btn" onclick="openSettingsSection(\'benutzer\')">← Zurück</button>'+
-    '<button class="btn btn-primary" onclick="savePerms(\''+escHtml(username)+'\')">Speichern</button>'+
+      '<button class="btn btn-sm" onclick="permSetAll(true)">Alle aktivieren</button>'+
+      '<button class="btn btn-sm" onclick="permSetAll(false)">Alle deaktivieren</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '<button class="btn btn-primary" onclick="saveEditUser(\''+escHtml(username)+'\')">Speichern</button>'+
     '</div></div>';
 
   openModal(html);
+  // Modal breit machen
+  const mc = document.getElementById('modal-content');
+  if(mc) mc.classList.add('wide');
+}
+
+function saveEditUser(oldUsername){
+  const display = document.getElementById('eu-display').value.trim();
+  const newName = document.getElementById('eu-name').value.trim().toLowerCase();
+  const role    = document.getElementById('eu-role').value;
+  const pass    = document.getElementById('eu-pass').value;
+  const errEl   = document.getElementById('eu-err');
+  const showErr = msg=>{ errEl.textContent=msg; errEl.style.display='block'; window.scrollTo(0,0); };
+
+  if(!newName){ showErr('Benutzername darf nicht leer sein.'); return; }
+  if(pass && pass.length<4){ showErr('Passwort muss mindestens 4 Zeichen haben.'); return; }
+
+  const users = getUsers();
+  // Check duplicate username (only if changed)
+  if(newName !== oldUsername && users.find(u=>u.username===newName)){
+    showErr('Dieser Benutzername ist bereits vergeben.'); return;
+  }
+  const u = users.find(x=>x.username===oldUsername);
+  if(!u) return;
+  u.displayName = display || newName;
+  u.username    = newName;
+  u.role        = role;
+  if(pass) u.passwordHash = hashPass(pass);
+  // Rechte aus den Checkboxen lesen und übernehmen
+  const pages=[], write=[], print=[];
+  document.querySelectorAll('#modal-content input[data-perm="see"]:checked').forEach(cb=>pages.push(cb.dataset.page));
+  document.querySelectorAll('#modal-content input[data-perm="write"]:checked').forEach(cb=>write.push(cb.dataset.page));
+  document.querySelectorAll('#modal-content input[data-perm="print"]:checked').forEach(cb=>print.push(cb.dataset.page));
+  u.perms = {pages, write, print};
+  saveUsers(users);
+  closeModal(true);
+  openSettingsSection('benutzer');
+  // Wenn Passwort geändert wurde: Anmeldedaten anzeigen, damit Admin sie weitergeben kann
+  if(pass){
+    showCredentialsModal(newName, pass, u.displayName);
+  }
 }
 
 function permCheckChange(cb){
@@ -1491,8 +1654,13 @@ function permSetAll(on){
   document.querySelectorAll('#modal-content input[type=checkbox]').forEach(cb=>{
     cb.checked=on;
     cb.disabled=false;
-    if(!on && cb.dataset.perm==='write') cb.disabled=true;
   });
+  if(!on){
+    // Wenn alles deaktiviert: Write/Print sind ohnehin disabled wenn See nicht gesetzt
+    document.querySelectorAll('#modal-content input[data-perm="write"], #modal-content input[data-perm="print"]').forEach(cb=>{
+      cb.disabled=true;
+    });
+  }
 }
 
 function savePerms(username){
@@ -1543,7 +1711,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.4.5'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.5.3'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -2502,7 +2670,6 @@ function openAdminPage(section){
       '<td style="padding:10px 8px;text-align:right;">'+
         '<div style="display:flex;gap:6px;justify-content:flex-end;">'+
         '<button class="btn btn-sm" onclick="openEditUser(\''+escHtml(u.username)+'\')">✏️</button>'+
-        (u.role!=='admin'?'<button class="btn btn-sm" onclick="openPermEditor(\''+escHtml(u.username)+'\')">⚙️ Rechte</button>':'')+
         (u.username!==AUTH.username?'<button class="btn btn-sm btn-danger" onclick="deleteUser(\''+escHtml(u.username)+'\')">Löschen</button>':'<span style="font-size:11px;color:var(--text2);line-height:2.2;">Ich</span>')+
         '</div>'+
       '</td></tr>'
@@ -2633,7 +2800,7 @@ function openSettingsSection(section){
       '<td style="padding:10px 8px;">'+roleBadge(u.role,true)+'</td>'+
       '<td style="padding:10px 8px;text-align:right;">'+
         '<div style="display:flex;gap:6px;justify-content:flex-end;">'+
-        (u.role!=='admin'?'<button class="btn btn-sm" onclick="openPermEditor(\''+escHtml(u.username)+'\')">Rechte</button>':'')+
+        '<button class="btn btn-sm" onclick="openEditUser(\''+escHtml(u.username)+'\')">✏️ Bearbeiten</button>'+
         (u.username!==AUTH.username?'<button class="btn btn-sm btn-danger" onclick="confirmDeleteUser(\''+escHtml(u.username)+'\')">Löschen</button>':'<span style="font-size:11px;color:var(--text2);line-height:2.2;">Ich</span>')+
         '</div>'+
       '</td></tr>'
@@ -2655,8 +2822,13 @@ function openSettingsSection(section){
         '<div class="form-row"><label>Benutzername</label><input type="text" id="nu-name" placeholder="max"></div>'+
       '</div>'+
       '<div class="form-row-2">'+
-        '<div class="form-row"><label>Passwort</label><input type="password" id="nu-pass" placeholder="Min. 4 Zeichen"></div>'+
-        '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option></select></div>'+
+        '<div class="form-row"><label>Passwort <span style="font-size:11px;color:var(--text2);font-weight:400;">(automatisch generiert)</span></label>'+
+          '<div style="display:flex;gap:4px;">'+
+            '<input type="text" id="nu-pass" style="flex:1;font-family:monospace;letter-spacing:0.5px;">'+
+            '<button type="button" class="btn btn-sm" onclick="regenerateUserPassword()" title="Neu generieren" style="padding:0 10px;">🔄</button>'+
+            '<button type="button" id="nu-pass-copy-btn" class="btn btn-sm" onclick="copyUserPassword()" title="In Zwischenablage kopieren" style="padding:0 10px;">📋</button>'+
+          '</div></div>'+
+        '<div class="form-row"><label>Rolle</label><select id="nu-role"><option value="betreuer">Betreuer</option><option value="admin">Admin</option><option value="gast">Gast</option></select></div>'+
       '</div>'+
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">'+
         '<button class="btn btn-sm" onclick="closeInlineAddUser()">← Zurück</button>'+
@@ -2740,6 +2912,13 @@ function openInlineAddUser(){
   const tbl = document.getElementById('user-table-card');
   if(el) el.style.display='';
   if(tbl) tbl.style.display='none';
+  // Passwort automatisch generieren
+  const pwdEl = document.getElementById('nu-pass');
+  if(pwdEl){ pwdEl.value = generatePassword(10); pwdEl.type = 'text'; }
+  // Andere Felder leeren
+  const dispEl = document.getElementById('nu-display'); if(dispEl) dispEl.value='';
+  const nameEl = document.getElementById('nu-name'); if(nameEl) nameEl.value='';
+  const roleEl = document.getElementById('nu-role'); if(roleEl) roleEl.value='betreuer';
 }
 
 function closeInlineAddUser(){
@@ -2759,9 +2938,11 @@ function addUserInline(){
   if(pass.length<4){ alert('Passwort muss mindestens 4 Zeichen haben.'); return; }
   const users = getUsers();
   if(users.find(u=>u.username===name)){ alert('Dieser Benutzername ist bereits vergeben.'); return; }
-  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms:{...DEFAULT_PERMS, pages:[...DEFAULT_PERMS.pages], write:[...DEFAULT_PERMS.write]}});
+  users.push({username:name, passwordHash:hashPass(pass), role, displayName:display||name, perms:buildDefaultPermsForRole(role)});
   saveUsers(users);
+  closeInlineAddUser();
   openSettingsSection('benutzer');
+  showCredentialsModal(name, pass, display||name);
 }
 
 function confirmDeleteUser(username){
