@@ -760,7 +760,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Einsätze</span><button class="btn btn-primary btn-sm" onclick="openEinsatzModal()">+ Einsatz</button></div>
-        <div style="overflow-x:auto;"><table><thead><tr><th>Fahrzeug</th><th>Status</th><th>Start</th><th>Ende</th><th>Dauer</th><th>Ort</th><th>Einsatzart</th><th>Beschreibung</th><th>ASP</th><th></th></tr></thead><tbody id="einsatz-body"></tbody></table></div>
+        <div style="overflow-x:auto;"><table><thead><tr><th>Fahrzeug</th><th>Status</th><th>Start</th><th>Ende</th><th>Dauer</th><th>Ort</th><th>Einsatzart</th><th style="text-align:center;">RUD</th><th>Beschreibung</th><th>ASP</th><th></th></tr></thead><tbody id="einsatz-body"></tbody></table></div>
       </div>
     </div>
 
@@ -1528,7 +1528,7 @@ function openEditUser(username){
       '<div class="form-row"><label>Benutzername</label><input type="text" id="eu-name" value="'+escHtml(u.username)+'" placeholder="max"></div>'+
     '</div>'+
     '<div class="form-row-2">'+
-      '<div class="form-row"><label>Rolle</label><select id="eu-role">'+
+      '<div class="form-row"><label>Rolle</label><select id="eu-role" onchange="onEditUserRoleChange(this.value)">'+
         '<option value="betreuer"'+(u.role==='betreuer'?' selected':'')+'>Betreuer</option>'+
         '<option value="admin"'+(u.role==='admin'?' selected':'')+'>Admin</option>'+
         '<option value="gast"'+(u.role==='gast'?' selected':'')+'>Gast</option>'+
@@ -1650,6 +1650,31 @@ function permCheckChange(cb){
   }
 }
 
+// Wird aufgerufen wenn die Rolle im Bearbeiten-Modal gewechselt wird
+function onEditUserRoleChange(newRole){
+  const defaults = buildDefaultPermsForRole(newRole);
+  // Alle Checkboxen entsprechend der neuen Rolle setzen
+  document.querySelectorAll('#modal-content input[data-perm="see"]').forEach(cb=>{
+    cb.checked = defaults.pages.includes(cb.dataset.page);
+    cb.disabled = false;
+  });
+  document.querySelectorAll('#modal-content input[data-perm="write"]').forEach(cb=>{
+    cb.checked = defaults.write.includes(cb.dataset.page);
+  });
+  document.querySelectorAll('#modal-content input[data-perm="print"]').forEach(cb=>{
+    cb.checked = defaults.print.includes(cb.dataset.page);
+  });
+  // Write/Print disabled wenn See nicht aktiv ist
+  document.querySelectorAll('#modal-content input[data-perm="see"]').forEach(seeCb=>{
+    const row = seeCb.closest('tr');
+    if(!row) return;
+    const writeCb = row.querySelector('[data-perm="write"]');
+    const printCb = row.querySelector('[data-perm="print"]');
+    if(writeCb) writeCb.disabled = !seeCb.checked;
+    if(printCb) printCb.disabled = !seeCb.checked;
+  });
+}
+
 function permSetAll(on){
   document.querySelectorAll('#modal-content input[type=checkbox]').forEach(cb=>{
     cb.checked=on;
@@ -1711,7 +1736,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.5.3'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.5.6'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1832,14 +1857,22 @@ function migrate(data){
       const key = (e.start||'')+'|'+(e.end||'')+'|'+(e.ort||'')+'|'+(e.art||'')+'|'+(e.desc||'').slice(0,40);
       if(!merged[key]){
         const copy = Object.assign({}, e);
-        copy.vehs = e.veh ? [e.veh] : [];
+        // Falls bereits vehs-Array vorhanden: behalten. Sonst aus altem e.veh ableiten.
+        if(Array.isArray(copy.vehs) && copy.vehs.length){
+          // vehs ist bereits korrekt gefüllt – nichts tun
+        } else {
+          copy.vehs = e.veh ? [e.veh] : (Array.isArray(e.vehs) ? e.vehs : []);
+        }
         delete copy.veh;
         merged[key] = copy;
         idMap[e.id] = copy.id; // Self-Mapping
       } else {
-        // Gleicher Einsatz – nur Fahrzeug ergänzen
+        // Gleicher Einsatz – Fahrzeug(e) ergänzen
         if(e.veh && !merged[key].vehs.includes(e.veh)){
           merged[key].vehs.push(e.veh);
+        }
+        if(Array.isArray(e.vehs)){
+          e.vehs.forEach(v=>{ if(v && !merged[key].vehs.includes(v)) merged[key].vehs.push(v); });
         }
         idMap[e.id] = merged[key].id; // Alte ID → erste/Master-ID
       }
@@ -3303,10 +3336,10 @@ function renderEinsaetze(){
       '<td>'+statusDropdown(b.id, b.status)+'</td>'+
       '<td>'+b.start+'</td><td>'+b.end+'</td><td style="color:var(--text2);font-size:12px;">'+durStr(b.start,b.end)+'</td>'+
       '<td style="max-width:120px;font-size:12px;color:#185FA5;cursor:pointer;text-decoration:underline dotted;" onclick="showOrtDetail('+b.id+')">'+escHtml(b.ort||'–')+'</td>'+
-      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span>'+(b.rudActive===true?' <span class="badge" title="RUD aktiv" style="background:#FFF1E0;color:#7a4800;font-size:10px;margin-left:4px;">🎭 RUD</span>':'')+'</td>'+
+      '<td><span class="badge" style="background:'+(b.art==='Trauma'?'#FCEBEB':b.art==='Internistisch'?'#E6F1FB':b.art==='Transport'?'#EAF3DE':'#F1EFE8')+';color:'+(b.art==='Trauma'?'#A32D2D':b.art==='Internistisch'?'#0C447C':b.art==='Transport'?'#27500A':'#5F5E5A')+';">'+escHtml(b.art||'–')+'</span></td>'+
+      '<td style="text-align:center;">'+(b.rudActive===true?'<span class="badge" title="RUD aktiv" style="background:#FFF1E0;color:#7a4800;">🎭</span>':'<span style="color:#ccc;font-size:11px;">–</span>')+'</td>'+
       '<td style="max-width:180px;font-size:12px;color:#555;">'+escHtml(b.desc||'')+'</td>'+
       '<td style="max-width:120px;font-size:12px;color:#555;">'+escHtml(b.asp||'')+'</td>'+
-      '</td>'+
       '<td style="white-space:nowrap;"><button class="btn btn-sm" onclick="openEinsatzModal('+b.id+')" style="margin-right:4px;">Bearbeiten</button>'+
       '<button class="btn btn-sm btn-danger" onclick="deleteEinsatz('+b.id+')">x</button></td>';
     tb.appendChild(tr);
