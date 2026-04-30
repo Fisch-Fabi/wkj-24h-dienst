@@ -211,18 +211,53 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
 .info-sb-key{font-size:12px;color:var(--text2);width:120px;flex-shrink:0;padding-top:2px;}
 .info-sb-val{font-size:14px;font-weight:500;color:var(--text);}
 @media print{
-  .sidebar,.topbar,.btn,.btn-primary,.btn-danger,.nav-item,.search-bar,.no-print,button{display:none!important;}
-  body{background:#fff!important;color:#000!important;display:block;}
-  .main{width:100%;}
+  /* Layout-Container ausblenden */
+  .sidebar,.topbar,.search-bar,.no-print,#app-loading,#login-screen,#user-menu{display:none!important;}
+  /* Buttons & Aktionen ausblenden */
+  button,.btn,.btn-primary,.btn-danger,.btn-sm,select{display:none!important;}
+  /* Sicherer Reset */
+  *{box-shadow:none!important;text-shadow:none!important;}
+  body{background:#fff!important;color:#000!important;display:block;font-family:'Helvetica',sans-serif;font-size:11pt;}
+  .main{width:100%;margin:0;padding:0;}
   .content{padding:0;}
+  /* Seiten – nur active drucken */
   .page{display:none!important;}
   .page.print-active{display:block!important;}
-  .card{border:1px solid #ccc;border-radius:0;break-inside:avoid;margin-bottom:12px;}
-  canvas{max-width:100%;}
-  #print-header{display:block!important;margin-bottom:16px;}
+  /* Cards: heller, mit klarer Trennung, nicht in der Mitte umbrechen */
+  .card{border:1px solid #bbb!important;border-radius:0!important;break-inside:avoid;margin-bottom:10px!important;padding:8px 10px!important;background:#fff!important;box-shadow:none!important;}
+  .card-header{border-bottom:1px solid #ccc;padding-bottom:5px;margin-bottom:8px;}
+  .card-title{font-size:13pt;font-weight:600;}
+  /* Canvas (Gantt) */
+  canvas{max-width:100%!important;height:auto!important;page-break-inside:avoid;}
+  /* Print-Header (oben auf jeder Druckseite) */
+  #print-header{display:block!important;margin:0 0 16px 0;border-bottom:2px solid #333;padding-bottom:8px;}
+  #print-header h1{margin:0 0 4px;font-size:16pt;color:#000!important;}
+  #print-header p{margin:0;color:#444!important;font-size:10pt;}
+  /* Tabellen – sauberes Druck-Layout */
+  table{width:100%!important;border-collapse:collapse;page-break-inside:auto;font-size:9pt;}
+  thead{display:table-header-group;}
+  tr{page-break-inside:avoid;}
+  th{border:1px solid #999;padding:4px 6px;background:#eee!important;color:#000!important;text-align:left;font-weight:600;}
+  td{border:1px solid #ccc;padding:4px 6px;color:#000!important;}
+  /* Status-Dropdowns als Text */
+  select{display:none!important;}
+  /* Badges flach drucken */
+  .badge{display:inline-block;padding:1px 5px;border:1px solid #999!important;background:#fff!important;color:#000!important;font-size:8.5pt;border-radius:3px;}
+  /* Form-Elemente nicht drucken */
+  input,textarea{border:none!important;background:transparent!important;color:#000!important;}
+  /* Trennlinien */
+  hr{border:none;border-top:1px solid #999;}
+  /* Sidebar/Form-Edit-Bereiche im Print ausblenden */
+  #infos-edit,#info-files-card{display:none!important;}
+  /* RUD spezifisch – Patienten-Karten kompakt */
+  .rud-pat-card{break-inside:avoid;margin-bottom:6px;border:1px solid #999!important;}
+  .rud-pat-name{font-weight:600!important;}
+  .rud-pat-meta{font-size:9pt!important;color:#000!important;}
+  .rud-pat-injury{font-size:9pt!important;color:#000!important;border-top:1px solid #ccc!important;}
+  .rud-pat-injury b{color:#000!important;}
   .turnus-card{break-inside:avoid;}
-  table{width:100%;border-collapse:collapse;}
-  th,td{border:1px solid #ccc;padding:5px 8px;font-size:12px;}
+  /* Page Margins */
+  @page{margin:1.5cm 1.2cm;}
 }
 /* ── Role-based visibility ── */
 body:not(.is-admin) .admin-only{display:none!important;}
@@ -687,6 +722,16 @@ body:not(.is-admin) .admin-only{display:none!important;}
         <div class="form-row"><label>Ort</label><input type="text" id="info-ort" placeholder="z.B. Hauptplatz"></div>
         <div class="form-row"><label>Verantwortliche Person</label><input type="text" id="info-verantwortlich" placeholder="Name"></div>
         <div class="form-row"><label>Notizen</label><textarea id="info-notizen" placeholder="Allgemeine Anmerkungen..."></textarea></div>
+      </div>
+
+      <!-- Dokumente / PDFs -->
+      <div class="card" id="info-files-card">
+        <div class="card-header">
+          <span class="card-title">📄 Dokumente</span>
+          <button class="btn btn-primary btn-sm" id="info-files-upload-btn" onclick="openInfoFileUpload()">+ PDF hochladen</button>
+        </div>
+        <div id="info-files-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="info-files-empty" style="text-align:center;padding:1.5rem;color:var(--text2);font-size:13px;display:none;">Noch keine Dokumente hochgeladen.</div>
       </div>
 
     </div>
@@ -1736,7 +1781,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.5.6'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.6.1'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -2043,19 +2088,19 @@ function load(){
   updateClock();
   setInterval(updateClock, 30000);
   renderAll();
-  // Für Admins: volle PocketBase-Verbindung (mit Superuser-Token für Schreibzugriff)
-  // Für andere Rollen: Eventdaten via reader-Token laden + Live-Sync (nur lesend)
-  if(AUTH.role === 'admin'){
-    setTimeout(pbAutoConnect, 300);
-  } else {
-    setTimeout(async ()=>{
-      const ok = await pbFetchEventData();
-      if(ok){
-        renderAll();
-        pbSubscribe(); // Live-Sync aktivieren
-      }
-    }, 300);
-  }
+  // Daten IMMER zuerst via Reader-Token laden (funktioniert auf jedem Gerät, jeder Rolle)
+  // Danach: Admin versucht zusätzlich Superuser-Verbindung für Schreibzugriff
+  setTimeout(async ()=>{
+    const ok = await pbFetchEventData();
+    if(ok){
+      renderAll();
+      pbSubscribe(); // Live-Sync aktivieren
+    }
+    // Admin: zusätzlich Superuser-Verbindung versuchen, falls Token bereits vorhanden
+    if(AUTH.role === 'admin' && localStorage.getItem('pb-token') && localStorage.getItem('pb-record-id')){
+      pbAutoConnect();
+    }
+  }, 300);
 }
 function save(){
   try{
@@ -3172,6 +3217,177 @@ function renderInfos(){
   document.getElementById('view-verantwortlich-val').textContent=f.verantwortlich||'–';
   document.getElementById('view-notizen-val').textContent=f.notizen||'–';
   applyEventBranding();
+  renderInfoFiles();
+}
+
+/* ── Dokumente / PDFs auf Infos-Seite ── */
+const PB_FILES_COLLECTION = 'event_files';
+let _infoFilesCache = null;
+
+function infoFilesCanWrite(){
+  // Nutzt die normale Permission-Logik des Tools für die Infos-Seite
+  return typeof canWrite === 'function' ? canWrite('infos') : (AUTH.role === 'admin' || AUTH.role === 'betreuer');
+}
+
+async function renderInfoFiles(){
+  const list = document.getElementById('info-files-list');
+  const empty = document.getElementById('info-files-empty');
+  const uploadBtn = document.getElementById('info-files-upload-btn');
+  if(!list) return;
+
+  // Upload-Button nur sichtbar wenn der User Schreibrechte hat
+  if(uploadBtn) uploadBtn.style.display = infoFilesCanWrite() ? '' : 'none';
+
+  if(!_pbUrl || !_pbToken){
+    list.innerHTML = '<div style="font-size:12px;color:var(--text2);font-style:italic;padding:0.5rem;">Verbindung zum Server wird aufgebaut...</div>';
+    return;
+  }
+
+  list.innerHTML = '<div style="font-size:12px;color:var(--text2);font-style:italic;padding:0.5rem;">Lade Dokumente...</div>';
+
+  try{
+    const res = await fetch(_pbUrl+'/api/collections/'+PB_FILES_COLLECTION+'/records?perPage=100&sort=-created', {
+      headers: {'Authorization': _pbToken}
+    });
+    if(!res.ok){
+      list.innerHTML = '<div style="font-size:12px;color:#A32D2D;padding:0.5rem;">Fehler beim Laden der Dokumente ('+res.status+').</div>';
+      return;
+    }
+    const data = await res.json();
+    _infoFilesCache = data.items || [];
+
+    if(_infoFilesCache.length === 0){
+      list.innerHTML = '';
+      if(empty) empty.style.display = '';
+      return;
+    }
+    if(empty) empty.style.display = 'none';
+
+    const canEdit = infoFilesCanWrite();
+    list.innerHTML = _infoFilesCache.map(f=>{
+      const url = getInfoFileUrl(f);
+      const dateStr = f.created ? new Date(f.created).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+      const cat = f.category ? '<span class="badge" style="background:#E8F0FA;color:#185FA5;font-size:10px;margin-left:6px;">'+escHtml(f.category)+'</span>' : '';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);">'+
+        '<div style="font-size:22px;flex-shrink:0;">📄</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:600;font-size:14px;color:var(--text);">'+escHtml(f.title||'Unbenannt')+cat+'</div>'+
+          (f.description?'<div style="font-size:12px;color:var(--text2);margin-top:2px;">'+escHtml(f.description)+'</div>':'')+
+          '<div style="font-size:11px;color:var(--text2);margin-top:3px;">'+
+            (f.created_by?escHtml(f.created_by)+' · ':'')+escHtml(dateStr)+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;flex-shrink:0;">'+
+          '<a class="btn btn-sm" href="'+url+'" target="_blank" rel="noopener" title="Öffnen">📥 Anzeigen</a>'+
+          (canEdit?'<button class="btn btn-sm btn-danger" onclick="deleteInfoFile(\''+escHtml(f.id)+'\')" title="Löschen">🗑️</button>':'')+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }catch(err){
+    console.error('renderInfoFiles error:', err);
+    list.innerHTML = '<div style="font-size:12px;color:#A32D2D;padding:0.5rem;">Verbindungsfehler beim Laden der Dokumente.</div>';
+  }
+}
+
+function getInfoFileUrl(rec){
+  if(!rec || !rec.file) return '#';
+  return _pbUrl+'/api/files/'+PB_FILES_COLLECTION+'/'+rec.id+'/'+encodeURIComponent(rec.file);
+}
+
+function openInfoFileUpload(){
+  if(!infoFilesCanWrite()){ alert('Keine Berechtigung zum Hochladen.'); return; }
+  openModal(
+    '<h2>📄 PDF hochladen</h2>'+
+    '<div class="form-row"><label>Titel *</label><input type="text" id="upl-title" placeholder="z.B. Sicherheitsrichtlinien 2026"></div>'+
+    '<div class="form-row"><label>Beschreibung</label><textarea id="upl-desc" placeholder="Kurze Beschreibung..." style="min-height:60px;"></textarea></div>'+
+    '<div class="form-row"><label>Kategorie</label><select id="upl-category">'+
+      '<option value="">– keine –</option>'+
+      '<option value="Allgemein">Allgemein</option>'+
+      '<option value="Sicherheit">Sicherheit</option>'+
+      '<option value="Anleitung">Anleitung</option>'+
+      '<option value="Vorlage">Vorlage</option>'+
+      '<option value="Sonstiges">Sonstiges</option>'+
+    '</select></div>'+
+    '<div class="form-row"><label>PDF-Datei *</label><input type="file" id="upl-file" accept="application/pdf"></div>'+
+    '<div id="upl-status" style="display:none;font-size:12px;margin-bottom:8px;"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+      '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+      '<button class="btn btn-primary" id="upl-btn" onclick="uploadInfoFile()">Hochladen</button>'+
+    '</div>'
+  );
+}
+
+async function uploadInfoFile(){
+  const title = document.getElementById('upl-title').value.trim();
+  const desc = document.getElementById('upl-desc').value.trim();
+  const category = document.getElementById('upl-category').value;
+  const fileInput = document.getElementById('upl-file');
+  const file = fileInput.files[0];
+  const statusEl = document.getElementById('upl-status');
+  const uplBtn = document.getElementById('upl-btn');
+
+  const showStatus = (msg, color)=>{ if(!statusEl) return; statusEl.style.display='block'; statusEl.style.color=color||'var(--text2)'; statusEl.textContent=msg; };
+
+  if(!title){ showStatus('Bitte einen Titel angeben.', '#A32D2D'); return; }
+  if(!file){ showStatus('Bitte eine PDF-Datei auswählen.', '#A32D2D'); return; }
+  if(file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')){
+    showStatus('Nur PDF-Dateien sind erlaubt.', '#A32D2D'); return;
+  }
+  if(file.size > 10*1024*1024){
+    showStatus('Datei zu groß (max. 10 MB).', '#A32D2D'); return;
+  }
+  if(!_pbUrl || !_pbToken){ showStatus('Keine Server-Verbindung.', '#A32D2D'); return; }
+
+  uplBtn.disabled = true;
+  showStatus('⏳ Lade hoch...', 'var(--text2)');
+
+  try{
+    const fd = new FormData();
+    fd.append('title', title);
+    fd.append('description', desc);
+    if(category) fd.append('category', category);
+    fd.append('created_by', AUTH.displayName || AUTH.username || '');
+    fd.append('file', file);
+
+    const res = await fetch(_pbUrl+'/api/collections/'+PB_FILES_COLLECTION+'/records', {
+      method: 'POST',
+      headers: {'Authorization': _pbToken},
+      body: fd
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      console.error('Upload error:', errText);
+      showStatus('Fehler beim Hochladen ('+res.status+').', '#A32D2D');
+      uplBtn.disabled = false;
+      return;
+    }
+    showStatus('✅ Erfolgreich hochgeladen.', '#27500A');
+    setTimeout(()=>{ closeModal(true); renderInfoFiles(); }, 600);
+  }catch(err){
+    console.error('Upload error:', err);
+    showStatus('Verbindungsfehler beim Hochladen.', '#A32D2D');
+    uplBtn.disabled = false;
+  }
+}
+
+function deleteInfoFile(id){
+  if(!infoFilesCanWrite()){ alert('Keine Berechtigung zum Löschen.'); return; }
+  confirmModal('Dieses Dokument wirklich unwiderruflich löschen?', async function(){
+    try{
+      const res = await fetch(_pbUrl+'/api/collections/'+PB_FILES_COLLECTION+'/records/'+id, {
+        method: 'DELETE',
+        headers: {'Authorization': _pbToken}
+      });
+      if(!res.ok && res.status !== 204){
+        alert('Fehler beim Löschen ('+res.status+').');
+        return;
+      }
+      renderInfoFiles();
+    }catch(err){
+      console.error('Delete error:', err);
+      alert('Verbindungsfehler beim Löschen.');
+    }
+  });
 }
 
 // Aktualisiert alle Stellen wo der Eventname angezeigt wird (Sidebar, Tab-Title, Login-Header)
@@ -5779,220 +5995,251 @@ function exportRudPDF(){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const info = S.infos||{};
-  const einsaetze = S.einsaetze||[];
+  const einsaetze = (S.einsaetze||[]).filter(e=>e.rudActive===true);
   const PW=210, PH=297, ML=15, MR=15, MT=15, CW=PW-ML-MR;
-  const RED=[163,45,45], ORANGE=[208,90,26], YELLOW=[180,130,0], BLUE=[31,56,100], GREY=[100,100,100], LIGHTGREY=[220,220,220];
+  const RED=[163,45,45], ORANGE=[208,90,26], YELLOW=[180,130,0], BLUE=[31,56,100], GREEN=[39,80,10], GREY=[100,100,100], LIGHTGREY=[220,220,220], BG_LIGHT=[248,248,250];
 
-  function addHeader(title, subtitle){
-    doc.setFillColor(...RED);
+  // Helper: clip text and ensure no problematic Unicode
+  function safeText(s, maxLen){
+    if(s==null) return '';
+    let t = String(s);
+    // Reduce common emojis to ASCII
+    t = t.replace(/🎭/g,'').replace(/📍/g,'').replace(/→/g,'->').replace(/➜/g,'->');
+    if(maxLen && t.length>maxLen) t = t.substring(0, maxLen-1)+'…';
+    return t.trim();
+  }
+
+  function addHeader(title, subtitle, bgColor){
+    const c = bgColor || RED;
+    doc.setFillColor(...c);
     doc.rect(0,0,PW,18,'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(13);doc.setFont('helvetica','bold');
-    doc.text(title,ML,11);
-    if(subtitle){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text(subtitle,PW-MR,11,{align:'right'});}
+    doc.text(safeText(title), ML, 11);
+    if(subtitle){
+      doc.setFontSize(9);doc.setFont('helvetica','normal');
+      doc.text(safeText(subtitle), PW-MR, 11, {align:'right'});
+    }
     doc.setTextColor(0,0,0);
     return 24;
   }
   function addEventInfo(y){
-    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
-    const parts=[info.name,info.datum,info.ort].filter(Boolean).join('  |  ');
-    if(parts) doc.text(parts,ML,y);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
+    const dStr = info.datum ? new Date(info.datum).toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+    const parts=[info.name, dStr, info.ort?'Ort: '+info.ort:'', info.verantwortlich?'Verantw.: '+info.verantwortlich:''].filter(Boolean);
+    if(parts.length) doc.text(safeText(parts.join('  |  ')), ML, y);
     doc.setTextColor(0,0,0);
-    return y+6;
+    return y+7;
   }
-  function addSectionTitle(text,y,color=BLUE){
-    doc.setFillColor(...color);
-    doc.rect(ML,y,CW,6,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
-    doc.text(text,ML+3,y+4.2);
+  function addSectionTitle(text, y, color){
+    const c = color || BLUE;
+    doc.setFillColor(...c);
+    doc.rect(ML, y, CW, 6.5, 'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(9.5);doc.setFont('helvetica','bold');
+    doc.text(safeText(text), ML+3, y+4.5);
     doc.setTextColor(0,0,0);
-    return y+9;
+    return y+10;
   }
-  function addTimeline(patients, y, pageWidth){
-    // Simple timeline bar
-    const BASE=8,TOTAL=26,TL=35,TW=CW-TL-5,TH=8,BY=y;
-    doc.setFontSize(7);doc.setFont('helvetica','normal');
-    // Hour labels
-    doc.setTextColor(...GREY);
-    for(let h=0;h<=TOTAL;h+=2){
-      const x=ML+TL+(h/TOTAL)*TW;
-      const hr=String((BASE+h)%24).padStart(2,'0');
-      doc.text(hr+':00',x,BY,{align:'center'});
-    }
-    doc.setTextColor(0,0,0);
-    y=BY+4;
-    patients.forEach(p=>{
-      if(!p.schminkStart||!p.schminkEnd)return;
-      // Label
-      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
-      doc.text((p.name||'').substring(0,16),ML,y+3.5);
-      // Schminken bar
-      const[sh,sm]=p.schminkStart.split(':').map(Number);
-      const[eh,em]=p.schminkEnd.split(':').map(Number);
-      let so=sh+sm/60-BASE, eo=eh+em/60-BASE;
-      if(so<0)so+=24;if(eo<=so)eo+=24;
-      const x1=ML+TL+(so/TOTAL)*TW, bw=Math.max((eo-so)/TOTAL*TW,1);
-      doc.setFillColor(...ORANGE);doc.setDrawColor(...ORANGE);
-      doc.roundedRect(x1,y,bw,TH-2,1,1,'F');
-      doc.setTextColor(255,255,255);doc.setFontSize(6);
-      if(bw>15)doc.text(p.schminkStart+'–'+p.schminkEnd,x1+bw/2,y+3.2,{align:'center'});
-      doc.setTextColor(0,0,0);
-      y+=TH;
-    });
-    // Border
-    doc.setDrawColor(...LIGHTGREY);
-    doc.rect(ML+TL,BY+3,TW,y-(BY+3));
-    return y+4;
-  }
-  function checkPageBreak(y,needed=20){
-    if(y+needed>PH-15){doc.addPage();return MT;}
+  function checkPageBreak(y, needed){
+    needed = needed||20;
+    if(y+needed > PH-15){doc.addPage(); return MT;}
     return y;
+  }
+  function getPersonName(pid){
+    const per = S.persons.find(x=>x.id===pid);
+    if(!per) return 'Unbekannt';
+    return ((per.vorname||'') + (per.nachname?' '+per.nachname:'')).trim() || 'Unbekannt';
+  }
+  function vehListSafe(e){
+    if(!e) return '';
+    const vehs = getEinsatzVehs(e);
+    return vehs.join(' + ');
   }
 
   // ── PAGE 1: GESAMTÜBERSICHT ──
-  let y = addHeader('RUD – Gesamtübersicht','Alle Patienten & Schminker');
+  let y = addHeader('RUD - Gesamtübersicht', 'Patienten & Schminker');
   y = addEventInfo(y);
 
   // Collect all patients grouped by einsatz
   const allPatients=[];
   einsaetze.forEach(e=>{
-    const rudEntry=(S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id);
-    if(!rudEntry||!(rudEntry.patients||[]).length)return;
-    rudEntry.patients.forEach(p=>allPatients.push({...p,einsatz:e}));
+    const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id);
+    if(!rudEntry || !(rudEntry.patients||[]).length) return;
+    rudEntry.patients.forEach(p=>allPatients.push({...p, einsatz:e}));
   });
 
   if(!allPatients.length){
-    doc.setFontSize(10);doc.setTextColor(...GREY);
-    doc.text('Keine Patienten erfasst.',ML,y+10);
+    doc.setFontSize(11);doc.setTextColor(...GREY);
+    doc.text('Keine Patienten erfasst.', ML, y+10);
   } else {
-    // Timeline overview
-    y=addSectionTitle('TIMELINE – Alle Patienten',y);
-    y=addTimeline(allPatients,y);
-    y=checkPageBreak(y,10);
+    // ── Übersichtstabelle ──
+    y = addSectionTitle('PATIENTENLISTE ('+allPatients.length+')', y);
+    // Tabellen-Header
+    doc.setFillColor(...LIGHTGREY);doc.rect(ML, y, CW, 5.5, 'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
+    const cols = [
+      {x:ML+2,  w:32, label:'Patient'},
+      {x:ML+34, w:34, label:'Einsatz'},
+      {x:ML+68, w:18, label:'Ankunft'},
+      {x:ML+86, w:24, label:'Schminken'},
+      {x:ML+110,w:24, label:'Transfer'},
+      {x:ML+134,w:25, label:'Ort/Ziel'},
+      {x:ML+159,w:25, label:'Schminker'},
+    ];
+    cols.forEach(c=>doc.text(c.label, c.x, y+3.8));
+    y += 6;
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);
 
-    // Table
-    y=addSectionTitle('PATIENTENLISTE',y);
-    // Header
-    doc.setFillColor(...LIGHTGREY);doc.rect(ML,y,CW,5,'F');
-    doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
-    doc.text('Patient',ML+2,y+3.5);
-    doc.text('Fahrzeug / Einsatz',ML+40,y+3.5);
-    doc.text('Ankunft',ML+90,y+3.5);
-    doc.text('Schminken',ML+108,y+3.5);
-    doc.text('Transfer',ML+133,y+3.5);
-    doc.text('Schminker',ML+158,y+3.5);
-    y+=6;
-    doc.setFont('helvetica','normal');doc.setFontSize(7);
     allPatients.forEach((p,i)=>{
-      y=checkPageBreak(y,6);
-      if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML,y-0.5,CW,5.5,'F');}
+      y = checkPageBreak(y, 10);
+      // Zebra-Streifen
+      if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML, y-0.5, CW, 5.5, 'F');}
       doc.setTextColor(0,0,0);
-      doc.text((p.name||'–').substring(0,18),ML+2,y+3.5);
-      doc.text((vehListText(p.einsatz)+(p.einsatz.ort?' / '+p.einsatz.ort:'')).substring(0,22),ML+40,y+3.5);
-      doc.text(p.ankunft||'–',ML+90,y+3.5);
-      doc.text((p.schminkStart||'–')+'–'+(p.schminkEnd||'–'),ML+108,y+3.5);
-      doc.text((p.transferStart||'–')+'–'+(p.transferEnd||'–'),ML+133,y+3.5);
-      const schminker=(p.persons||[]).map(pid=>{const per=S.persons.find(x=>x.id===pid);return per?(per.vorname||'')+(per.nachname?' '+per.nachname:''):'?';}).join(', ');
-      doc.text(schminker.substring(0,20),ML+158,y+3.5);
-      y+=5.5;
-      // Verletzungsmuster
-      if(p.verletzung){
-        y=checkPageBreak(y,5);
-        doc.setTextColor(...GREY);doc.setFontSize(6.5);
-        doc.text('  Verletzungsmuster: '+p.verletzung.substring(0,80),ML+2,y+2.5);
-        doc.setTextColor(0,0,0);doc.setFontSize(7);
-        y+=4;
+      doc.text(safeText(p.name||'-', 18), ML+2, y+3.5);
+      const einsLabel = (vehListSafe(p.einsatz) + (p.einsatz.ort?' / '+p.einsatz.ort:'')) || '-';
+      doc.text(safeText(einsLabel, 20), ML+34, y+3.5);
+      doc.text(safeText(p.ankunft||'-'), ML+68, y+3.5);
+      doc.text(safeText((p.schminkStart||'-')+'-'+(p.schminkEnd||'-')), ML+86, y+3.5);
+      doc.text(safeText((p.transferStart||'-')+'-'+(p.transferEnd||'-')), ML+110, y+3.5);
+      doc.text(safeText(p.transferNach||p.einsatz.ort||'-', 14), ML+134, y+3.5);
+      const schminker = (p.persons||[]).map(getPersonName).join(', ');
+      doc.text(safeText(schminker||'-', 14), ML+159, y+3.5);
+      y += 5.5;
+
+      // Verletzungsmuster + Unfallhergang als Sub-Zeile (wenn vorhanden)
+      if(p.verletzung || p.unfallhergang){
+        doc.setTextColor(...GREY);doc.setFontSize(7);
+        if(p.verletzung){
+          y = checkPageBreak(y, 4);
+          const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-4);
+          txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+        }
+        if(p.unfallhergang){
+          y = checkPageBreak(y, 4);
+          const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-4);
+          txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+        }
+        doc.setTextColor(0,0,0);doc.setFontSize(7.5);
+        y += 1;
       }
     });
   }
 
-  // ── SEITEN PRO SCHMINKER ──
+  // ── EIGENE SEITE PRO SCHMINKER ──
   const personMap={};
   allPatients.forEach(p=>{
     (p.persons||[]).forEach(pid=>{
-      if(!personMap[pid])personMap[pid]=[];
+      if(!personMap[pid]) personMap[pid]=[];
       personMap[pid].push(p);
     });
   });
 
-  Object.entries(personMap).forEach(([pid,patients])=>{
+  Object.entries(personMap).forEach(([pid, patients])=>{
     doc.addPage();
-    const per=S.persons.find(x=>x.id===parseInt(pid));
-    const name=per?((per.vorname||'')+(per.nachname?' '+per.nachname:'')):'Unbekannt';
-    let y=addHeader('RUD – Schminker: '+name,patients.length+' Patient'+(patients.length!==1?'en':''));
-    y=addEventInfo(y);
+    const name = getPersonName(parseInt(pid));
+    let yy = addHeader('Schminker: '+name, patients.length+' Patient'+(patients.length!==1?'en':''), ORANGE);
+    yy = addEventInfo(yy);
+    yy = addSectionTitle('PATIENTEN', yy, ORANGE);
 
-    // Timeline for this schminker
-    y=addSectionTitle('TIMELINE',y,ORANGE);
-    y=addTimeline(patients,y);
-    y=checkPageBreak(y,10);
+    patients.forEach((p)=>{
+      // Card-Höhe je nach Inhalt berechnen
+      let cardH = 32;
+      if(p.verletzung) cardH += 6;
+      if(p.unfallhergang) cardH += 6;
+      yy = checkPageBreak(yy, cardH+5);
 
-    // Patient cards
-    y=addSectionTitle('PATIENTEN',y,ORANGE);
-    patients.forEach((p,i)=>{
-      y=checkPageBreak(y,40);
       // Card background
       doc.setFillColor(255,248,240);doc.setDrawColor(...ORANGE);doc.setLineWidth(0.3);
-      const cardH=p.verletzung?38:32;
-      doc.roundedRect(ML,y,CW,cardH,2,2,'FD');
+      doc.roundedRect(ML, yy, CW, cardH, 2, 2, 'FD');
+
       // Patient name
       doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
-      doc.text(p.name||'–',ML+4,y+7);
-      // Einsatz ref
-      doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
-      doc.text('Einsatz: '+(vehListText(p.einsatz)+(p.einsatz.ort?' – '+p.einsatz.ort:'')),ML+4,y+12);
+      doc.text(safeText(p.name||'-'), ML+4, yy+7);
+
+      // Einsatz reference
+      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
+      const einsRef = vehListSafe(p.einsatz) + (p.einsatz.ort?' - '+p.einsatz.ort:'') + (p.einsatz.start?' ('+p.einsatz.start+')':'');
+      doc.text('Einsatz: '+safeText(einsRef, 70), ML+4, yy+12);
       doc.setTextColor(0,0,0);
+
       // Three phase boxes
-      const bw=(CW-8)/3,bx1=ML+4,bx2=bx1+bw+2,bx3=bx2+bw+2;
-      // Ankunft
+      const bw = (CW-12)/3;
+      const bx1 = ML+4, bx2 = bx1+bw+2, bx3 = bx2+bw+2;
+      const phaseY = yy+15;
+      const phaseH = 13;
+
+      // ANKUNFT (gelb)
       doc.setFillColor(255,248,230);doc.setDrawColor(240,208,128);
-      doc.roundedRect(bx1,y+14,bw,12,1,1,'FD');
-      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...YELLOW);
-      doc.text('ANKUNFT',bx1+2,y+18.5);
+      doc.roundedRect(bx1, phaseY, bw, phaseH, 1, 1, 'FD');
+      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...YELLOW);
+      doc.text('VORBEREITUNG', bx1+2, phaseY+4);
       doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text(p.ankunft||'–',bx1+2,y+23.5);
-      if(p.schminkplatz){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('📍 '+p.schminkplatz.substring(0,18),bx1+2,y+27);}
-      // Schminken
-      doc.setFillColor(255,240,230);doc.setDrawColor(240,160,112);
-      doc.roundedRect(bx2,y+14,bw,12,1,1,'FD');
-      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...ORANGE);
-      doc.text('SCHMINKEN ('+String(p.schminkdauer||40)+' min)',bx2+2,y+18.5);
-      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text((p.schminkStart||'–')+' – '+(p.schminkEnd||'–'),bx2+2,y+23.5);
-      // Transfer
-      doc.setFillColor(252,235,235);doc.setDrawColor(240,149,149);
-      doc.roundedRect(bx3,y+14,bw,12,1,1,'FD');
-      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
-      doc.text('TRANSFER',bx3+2,y+18.5);
-      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text((p.transferStart||'–')+' – '+(p.transferEnd||'–'),bx3+2,y+23.5);
-      if(p.transferNach||p.einsatz.ort){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('→ '+(p.transferNach||p.einsatz.ort||''),bx3+2,y+27);}
-      doc.setTextColor(0,0,0);
-      // ASP
-      if(p.einsatz.asp){doc.setFontSize(6.5);doc.setTextColor(...GREY);doc.text('ASP: '+p.einsatz.asp,bx3+2,y+27+(p.transferNach||p.einsatz.ort?3.5:0));}
-      // Verletzungsmuster
-      if(p.verletzung){
-        doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
-        doc.text('Verletzungsmuster:',ML+4,y+30);
-        doc.setFont('helvetica','normal');
-        doc.text(p.verletzung.substring(0,90),ML+36,y+30);
-        doc.setTextColor(0,0,0);
+      doc.text(safeText(p.ankunft||'-'), bx1+2, phaseY+9);
+      if(p.schminkplatz){
+        doc.setFontSize(6.5);doc.setTextColor(...GREY);
+        doc.text('Ort: '+safeText(p.schminkplatz, 18), bx1+2, phaseY+12);
       }
-      y+=cardH+5;
+
+      // SCHMINKEN (orange)
+      doc.setFillColor(255,240,230);doc.setDrawColor(240,160,112);
+      doc.roundedRect(bx2, phaseY, bw, phaseH, 1, 1, 'FD');
+      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...ORANGE);
+      doc.text('SCHMINKEN ('+(p.schminkdauer||40)+' min)', bx2+2, phaseY+4);
+      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
+      doc.text(safeText((p.schminkStart||'-')+' - '+(p.schminkEnd||'-')), bx2+2, phaseY+9);
+
+      // TRANSFER (rot)
+      doc.setFillColor(252,235,235);doc.setDrawColor(240,149,149);
+      doc.roundedRect(bx3, phaseY, bw, phaseH, 1, 1, 'FD');
+      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
+      doc.text('TRANSFER', bx3+2, phaseY+4);
+      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
+      doc.text(safeText((p.transferStart||'-')+' - '+(p.transferEnd||'-')), bx3+2, phaseY+9);
+      const targetOrt = p.transferNach||p.einsatz.ort||'';
+      if(targetOrt){
+        doc.setFontSize(6.5);doc.setTextColor(...GREY);
+        doc.text('-> '+safeText(targetOrt, 18), bx3+2, phaseY+12);
+      }
+      doc.setTextColor(0,0,0);
+
+      // Verletzungsmuster + Unfallhergang unter den Boxen
+      let textY = phaseY + phaseH + 3;
+      if(p.verletzung){
+        doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+        doc.text('Verletzungsmuster:', ML+4, textY);
+        doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
+        const lines = doc.splitTextToSize(safeText(p.verletzung), CW-42);
+        doc.text(lines.slice(0,2).join(' '), ML+38, textY);
+        textY += 5;
+      }
+      if(p.unfallhergang){
+        doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+        doc.text('Unfallhergang:', ML+4, textY);
+        doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
+        const lines = doc.splitTextToSize(safeText(p.unfallhergang), CW-42);
+        doc.text(lines.slice(0,2).join(' '), ML+38, textY);
+      }
+
+      yy += cardH + 5;
     });
   });
 
-  // Footer on all pages
-  const pageCount=doc.getNumberOfPages();
-  for(let i=1;i<=pageCount;i++){
+  // Footer auf jeder Seite
+  const pageCount = doc.getNumberOfPages();
+  const eventName = info.name || 'Event';
+  const exportDate = new Date().toLocaleDateString('de-AT');
+  for(let i=1; i<=pageCount; i++){
     doc.setPage(i);
     doc.setFontSize(7);doc.setTextColor(...GREY);
-    doc.text('RUD Export – '+((S.infos&&S.infos.name)?S.infos.name:'Event'),ML,PH-8);
-    doc.text('Seite '+i+' / '+pageCount,PW-MR,PH-8,{align:'right'});
+    doc.text(safeText('RUD-Export | '+eventName+' | '+exportDate), ML, PH-8);
+    doc.text('Seite '+i+' / '+pageCount, PW-MR, PH-8, {align:'right'});
     doc.setTextColor(0,0,0);
   }
 
-  doc.save('RUD_Export.pdf');
+  // Dateiname mit Event-Slug + Datum
+  const slug = (eventName||'rud').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').substring(0,30) || 'rud';
+  const today = new Date().toISOString().slice(0,10);
+  doc.save('RUD-Export_'+slug+'_'+today+'.pdf');
 }
 
 /* ══ ZUSTÄNDIGKEITSBEREICHE ══ */
