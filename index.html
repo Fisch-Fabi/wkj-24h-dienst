@@ -1781,7 +1781,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.6.1'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.6.3'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -2602,10 +2602,15 @@ function statusDropdown(id, s){
     ['aktiv','🔵 Aktiv'],
     ['abgeschlossen','⚫ Abgeschlossen'],
     ['abgebrochen','🔴 Abgebrochen'],
-  ].map(([v,l])=>'<option value="'+v+'"'+(v===(s||'geplant')?' selected':'')+'>'+l+'</option>').join('');
+  ];
+  // Read-only Modus für User ohne Schreibrechte: als Badge anzeigen
+  if(typeof canWrite === 'function' && !canWrite('einsaetze')){
+    const label = (opts.find(o=>o[0]===(s||'geplant'))||opts[1])[1];
+    return '<span style="display:inline-block;background:'+c.bg+';color:'+c.col+';border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500;">'+label+'</span>';
+  }
   return '<select onchange="setEinsatzStatus('+id+',this.value)" onclick="event.stopPropagation()" '+
     'style="background:'+c.bg+';color:'+c.col+';border:none;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;cursor:pointer;outline:none;appearance:auto;">'+
-    opts+'</select>';
+    opts.map(([v,l])=>'<option value="'+v+'"'+(v===(s||'geplant')?' selected':'')+'>'+l+'</option>').join('')+'</select>';
 }
 
 function toggleDark(){
@@ -4013,6 +4018,7 @@ function deleteRudPatientFromEinsatz(einsatzId, patientId){
 }
 
 function setEinsatzStatus(id, status){
+  if(!guardWrite('einsaetze')) return;
   const e=S.einsaetze.find(x=>x.id===id);
   if(e){e.status=status;save();renderEinsaetze();renderGantt();renderDashboard();}
 }
@@ -6469,10 +6475,12 @@ let sortState={col:null,dir:1};
 document.getElementById('gantt').addEventListener('click', function(e){
   const canvas = this;
   const rect = canvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+  // Mausposition in CSS-Pixeln (nicht in DPR-skalierten Canvas-Pixeln!)
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
   const TOTAL=24,BASE=10,LW=80,PT=44,RH=148,EY=4,EH=52;
-  const chartW = canvas.width - LW - 8;
+  // Chart-Breite in CSS-Pixeln (nicht canvas.width!)
+  const chartW = rect.width - LW - 8;
   function xOf(h){return LW+(h/TOTAL)*chartW;}
   let hit = null;
   S.einsaetze.forEach(b=>{
