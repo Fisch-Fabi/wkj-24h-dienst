@@ -824,7 +824,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
       <div class="card">
         <div class="card-header">
           <span class="card-title">🎭 Einsätze &amp; Patienten</span>
-          <button id="btn-rud-pdf" class="btn btn-sm" onclick="exportRudPDF()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
+          <button id="btn-rud-pdf" class="btn btn-sm" onclick="openRudPdfChoice()" style="background:#1F3864;color:#fff;border-color:#1F3864;">📄 PDF Export</button>
         </div>
         <div id="rud-list"></div>
         <div id="rud-empty" style="text-align:center;padding:1.5rem;font-size:13px;color:var(--text2);">Keine Einsätze vorhanden. Einsätze zuerst auf der Einsätze-Seite anlegen.</div>
@@ -1781,7 +1781,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.6.3'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.6.6'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -5415,13 +5415,13 @@ function renderRudList(){
           '</div>'+
           '<div class="rud-pat-meta">'+
             '<b>Schminker:</b><span>'+escHtml(schminkerNames||'–')+'</span>'+
+            (p.ankunft?'<b>Ankunft:</b><span>'+escHtml(p.ankunft)+'</span>':'')+
             '<b>Schmink-Ort:</b><span>'+escHtml(p.schminkplatz||'–')+
               (p.schminkStart?' · '+escHtml(p.schminkStart||'')+'–'+escHtml(p.schminkEnd||''):'')+
             '</span>'+
             (p.transferStart?'<b>Transfer:</b><span>'+escHtml(p.transferStart||'')+'–'+escHtml(p.transferEnd||'')+
               (p.transferNach?' → '+escHtml(p.transferNach):(e.ort?' → '+escHtml(e.ort):''))+
             '</span>':'')+
-            (p.ankunft?'<b>Ankunft:</b><span>'+escHtml(p.ankunft)+'</span>':'')+
             (e.asp?'<b>ASP:</b><span>'+escHtml(e.asp)+'</span>':'')+
           '</div>'+
           ((p.verletzung||p.unfallhergang)?'<div class="rud-pat-injury">'+
@@ -5826,6 +5826,18 @@ function renderRudGantt(){
     return ((val - startH) / totalH) * 100;
   }
 
+  // X-Position mit Clamp: gibt für Werte ausserhalb des Fensters den nächsten Rand zurück.
+  // Praktisch für Bars die über Mitternacht gehen (Start im Fenster, Ende außerhalb).
+  // Liefert null wenn der Zeitwert ungültig ist.
+  function xPctClamp(timeStr, isEnd){
+    let val = tToH(timeStr);
+    if(val===null) return null;
+    // Wenn Endzeit numerisch <= Anfangszeit gilt sie als "am Folgetag" → über 24h hinaus
+    if(val < startH) return 0;
+    if(val > endH) return 100;
+    return ((val - startH) / totalH) * 100;
+  }
+
   // Zeitachse oben
   const minWidth = Math.max(800, S.vehicles.length*50);
   let html = '<div class="rtl-time-axis" style="min-width:'+minWidth+'px;">';
@@ -5869,13 +5881,27 @@ function renderRudGantt(){
       html += '<div class="rtl-empty-row">— keine Einsätze —</div>';
     } else {
       vehEinsaetze.forEach(e=>{
+        // Cross-Midnight Logik: wenn Endzeit < Startzeit, geht der Einsatz über 0:00.
+        // In dem Fall die Bar bis zum Tagesende (24h) zeichnen.
+        const sH = tToH(e.start);
+        const eH = tToH(e.end);
+        if(sH===null || eH===null) return;
+        const crossesMidnight = eH <= sH;
         const x1 = xPct(e.start);
-        const x2 = xPct(e.end);
-        if(x1===null || x2===null) return;
+        if(x1===null) return;
+        let x2;
+        if(crossesMidnight){
+          // Bis Tagesende clampen
+          x2 = xPctClamp('23:59', true);
+        } else {
+          x2 = xPct(e.end);
+          if(x2===null) x2 = xPctClamp(e.end, true);
+        }
+        if(x2===null) return;
         const w = Math.max(x2-x1, 2);
         const cls = e.art==='Trauma' ? 'einsatz-trauma' : (e.art==='Internistisch' ? 'einsatz-intern' : 'einsatz-other');
         const patCount = (rudByEinsatz[e.id]||[]).length;
-        const title = (e.ort||e.art||'Einsatz')+' · '+e.start+'–'+e.end+(patCount?' · '+patCount+' Patient(en)':'');
+        const title = (e.ort||e.art||'Einsatz')+' · '+e.start+'–'+e.end+(crossesMidnight?' (über Mitternacht)':'')+(patCount?' · '+patCount+' Patient(en)':'');
         // Zwei-Zeilen-Layout: oben Ort, unten Uhrzeit + Pat-Anzahl
         const labelHtml = '<span style="display:flex;flex-direction:column;line-height:1.15;width:100%;overflow:hidden;">'+
           '<span style="font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(e.ort||e.art||'Einsatz')+'</span>'+
@@ -5937,9 +5963,20 @@ function renderRudGantt(){
       // Bei 1 Lane: 36px Höhe; bei 2: 18px; bei 3: 14px
       const laneHeight = showLanes>2 ? 14 : (showLanes>1 ? 18 : 36);
       patWithLane.forEach(({p, lane})=>{
+        const sH = tToH(p.schminkStart);
+        const eH = tToH(p.schminkEnd);
+        if(sH===null || eH===null) return;
+        const crossesMidnight = eH <= sH;
         const x1 = xPct(p.schminkStart);
-        const x2 = xPct(p.schminkEnd);
-        if(x1===null || x2===null) return;
+        if(x1===null) return;
+        let x2;
+        if(crossesMidnight){
+          x2 = xPctClamp('23:59', true);
+        } else {
+          x2 = xPct(p.schminkEnd);
+          if(x2===null) x2 = xPctClamp(p.schminkEnd, true);
+        }
+        if(x2===null) return;
         const w = Math.max(x2-x1, 2);
         const visualLane = Math.min(lane, showLanes-1);
         const top = 3 + visualLane * (laneHeight + 2);
@@ -5992,7 +6029,33 @@ function scrollToEinsatz(einsatzId){
 
 
 /* ══ RUD PDF EXPORT ══ */
-function exportRudPDF(){
+function openRudPdfChoice(){
+  if(!canPrint('rud')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
+  openModal(
+    '<h2>📄 RUD PDF Export</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Welchen Bereich möchtest du als PDF erstellen?</p>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      '<button class="btn" onclick="closeModal(true);exportRudPDF(\'all\');" style="text-align:left;padding:12px 14px;">'+
+        '<div style="font-weight:600;font-size:14px;">📋 Gesamtübersicht</div>'+
+        '<div style="font-size:12px;color:var(--text2);margin-top:2px;">Eine Seite mit allen Patienten in Tabellenform</div>'+
+      '</button>'+
+      '<button class="btn" onclick="closeModal(true);exportRudPDF(\'schminker\');" style="text-align:left;padding:12px 14px;">'+
+        '<div style="font-weight:600;font-size:14px;">👥 Pro Schminker</div>'+
+        '<div style="font-size:12px;color:var(--text2);margin-top:2px;">Eine Seite pro Schminker mit seinen zugewiesenen Patienten</div>'+
+      '</button>'+
+      '<button class="btn btn-primary" onclick="closeModal(true);exportRudPDF(\'both\');" style="text-align:left;padding:12px 14px;">'+
+        '<div style="font-weight:600;font-size:14px;">📑 Beides (kompletter Export)</div>'+
+        '<div style="font-size:12px;opacity:0.85;margin-top:2px;">Gesamtübersicht + alle Schminker-Seiten in einem PDF</div>'+
+      '</button>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-top:14px;">'+
+      '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '</div>'
+  );
+}
+
+function exportRudPDF(mode){
+  mode = mode || 'both'; // Default: alles drin (Backward-Compat)
   if(!canPrint('rud')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
   if(typeof window.jspdf === 'undefined'){
     alert('PDF-Bibliothek wird geladen, bitte erneut versuchen.');
@@ -6062,11 +6125,7 @@ function exportRudPDF(){
     return vehs.join(' + ');
   }
 
-  // ── PAGE 1: GESAMTÜBERSICHT ──
-  let y = addHeader('RUD - Gesamtübersicht', 'Patienten & Schminker');
-  y = addEventInfo(y);
-
-  // Collect all patients grouped by einsatz
+  // Patientenliste vorab sammeln (für beide Modi)
   const allPatients=[];
   einsaetze.forEach(e=>{
     const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id);
@@ -6074,87 +6133,108 @@ function exportRudPDF(){
     rudEntry.patients.forEach(p=>allPatients.push({...p, einsatz:e}));
   });
 
-  if(!allPatients.length){
-    doc.setFontSize(11);doc.setTextColor(...GREY);
-    doc.text('Keine Patienten erfasst.', ML, y+10);
-  } else {
-    // ── Übersichtstabelle ──
-    y = addSectionTitle('PATIENTENLISTE ('+allPatients.length+')', y);
-    // Tabellen-Header
-    doc.setFillColor(...LIGHTGREY);doc.rect(ML, y, CW, 5.5, 'F');
-    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
-    const cols = [
-      {x:ML+2,  w:32, label:'Patient'},
-      {x:ML+34, w:34, label:'Einsatz'},
-      {x:ML+68, w:18, label:'Ankunft'},
-      {x:ML+86, w:24, label:'Schminken'},
-      {x:ML+110,w:24, label:'Transfer'},
-      {x:ML+134,w:25, label:'Ort/Ziel'},
-      {x:ML+159,w:25, label:'Schminker'},
-    ];
-    cols.forEach(c=>doc.text(c.label, c.x, y+3.8));
-    y += 6;
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+  const showOverview = (mode === 'all' || mode === 'both');
+  const showSchminker = (mode === 'schminker' || mode === 'both');
 
-    allPatients.forEach((p,i)=>{
-      y = checkPageBreak(y, 10);
-      // Zebra-Streifen
-      if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML, y-0.5, CW, 5.5, 'F');}
-      doc.setTextColor(0,0,0);
-      doc.text(safeText(p.name||'-', 18), ML+2, y+3.5);
-      const einsLabel = (vehListSafe(p.einsatz) + (p.einsatz.ort?' / '+p.einsatz.ort:'')) || '-';
-      doc.text(safeText(einsLabel, 20), ML+34, y+3.5);
-      doc.text(safeText(p.ankunft||'-'), ML+68, y+3.5);
-      doc.text(safeText((p.schminkStart||'-')+'-'+(p.schminkEnd||'-')), ML+86, y+3.5);
-      doc.text(safeText((p.transferStart||'-')+'-'+(p.transferEnd||'-')), ML+110, y+3.5);
-      doc.text(safeText(p.transferNach||p.einsatz.ort||'-', 14), ML+134, y+3.5);
-      const schminker = (p.persons||[]).map(getPersonName).join(', ');
-      doc.text(safeText(schminker||'-', 14), ML+159, y+3.5);
-      y += 5.5;
+  // ── PAGE 1: GESAMTÜBERSICHT ──
+  if(showOverview){
+    let y = addHeader('RUD - Gesamtübersicht', 'Patienten & Schminker');
+    y = addEventInfo(y);
 
-      // Verletzungsmuster + Unfallhergang als Sub-Zeile (wenn vorhanden)
-      if(p.verletzung || p.unfallhergang){
-        doc.setTextColor(...GREY);doc.setFontSize(7);
-        if(p.verletzung){
-          y = checkPageBreak(y, 4);
-          const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-4);
-          txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+    if(!allPatients.length){
+      doc.setFontSize(11);doc.setTextColor(...GREY);
+      doc.text('Keine Patienten erfasst.', ML, y+10);
+    } else {
+      // ── Übersichtstabelle ──
+      y = addSectionTitle('PATIENTENLISTE ('+allPatients.length+')', y);
+      // Tabellen-Header
+      doc.setFillColor(...LIGHTGREY);doc.rect(ML, y, CW, 5.5, 'F');
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
+      const cols = [
+        {x:ML+2,  w:32, label:'Patient'},
+        {x:ML+34, w:34, label:'Einsatz'},
+        {x:ML+68, w:18, label:'Ankunft'},
+        {x:ML+86, w:24, label:'Schminken'},
+        {x:ML+110,w:24, label:'Transfer'},
+        {x:ML+134,w:25, label:'Ort/Ziel'},
+        {x:ML+159,w:25, label:'Schminker'},
+      ];
+      cols.forEach(c=>doc.text(c.label, c.x, y+3.8));
+      y += 6;
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+
+      allPatients.forEach((p,i)=>{
+        y = checkPageBreak(y, 10);
+        // Zebra-Streifen
+        if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML, y-0.5, CW, 5.5, 'F');}
+        doc.setTextColor(0,0,0);
+        doc.text(safeText(p.name||'-', 18), ML+2, y+3.5);
+        const einsLabel = (vehListSafe(p.einsatz) + (p.einsatz.ort?' / '+p.einsatz.ort:'')) || '-';
+        doc.text(safeText(einsLabel, 20), ML+34, y+3.5);
+        doc.text(safeText(p.ankunft||'-'), ML+68, y+3.5);
+        doc.text(safeText((p.schminkStart||'-')+'-'+(p.schminkEnd||'-')), ML+86, y+3.5);
+        doc.text(safeText((p.transferStart||'-')+'-'+(p.transferEnd||'-')), ML+110, y+3.5);
+        doc.text(safeText(p.transferNach||p.einsatz.ort||'-', 14), ML+134, y+3.5);
+        const schminker = (p.persons||[]).map(getPersonName).join(', ');
+        doc.text(safeText(schminker||'-', 14), ML+159, y+3.5);
+        y += 5.5;
+
+        // Verletzungsmuster + Unfallhergang als Sub-Zeile (wenn vorhanden)
+        if(p.verletzung || p.unfallhergang){
+          doc.setTextColor(...GREY);doc.setFontSize(7);
+          if(p.verletzung){
+            y = checkPageBreak(y, 4);
+            const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-4);
+            txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+          }
+          if(p.unfallhergang){
+            y = checkPageBreak(y, 4);
+            const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-4);
+            txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+          }
+          doc.setTextColor(0,0,0);doc.setFontSize(7.5);
+          y += 1;
         }
-        if(p.unfallhergang){
-          y = checkPageBreak(y, 4);
-          const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-4);
-          txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
-        }
-        doc.setTextColor(0,0,0);doc.setFontSize(7.5);
-        y += 1;
-      }
-    });
+      });
+    }
   }
 
   // ── EIGENE SEITE PRO SCHMINKER ──
-  const personMap={};
-  allPatients.forEach(p=>{
-    (p.persons||[]).forEach(pid=>{
-      if(!personMap[pid]) personMap[pid]=[];
-      personMap[pid].push(p);
+  if(showSchminker){
+    const personMap={};
+    allPatients.forEach(p=>{
+      (p.persons||[]).forEach(pid=>{
+        if(!personMap[pid]) personMap[pid]=[];
+        personMap[pid].push(p);
+      });
     });
-  });
 
-  Object.entries(personMap).forEach(([pid, patients])=>{
-    doc.addPage();
-    const name = getPersonName(parseInt(pid));
-    let yy = addHeader('Schminker: '+name, patients.length+' Patient'+(patients.length!==1?'en':''), ORANGE);
-    yy = addEventInfo(yy);
-    yy = addSectionTitle('PATIENTEN', yy, ORANGE);
+    if(Object.keys(personMap).length === 0 && !showOverview){
+      // Schminker-only Modus, aber keine Schminker zugewiesen → Hinweis-Seite
+      let yy = addHeader('RUD - Schminker', 'Keine Schminker zugewiesen', ORANGE);
+      yy = addEventInfo(yy);
+      doc.setFontSize(11);doc.setTextColor(...GREY);
+      doc.text('Es sind keine Schminker zu Patienten zugewiesen.', ML, yy+10);
+    }
 
-    patients.forEach((p)=>{
-      // Card-Höhe je nach Inhalt berechnen
-      let cardH = 32;
-      if(p.verletzung) cardH += 6;
-      if(p.unfallhergang) cardH += 6;
-      yy = checkPageBreak(yy, cardH+5);
+    let isFirst = true;
+    Object.entries(personMap).forEach(([pid, patients])=>{
+      // Bei Schminker-only und erstem Schminker: keine neue Seite (auf der ersten Seite starten)
+      if(!(isFirst && !showOverview)) doc.addPage();
+      isFirst = false;
+      const name = getPersonName(parseInt(pid));
+      let yy = addHeader('Schminker: '+name, patients.length+' Patient'+(patients.length!==1?'en':''), ORANGE);
+      yy = addEventInfo(yy);
+      yy = addSectionTitle('PATIENTEN', yy, ORANGE);
 
-      // Card background
+      patients.forEach((p)=>{
+        // Card-Höhe je nach Inhalt berechnen
+        let cardH = 32;
+        if(p.verletzung) cardH += 6;
+        if(p.unfallhergang) cardH += 6;
+        yy = checkPageBreak(yy, cardH+5);
+
+        // Card background
       doc.setFillColor(255,248,240);doc.setDrawColor(...ORANGE);doc.setLineWidth(0.3);
       doc.roundedRect(ML, yy, CW, cardH, 2, 2, 'FD');
 
@@ -6229,6 +6309,7 @@ function exportRudPDF(){
       yy += cardH + 5;
     });
   });
+  } // end if(showSchminker)
 
   // Footer auf jeder Seite
   const pageCount = doc.getNumberOfPages();
@@ -6242,10 +6323,11 @@ function exportRudPDF(){
     doc.setTextColor(0,0,0);
   }
 
-  // Dateiname mit Event-Slug + Datum
+  // Dateiname mit Event-Slug + Modus + Datum
   const slug = (eventName||'rud').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').substring(0,30) || 'rud';
   const today = new Date().toISOString().slice(0,10);
-  doc.save('RUD-Export_'+slug+'_'+today+'.pdf');
+  const modeStr = mode === 'all' ? 'Gesamt' : (mode === 'schminker' ? 'Schminker' : 'Komplett');
+  doc.save('RUD-'+modeStr+'_'+slug+'_'+today+'.pdf');
 }
 
 /* ══ ZUSTÄNDIGKEITSBEREICHE ══ */
