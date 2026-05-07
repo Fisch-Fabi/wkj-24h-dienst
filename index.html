@@ -465,11 +465,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
         </div>
         <div class="nav-item nav-sub" onclick="showPage('todos',this)">
           <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-          <span class="nav-label">To-Do-Liste</span>
-        </div>
-        <div class="nav-item nav-sub" onclick="showPage('bereiche',this)">
-          <div class="nav-icon-col"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-          <span class="nav-label">Zuständigkeitsbereiche</span>
+          <span class="nav-label">To-Dos</span>
         </div>
       </div>
     </div>
@@ -737,17 +733,6 @@ body:not(.is-admin) .admin-only{display:none!important;}
     </div>
 
     <!-- ══ ZUSTÄNDIGKEITSBEREICHE ══ -->
-    <div class="page" id="page-bereiche">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Zuständigkeitsbereiche</span>
-          <button class="btn btn-primary btn-sm" onclick="addBereich()">+ Bereich</button>
-        </div>
-        <div id="bereiche-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
-        <div id="bereiche-empty" style="text-align:center;padding:2rem;color:var(--text2);font-size:13px;display:none;">Noch keine Bereiche angelegt.</div>
-      </div>
-    </div>
-
     <!-- ══ FREIZEIT ══ -->
     <div class="page" id="page-freizeit">
       <div class="card" style="padding:0.75rem 1rem;">
@@ -833,15 +818,16 @@ body:not(.is-admin) .admin-only{display:none!important;}
 
     <!-- ══ TO-DOS ══ -->
     <div class="page" id="page-todos">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Checklisten</span>
-          <div style="display:flex;gap:6px;">
-            <button id="btn-todos-export" class="btn btn-sm" onclick="exportChecklists()">↓ Exportieren</button>
-            <button class="btn btn-primary btn-sm" onclick="addChecklist()">+ Liste</button>
-          </div>
+      <div class="card" style="padding:0;">
+        <div class="card-header" style="padding:14px 16px;">
+          <span class="card-title">📋 To-Dos</span>
         </div>
-        <div id="checklists"></div>
+        <div id="todos-master-detail" style="display:grid;grid-template-columns:240px 1fr;gap:0;border-top:1px solid var(--border);min-height:480px;">
+          <!-- LEFT: Bereiche-Liste -->
+          <div id="todos-sidebar" style="border-right:1px solid var(--border);padding:8px 6px;display:flex;flex-direction:column;gap:2px;background:var(--bg2);"></div>
+          <!-- RIGHT: Detail-Pane -->
+          <div id="todos-detail" style="padding:16px 18px;"></div>
+        </div>
       </div>
     </div>
 
@@ -893,15 +879,14 @@ body:not(.is-admin) .admin-only{display:none!important;}
         <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Planung</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
           <div class="print-tile" onclick="printSection('infos')"><div style="font-size:22px;margin-bottom:5px;">ℹ️</div><div style="font-weight:500;font-size:13px;">Allgemeine Infos</div><div style="font-size:11px;color:var(--text2);">Eventinformationen</div></div>
-          <div class="print-tile" onclick="printSection('todos')"><div style="font-size:22px;margin-bottom:5px;">✅</div><div style="font-weight:500;font-size:13px;">Checklisten</div><div style="font-size:11px;color:var(--text2);">To-Do-Liste</div></div>
-          <div class="print-tile" onclick="printSection('bereiche')"><div style="font-size:22px;margin-bottom:5px;">🏠</div><div style="font-weight:500;font-size:13px;">Zuständigkeitsbereiche</div><div style="font-size:11px;color:var(--text2);">Bereiche & Checklisten</div></div>
+          <div class="print-tile" onclick="printSection('todos')"><div style="font-size:22px;margin-bottom:5px;">✅</div><div style="font-weight:500;font-size:13px;">To-Dos</div><div style="font-size:11px;color:var(--text2);">Bereiche & Aufgaben</div></div>
           <div class="print-tile" onclick="printSection('freizeit')"><div style="font-size:22px;margin-bottom:5px;">🏕️</div><div style="font-weight:500;font-size:13px;">Freizeit</div><div style="font-size:11px;color:var(--text2);">Freizeitplanung & Essen</div></div>
         </div>
 
         <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Einsatz</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
           <div class="print-tile" onclick="printSection('einsaetze')"><div style="font-size:22px;margin-bottom:5px;">📋</div><div style="font-weight:500;font-size:13px;">Einsatzliste</div><div style="font-size:11px;color:var(--text2);">Alle Einsätze & Timeline</div></div>
-          <div class="print-tile" onclick="printSection('rud')"><div style="font-size:22px;margin-bottom:5px;">🎭</div><div style="font-weight:500;font-size:13px;">RUD</div><div style="font-size:11px;color:var(--text2);">Patientenplanung</div></div>
+          <div class="print-tile" onclick="openRudPdfChoice()"><div style="font-size:22px;margin-bottom:5px;">🎭</div><div style="font-weight:500;font-size:13px;">RUD</div><div style="font-size:11px;color:var(--text2);">Patientenplanung – PDF Export</div></div>
           <div class="print-tile" onclick="printSection('dienstplan')"><div style="font-size:22px;margin-bottom:5px;">👥</div><div style="font-weight:500;font-size:13px;">Dienstplan</div><div style="font-size:11px;color:var(--text2);">Dienstpläne & Zuteilungen</div></div>
           <div class="print-tile" onclick="printSection('teilnehmer')"><div style="font-size:22px;margin-bottom:5px;">🙋</div><div style="font-weight:500;font-size:13px;">Teilnehmerliste</div><div style="font-size:11px;color:var(--text2);">Alle Personen & Rollen</div></div>
         </div>
@@ -990,7 +975,7 @@ function rrect(ctx,x,y,w,h,r){
 }
 const COLORS=['#185FA5','#B8691C','#0F6E56','#993556','#534AB7','#3B6D11','#A32D2D','#854F0B'];
 const COLORS_L=['#D6E8F7','#F7E6D0','#E1F5EE','#FBEAF0','#EEEDFE','#EAF3DE','#FCEBEB','#FAEEDA'];
-const PAGE_TITLES={dashboard:'Dashboard',infos:'Infos',todos:'To-Do-Liste',bereiche:'Zuständigkeitsbereiche',freizeit:'Freizeit',einsaetze:'Einsätze',rud:'RUD',fuhrpark:'Fuhrpark',dienstplan:'Dienstplan',teilnehmer:'Teilnehmer',drucken:'Drucken / PDF',einstellungen:'Einstellungen',administration:'Administration'};
+const PAGE_TITLES={dashboard:'Dashboard',infos:'Infos',todos:'To-Dos',freizeit:'Freizeit',einsaetze:'Einsätze',rud:'RUD',fuhrpark:'Fuhrpark',dienstplan:'Dienstplan',teilnehmer:'Teilnehmer',drucken:'Drucken / PDF',einstellungen:'Einstellungen',administration:'Administration'};
 
 /* ══ AUTHENTICATION ══ */
 // Users are stored in localStorage under 'wkj-users' (hashed passwords)
@@ -1317,8 +1302,7 @@ async function pbFetchUsersForLogin(){
 const ALL_PAGES = [
   {id:'dashboard',   label:'Dashboard',              group:'Allgemein'},
   {id:'infos',       label:'Infos',                  group:'Allgemein'},
-  {id:'todos',       label:'To-Do-Liste',            group:'Allgemein'},
-  {id:'bereiche',    label:'Zuständigkeitsbereiche', group:'Allgemein'},
+  {id:'todos',       label:'To-Dos',                 group:'Allgemein'},
   {id:'freizeit',    label:'Freizeit',               group:'Allgemein'},
   {id:'einsaetze',   label:'Einsätze',               group:'Einsatz'},
   {id:'rud',         label:'RUD',                    group:'Einsatz'},
@@ -1780,8 +1764,8 @@ function saveOwnPassword(){
 }
 
 let selectedEinsatzId = null;
-const CURRENT_VERSION = 3; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.6.6'; // App-Version – bei jeder Änderungsrunde erhöhen
+const CURRENT_VERSION = 4; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
+const APP_VERSION = '3.7.8'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1814,7 +1798,6 @@ let S={
   vehicles:[],
   vehicleTypes:{},
   einsaetze:[],
-  checklists:[],
   dienstplaene:{},
   persons:[],
   nextId:1,
@@ -1943,6 +1926,24 @@ function migrate(data){
 
     // Dienstplaene: keys wie "einsatzId-..." remappen falls nötig
     // (wird hier nicht gebraucht da dienstplaene nach Fahrzeug/Turnus organisiert sind)
+  }
+  // Version 3 → 4: Alte Checklisten (S.checklists) entfernen, neues Aufgaben-Schema in Bereichen
+  if(v < 4){
+    data.version = 4;
+    // Alte Checklisten komplett verwerfen
+    delete data.checklists;
+    // Bestehende Bereich-Aufgaben um neue Felder ergänzen (assignedTo, dueDate)
+    if(Array.isArray(data.bereiche)){
+      data.bereiche.forEach(b=>{
+        if(Array.isArray(b.checkItems)){
+          b.checkItems.forEach(it=>{
+            if(!Array.isArray(it.assignedTo)) it.assignedTo = [];
+            if(it.dueDate === undefined) it.dueDate = null;
+            if(!it.status) it.status = 'offen';
+          });
+        }
+      });
+    }
   }
   // Reparatur: verwaiste rudEinsaetze (verweisen auf gelöschte Einsätze) reattachen
   // Läuft bei jedem Load – heilt auch bereits migrierte Datenbestände
@@ -2443,7 +2444,7 @@ function pbAutoConnect(){
   }
 }
 
-function renderAll(){renderDashboard();renderVehicles();renderEinsaetze();renderGantt();renderTodos();renderDienstplan();renderPersons();renderInfos();renderBereiche();renderFreizeit();renderRud();enforceRole();applyPagePerms();}
+function renderAll(){renderDashboard();renderVehicles();renderEinsaetze();renderGantt();renderTodos();renderDienstplan();renderPersons();renderInfos();renderFreizeit();renderRud();enforceRole();applyPagePerms();}
 
 // Nav group state
 const _navGroupOpen={allgemein:false,einsatz:false,sonstiges:false,administration:false};
@@ -2502,7 +2503,7 @@ function showPage(id,el){
   if(id==='administration'){ openAdminPage(); }
   if(id==='fuhrpark'){ renderVehicles(); }
   if(id==='infos'){renderInfos();}
-  if(id==='bereiche'){renderBereiche();}
+  if(id==='todos'){renderTodos();}
   if(id==='einstellungen'){
     // Always reset to tile overview when navigating to settings
     const ov = document.getElementById('settings-overview');
@@ -3094,7 +3095,7 @@ function toggleSim(){
 }
 
 function renderDashboard(){
-  const offeneTodos = S.checklists.reduce((s,cl)=>s+cl.items.filter(i=>!i.done).length,0);
+  const offeneTodos = (S.bereiche||[]).reduce((s,b)=>s + (b.checkItems||[]).filter(i=>i.status!=='ok').length, 0);
   document.getElementById('dash-einsaetze').textContent = S.einsaetze.length;
   document.getElementById('dash-fahrzeuge').textContent = S.vehicles.length;
   document.getElementById('dash-teilnehmer').textContent = S.persons.length;
@@ -4170,268 +4171,384 @@ function renderGantt(){
   S.vehicles.forEach((v,i)=>{const s=document.createElement('span');s.style.cssText='display:flex;align-items:center;gap:5px;font-size:12px;color:#666;';s.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+COLORS[i%8]+';"></span>'+escHtml(v);leg.appendChild(s);});
 }
 
-/* ══ TO-DOS ══ */
-let collapsedLists={};
-function toggleCollapse(clId){
-  collapsedLists[clId]=!collapsedLists[clId];
-  renderTodos();
-}
+/* ══ TO-DOS / BEREICHE (Master-Detail-Layout) ══ */
+let _todosActiveBereich = null; // null = "Alle Aufgaben", sonst Bereich-ID
+let _todosFilter = 'all'; // 'all' | 'open' | 'mine'
+
 function renderTodos(){
-  const el=document.getElementById('checklists');el.innerHTML='';
-  S.checklists.forEach(cl=>{
-    const collapsed=!!collapsedLists[cl.id];
-    // Fortschritt inkl. Unterpunkte
-    let total=0,done=0;
-    cl.items.forEach(it=>{
-      total++; if(it.done) done++;
-      (it.sub||[]).forEach(s=>{total++;if(s.done)done++;});
-    });
-    const pct=total?Math.round(done/total*100):0;
+  const sidebar = document.getElementById('todos-sidebar');
+  const detail  = document.getElementById('todos-detail');
+  if(!sidebar || !detail) return;
 
-    const div=document.createElement('div');div.className='card';div.style.marginBottom='10px';
-    div.innerHTML=
-      '<div class="card-header" style="cursor:pointer;" onclick="toggleCollapse('+cl.id+')">'+
-        '<div style="flex:1;display:flex;align-items:center;gap:8px;">'+
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;transform:rotate('+(collapsed?'-90':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg>'+
-          '<span style="font-weight:500;font-size:14px;">'+escHtml(cl.title)+'</span>'+
-          '<span style="font-size:12px;color:#888;">'+done+'/'+total+' ('+pct+'%)</span>'+
-        '</div>'+
-        '<div style="display:flex;gap:6px;" onclick="event.stopPropagation()">'+
-          '<button class="btn btn-sm btn-danger" onclick="deleteChecklist('+cl.id+')">Liste löschen</button>'+
-        '</div>'+
-      '</div>'+
-      (collapsed?'':
-        '<div style="background:#eee;height:4px;border-radius:2px;margin-bottom:10px;">'+
-          '<div style="background:#1F3864;height:4px;border-radius:2px;width:'+pct+'%;transition:width 0.3s;"></div>'+
-        '</div>'+
-        '<div id="items-'+cl.id+'"></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:6px;">'+
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+
-          '<input type="text" id="new-item-'+cl.id+'" placeholder="Neuer Punkt hinzufügen..." '+
-            'style="flex:1;border:none;background:transparent;font-size:13px;color:var(--text);outline:none;padding:2px 0;" '+
-            'onkeydown="if(event.key===\'Enter\')addCheckItemInline('+cl.id+')">'+
-        '</div>'
-      );
-    el.appendChild(div);
+  const bereiche = S.bereiche || [];
 
-    if(!collapsed){
-      const itemsEl=div.querySelector('#items-'+cl.id);
-      cl.items.forEach(it=>{
-        const row=document.createElement('div');
-        row.style.cssText='padding:4px 0 8px;border-bottom:2px solid var(--border);margin-bottom:2px;';
-        const subDone=(it.sub||[]).filter(s=>s.done).length;
-        const subTotal=(it.sub||[]).length;
-        const subCollapsed = it.subCollapsed||false;
-        row.innerHTML=
-          '<div class="check-item'+(it.done?' done':'')+'" style="padding:5px 0;">'+
-            (subTotal?'<span onclick="toggleSubCollapse('+cl.id+','+it.id+')" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;cursor:pointer;" title="'+(subCollapsed?'Einblenden':'Ausblenden')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" style="transition:transform 0.2s;transform:rotate('+(subCollapsed?'-90':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg></span>':'<span style="display:inline-flex;width:20px;height:20px;flex-shrink:0;"></span>')+
-            '<input type="checkbox"'+(it.done?' checked':'')+' onchange="toggleItem('+cl.id+','+it.id+',this.checked)" style="'+((it.sub||[]).length>0?'pointer-events:none;':'')+'">'+
-            '<span style="flex:1;font-size:13px;'+(it.done?'text-decoration:line-through;color:#888;':'')+'">'+escHtml(it.text)+'</span>'+
-            (subTotal?'<span style="font-size:11px;color:var(--text2);margin-right:4px;">'+subDone+'/'+subTotal+'</span>':'')+
-            '<button class="btn btn-sm btn-danger" onclick="deleteItem('+cl.id+','+it.id+')" style="padding:1px 6px;font-size:11px;">✕</button>'+
-          '</div>'+
-          '<div style="margin-left:64px;'+(subCollapsed?'display:none;':'')+'">'+
-            (it.sub||[]).map(s=>
-              '<div class="check-item'+(s.done?' done':'')+'" style="padding:3px 0;font-size:12px;">'+
-                '<input type="checkbox"'+(s.done?' checked':'')+' onchange="toggleSubItem('+cl.id+','+it.id+','+s.id+',this.checked)">'+
-                '<span style="flex:1;color:var(--text2);">'+escHtml(s.text)+'</span>'+
-                '<button class="btn btn-sm btn-danger" onclick="deleteSubItem('+cl.id+','+it.id+','+s.id+')" style="padding:1px 5px;font-size:10px;">✕</button>'+
-              '</div>'
-            ).join('')+
-            '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">'+
-              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+
-              '<input type="text" id="new-sub-'+cl.id+'-'+it.id+'" placeholder="Unterpunkt..." '+
-                'style="flex:1;border:none;background:transparent;font-size:12px;color:var(--text2);outline:none;padding:1px 0;" '+
-                'onkeydown="if(event.key===\'Enter\')addSubItemInline('+cl.id+','+it.id+')">'+
-            '</div>'+
-          '</div>';
-        itemsEl.appendChild(row);
-      });
-    }
-  });
-}
-function exportChecklists(){
-  if(!canPrint('todos')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
-  if(!S.checklists.length){alert('Keine Checklisten vorhanden.');return;}
-  const checks=S.checklists.map(cl=>{
-    let total=0,done=0;
-    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
-    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;">'+
-      '<input type="checkbox" checked data-clid="'+cl.id+'" style="width:15px;height:15px;">'+
-      '<span style="flex:1;">'+escHtml(cl.title)+'</span>'+
-      '<span style="font-size:11px;color:var(--text2);">'+done+'/'+total+'</span>'+
-      '</label>';
-  }).join('');
-  openModal('<h2>Checklisten exportieren</h2>'+
-    '<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Welche Listen sollen exportiert werden?</div>'+
-    '<div style="display:flex;gap:6px;margin-bottom:8px;">'+
-    '<button class="btn btn-sm" onclick="[...document.querySelectorAll(\'#cl-export-list input\')].forEach(c=>c.checked=true)">Alle</button>'+
-    '<button class="btn btn-sm" onclick="[...document.querySelectorAll(\'#cl-export-list input\')].forEach(c=>c.checked=false)">Keine</button>'+
-    '</div>'+
-    '<div id="cl-export-list">'+checks+'</div>'+
-    '<div style="margin-top:14px;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">Format</div>'+
-    '<div style="display:flex;gap:8px;margin-bottom:4px;">'+
-      '<button class="btn btn-sm" id="fmt-pdf" onclick="setExportFmt(\'pdf\')" style="flex:1;">🖨️ PDF</button>'+
-      '<button class="btn btn-sm" id="fmt-xlsx" onclick="setExportFmt(\'xlsx\')" style="flex:1;">📊 Excel</button>'+
-      '<button class="btn btn-sm" id="fmt-txt" onclick="setExportFmt(\'txt\')" style="flex:1;">📄 TXT</button>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">'+
-    '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
-    '<button class="btn btn-primary" onclick="doExportChecklists()">↓ Exportieren</button>'+
-    '</div>');
-  setTimeout(()=>setExportFmt('pdf'),0);
-}
-let _exportFmt='txt';
-function setExportFmt(fmt){
-  _exportFmt=fmt;
-  ['txt','xlsx','pdf'].forEach(f=>{
-    const btn=document.getElementById('fmt-'+f);
-    if(btn) btn.style.cssText=f===fmt?'flex:1;background:#1F3864;color:#fff;border-color:#1F3864;':'flex:1;';
-  });
-}
-function doExportChecklists(){
-  const selected=[...document.querySelectorAll('#cl-export-list input:checked')].map(c=>parseInt(c.dataset.clid));
-  const lists=S.checklists.filter(cl=>selected.includes(cl.id));
-  if(!lists.length){alert('Keine Liste ausgewählt.');return;}
-  if(_exportFmt==='txt') exportChecklistsTxt(lists);
-  else if(_exportFmt==='xlsx') exportChecklistsXlsx(lists);
-  else if(_exportFmt==='pdf') exportChecklistsPdf(lists);
-}
-function exportChecklistsTxt(lists){
-  const eventName=S.infos&&S.infos.name?S.infos.name:'Event';
-  let txt=eventName+' – Checklisten\n'+'='.repeat(40)+'\n\n';
-  lists.forEach(cl=>{
-    let total=0,done=0;
-    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
-    txt+=cl.title+' ('+done+'/'+total+')\n'+'-'.repeat(30)+'\n';
-    cl.items.forEach(it=>{
-      txt+=(it.done?'[x] ':'[ ] ')+it.text+'\n';
-      (it.sub||[]).forEach(s=>{txt+='    '+(s.done?'[x] ':'[ ] ')+s.text+'\n';});
+  // Stats berechnen
+  function bereichStats(b){
+    const items = b.checkItems || [];
+    const done = items.filter(i=>i.status==='ok').length;
+    const total = items.length;
+    return {done, total, open: total - done};
+  }
+  const totalOpen = bereiche.reduce((sum,b)=>sum + bereichStats(b).open, 0);
+  const totalCount = bereiche.reduce((sum,b)=>sum + (b.checkItems||[]).length, 0);
+
+  // ── SIDEBAR ──
+  let sb = '';
+  // Filter-Bereich
+  sb += '<div style="padding:4px 6px 8px;">';
+  sb += todoFilterRow('all', '<i class="ti ti-list"></i>', 'Alle Aufgaben', totalCount);
+  sb += todoFilterRow('open', '<i class="ti ti-clock"></i>', 'Offen', totalOpen, '#BA7517');
+  sb += '</div>';
+  // Bereiche-Header
+  sb += '<div style="font-size:11px;color:var(--text2);padding:8px 12px 4px;text-transform:uppercase;letter-spacing:0.5px;">Bereiche</div>';
+
+  if(!bereiche.length){
+    sb += '<div style="font-size:12px;color:var(--text2);font-style:italic;padding:8px 12px;">Noch keine Bereiche</div>';
+  } else {
+    bereiche.forEach(b=>{
+      const st = bereichStats(b);
+      const isActive = _todosActiveBereich === b.id;
+      const allDone = st.total > 0 && st.open === 0;
+      const badgeBg = allDone ? 'var(--bg3)' : (st.open>0 ? 'rgba(186,117,23,0.15)' : '#E6F1FB');
+      const badgeColor = allDone ? 'var(--text2)' : (st.open>0 ? '#854F0B' : '#185FA5');
+      const badgeContent = allDone ? '<i class="ti ti-check" style="font-size:10px;"></i>' : st.open;
+      sb += '<div onclick="todosSelectBereich('+b.id+')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;cursor:pointer;'+(isActive?'background:var(--bg3);border-left:3px solid #185FA5;padding-left:7px;':'')+'">';
+      sb += '<div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;">';
+      sb += '<span style="font-size:13px;font-weight:'+(isActive?'500':'400')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(b.name||'Ohne Name')+'</span>';
+      sb += '<span style="font-size:11px;color:var(--text2);">'+st.done+'/'+st.total+' erledigt</span>';
+      sb += '</div>';
+      sb += '<span style="font-size:10px;background:'+badgeBg+';color:'+badgeColor+';padding:1px 6px;border-radius:999px;flex-shrink:0;">'+badgeContent+'</span>';
+      sb += '</div>';
     });
-    txt+='\n';
-  });
-  const blob=new Blob([txt],{type:'text/plain'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='checklisten-'+new Date().toISOString().slice(0,10)+'.txt';
-  a.click();URL.revokeObjectURL(url);
-  closeModal(true);
-}
-function exportChecklistsXlsx(lists){
-  const wb=XLSX.utils.book_new();
-  lists.forEach(cl=>{
-    const rows=[['Status','Punkt','Unterpunkt']];
-    cl.items.forEach(it=>{
-      rows.push([it.done?'✓':'○', it.text, '']);
-      (it.sub||[]).forEach(s=>rows.push([s.done?'✓':'○', '', s.text]));
-    });
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:8},{wch:40},{wch:40}];
-    XLSX.utils.book_append_sheet(wb, ws, cl.title.substring(0,31));
-  });
-  XLSX.writeFile(wb,'checklisten-'+new Date().toISOString().slice(0,10)+'.xlsx');
-  closeModal(true);
-}
-function exportChecklistsPdf(lists){
-  closeModal(true);
-  const eventName=S.infos&&S.infos.name?S.infos.name:'Event';
-  // Temporäres Print-Div
-  const old=document.getElementById('pdf-print-div');
-  if(old) old.remove();
-  const div=document.createElement('div');
-  div.id='pdf-print-div';
-  div.style.cssText='display:none;';
-  let html='<h2 style="font-size:16px;margin-bottom:4px;">'+escHtml(eventName)+' – Checklisten</h2>'+
-    '<hr style="margin-bottom:12px;">';
-  lists.forEach(cl=>{
-    let total=0,done=0;
-    cl.items.forEach(it=>{total++;if(it.done)done++;(it.sub||[]).forEach(s=>{total++;if(s.done)done++;});});
-    html+='<div style="margin-bottom:16px;page-break-inside:avoid;">'+
-      '<div style="font-weight:600;font-size:13px;margin-bottom:4px;">'+escHtml(cl.title)+
-        ' <span style="font-weight:400;color:#666;font-size:11px;">('+done+'/'+total+')</span></div>';
-    cl.items.forEach(it=>{
-      html+='<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;font-size:12px;">'+
-        '<span style="margin-top:1px;">'+(it.done?'☑':'☐')+'</span>'+
-        '<span style="'+(it.done?'text-decoration:line-through;color:#aaa;':'')+'">'+escHtml(it.text)+'</span></div>';
-      (it.sub||[]).forEach(s=>{
-        html+='<div style="display:flex;align-items:flex-start;gap:6px;padding:2px 0 2px 24px;font-size:11px;color:#555;">'+
-          '<span>'+(s.done?'☑':'☐')+'</span>'+
-          '<span style="'+(s.done?'text-decoration:line-through;color:#aaa;':'')+'">'+escHtml(s.text)+'</span></div>';
-      });
-    });
-    html+='</div>';
-  });
-  div.innerHTML=html;
-  document.body.appendChild(div);
-  // Print-CSS temporär aktivieren
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
-  div.style.display='block';
-  setTimeout(()=>{
-    window.print();
-    div.remove();
-  },150);
-}
-function addChecklist(){if(!guardWrite('todos')) return; openModal('<h2>Neue Checkliste</h2>'+
-  '<div class="form-row"><label>Name</label><input type="text" id="m-clname" placeholder="z.B. Vorbereitung"></div>'+
-  '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'+
-  '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
-  '<button class="btn btn-primary" onclick="saveChecklist()">Speichern</button></div>');
-  setTimeout(()=>document.getElementById('m-clname').focus(),50);}
-function saveChecklist(){
-  if(!guardWrite('todos')) return;const t=document.getElementById('m-clname').value.trim();if(!t)return;S.checklists.push({id:uid(),title:t,items:[]});closeModal(true);save();renderTodos();}
-function deleteChecklist(id){if(!guardWrite('todos')) return; confirmModal('Diese Checkliste wird unwiderruflich gelöscht.',function(){S.checklists=S.checklists.filter(x=>x.id!==id);save();renderTodos();});}
-function addCheckItemInline(clId){
-  if(!guardWrite('todos')) return;
-  const inp=document.getElementById('new-item-'+clId);
-  const t=inp.value.trim();if(!t)return;
-  const cl=S.checklists.find(x=>x.id===clId);
-  cl.items.push({id:uid(),text:t,done:false,sub:[]});
-  inp.value='';save();renderTodos();
-  // Fokus wiederherstellen
-  setTimeout(()=>{const el=document.getElementById('new-item-'+clId);if(el)el.focus();},50);
-}
-function addSubItemInline(clId,itId){
-  if(!guardWrite('todos')) return;
-  const inp=document.getElementById('new-sub-'+clId+'-'+itId);
-  const t=inp.value.trim();if(!t)return;
-  const cl=S.checklists.find(x=>x.id===clId);
-  const it=cl.items.find(x=>x.id===itId);
-  if(!it.sub) it.sub=[];
-  it.sub.push({id:uid(),text:t,done:false});
-  inp.value='';save();renderTodos();
-  setTimeout(()=>{const el=document.getElementById('new-sub-'+clId+'-'+itId);if(el)el.focus();},50);
-}
-function toggleItem(clId,itId,val){
-  const cl=S.checklists.find(x=>x.id===clId);
-  const it=cl.items.find(x=>x.id===itId);
-  // Wenn Unterpunkte vorhanden → nicht manuell änderbar
-  if((it.sub||[]).length>0) return;
-  it.done=val;save();renderTodos();
-}
-function toggleSubItem(clId,itId,sId,val){
-  const cl=S.checklists.find(x=>x.id===clId);
-  const it=cl.items.find(x=>x.id===itId);
-  const s=(it.sub||[]).find(x=>x.id===sId);
-  if(s){
-    s.done=val;
-    // Hauptpunkt automatisch abhaken wenn alle Unterpunkte erledigt
-    it.done=(it.sub||[]).length>0 && (it.sub||[]).every(x=>x.done);
-    save();renderTodos();
+  }
+
+  if(canWrite('todos')){
+    sb += '<button class="btn btn-sm" onclick="addBereich()" style="margin:8px;font-size:12px;padding:6px;">+ Bereich</button>';
+  }
+  sidebar.innerHTML = sb;
+
+  // ── DETAIL-PANE ──
+  if(_todosActiveBereich === null){
+    renderTodosFilterView();
+  } else {
+    const b = bereiche.find(x=>x.id===_todosActiveBereich);
+    if(!b){ _todosActiveBereich = null; renderTodosFilterView(); return; }
+    renderTodosBereichView(b);
   }
 }
-function toggleSubCollapse(clId,itId){
-  const cl=S.checklists.find(x=>x.id===clId);
-  const it=cl.items.find(x=>x.id===itId);
-  it.subCollapsed=!it.subCollapsed;
-  save();renderTodos();
+
+function todoFilterRow(key, icon, label, count, color){
+  const isActive = (_todosActiveBereich === null && _todosFilter === key);
+  const bg = isActive ? '#E6F1FB' : 'transparent';
+  const fg = isActive ? '#0C447C' : 'var(--text)';
+  const fw = isActive ? '500' : '400';
+  return '<div onclick="todosSetFilter(\''+key+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:'+bg+';color:'+fg+';font-weight:'+fw+';cursor:pointer;margin-top:2px;">'+
+    '<span style="font-size:13px;display:flex;align-items:center;gap:6px;">'+icon+' '+escHtml(label)+'</span>'+
+    '<span style="font-size:11px;color:'+(isActive?'inherit':'var(--text2)')+';">'+count+'</span>'+
+  '</div>';
 }
-function deleteItem(clId,itId){if(!guardWrite('todos')) return; const cl=S.checklists.find(x=>x.id===clId);cl.items=cl.items.filter(x=>x.id!==itId);save();renderTodos();}
-function deleteSubItem(clId,itId,sId){
+
+function todosSelectBereich(id){
+  _todosActiveBereich = id;
+  renderTodos();
+}
+function todosSetFilter(key){
+  _todosActiveBereich = null;
+  _todosFilter = key;
+  renderTodos();
+}
+
+// Filter-View: zeigt Aufgaben aus allen Bereichen, nach Filter
+function renderTodosFilterView(){
+  const detail = document.getElementById('todos-detail');
+  const bereiche = S.bereiche || [];
+
+  const allItems = [];
+  bereiche.forEach(b=>{
+    (b.checkItems||[]).forEach(it=>{
+      allItems.push({...it, _bereich:b});
+    });
+  });
+
+  let filtered = allItems;
+  let title = 'Alle Aufgaben';
+  let subtitle = allItems.length + ' Aufgabe'+(allItems.length!==1?'n':'');
+  if(_todosFilter === 'open'){
+    filtered = allItems.filter(i=>i.status!=='ok');
+    title = 'Offene Aufgaben';
+    subtitle = filtered.length + ' offen';
+  }
+
+  // Sortieren: offene zuerst, dann nach Fälligkeit
+  filtered.sort((a,b)=>{
+    const sa = a.status==='ok' ? 2 : (a.status==='in_arbeit' ? 0 : 1);
+    const sb = b.status==='ok' ? 2 : (b.status==='in_arbeit' ? 0 : 1);
+    if(sa !== sb) return sa - sb;
+    if(a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate) return -1;
+    if(b.dueDate) return 1;
+    return 0;
+  });
+
+  let html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">';
+  html += '<div><div style="font-size:16px;font-weight:500;">'+escHtml(title)+'</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-top:2px;">'+escHtml(subtitle)+'</div></div>';
+  html += '</div>';
+
+  if(!filtered.length){
+    html += '<div style="text-align:center;padding:2rem;color:var(--text2);font-size:13px;">Keine Aufgaben.</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;">';
+    filtered.forEach(it=>{
+      html += renderTodoItemRow(it, it._bereich, true);
+    });
+    html += '</div>';
+  }
+  detail.innerHTML = html;
+}
+
+// Bereich-View: zeigt einen Bereich mit allen seinen Aufgaben + Bereich-Meta
+function renderTodosBereichView(b){
+  const detail = document.getElementById('todos-detail');
+  const items = b.checkItems || [];
+  const done = items.filter(i=>i.status==='ok').length;
+  const total = items.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const verantwPersonen = (Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])).map(id=>S.persons.find(p=>p.id===id)).filter(Boolean);
+  const personenText = verantwPersonen.length
+    ? verantwPersonen.map(p=>(p.vorname||'')+(p.nachname?' '+p.nachname:'')).join(', ')
+    : 'Keine Verantwortlichen';
+  const fzText = (b.fahrzeuge||[]).join(', ');
+
+  let html = '';
+  // Header
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">';
+  html += '<div style="min-width:0;flex:1;">';
+  html += '<div style="font-size:16px;font-weight:500;">'+escHtml(b.name||'Ohne Name')+'</div>';
+  html += '<div style="font-size:12px;color:var(--text2);margin-top:4px;">';
+  html += '<i class="ti ti-user" style="font-size:12px;vertical-align:-2px;"></i> '+escHtml(personenText);
+  if(fzText) html += ' · '+escHtml(fzText);
+  html += '</div>';
+  if(b.beschreibung){
+    html += '<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.5;">'+escHtml(b.beschreibung)+'</div>';
+  }
+  html += '</div>';
+  if(canWrite('todos')){
+    html += '<div style="display:flex;gap:6px;flex-shrink:0;">';
+    html += '<button class="btn btn-sm" onclick="editBereich('+b.id+')">Bearbeiten</button>';
+    html += '<button class="btn btn-sm btn-danger" onclick="deleteBereich('+b.id+')">✕</button>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Progress bar
+  html += '<div style="background:var(--bg3);height:6px;border-radius:3px;margin-bottom:14px;overflow:hidden;">';
+  html += '<div style="background:#639922;height:100%;width:'+pct+'%;transition:width 0.3s;"></div>';
+  html += '</div>';
+
+  // Tasks
+  if(!items.length){
+    html += '<div style="text-align:center;padding:1.5rem;color:var(--text2);font-size:13px;font-style:italic;">Noch keine Aufgaben.</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;">';
+    items.forEach(it=>{
+      html += renderTodoItemRow(it, b, false);
+    });
+    html += '</div>';
+  }
+
+  // Add button
+  if(canWrite('todos')){
+    html += '<button class="btn btn-sm btn-primary" onclick="openTodoItemModal('+b.id+',null)" style="margin-top:12px;font-size:12px;padding:6px 12px;">+ Aufgabe hinzufügen</button>';
+  }
+
+  detail.innerHTML = html;
+}
+
+// Rendert eine Aufgaben-Zeile
+function renderTodoItemRow(it, bereich, showBereichBadge){
+  const isOk = it.status==='ok';
+  const isInArbeit = it.status==='in_arbeit';
+
+  // Datums-Chip links berechnen
+  let dateChip = '';
+  let isOverdue = false;
+  if(isOk){
+    // Erledigt → grüner Chip mit Häkchen
+    dateChip = '<span style="font-size:11px;padding:4px 8px;border-radius:6px;background:#EAF3DE;color:#27500A;font-weight:500;flex-shrink:0;min-width:64px;text-align:center;display:inline-flex;align-items:center;justify-content:center;">'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'+
+    '</span>';
+  } else if(it.dueDate){
+    const due = new Date(it.dueDate+'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.floor((due - today)/86400000);
+    let bg = 'var(--bg3)', col = 'var(--text2)';
+    let text;
+    if(diff < 0){
+      bg = '#FCEBEB'; col = '#791F1F';
+      isOverdue = true;
+      text = due.getDate()+'. '+due.toLocaleDateString('de-AT',{month:'short'}).replace('.','');
+    } else if(diff === 0){
+      bg = '#FCEBEB'; col = '#791F1F';
+      text = 'Heute';
+    } else if(diff === 1){
+      bg = '#FAEEDA'; col = '#633806';
+      text = 'Morgen';
+    } else {
+      bg = 'var(--bg3)'; col = 'var(--text)';
+      text = due.getDate()+'. '+due.toLocaleDateString('de-AT',{month:'short'}).replace('.','');
+    }
+    dateChip = '<span style="font-size:11px;padding:4px 8px;border-radius:6px;background:'+bg+';color:'+col+';font-weight:500;flex-shrink:0;min-width:64px;text-align:center;">'+escHtml(text)+'</span>';
+  } else {
+    // Kein Datum: leerer/unauffälliger Chip
+    dateChip = '<span style="font-size:11px;padding:4px 8px;border-radius:6px;background:transparent;color:var(--text2);font-weight:400;flex-shrink:0;min-width:64px;text-align:center;font-style:italic;">—</span>';
+  }
+
+  // Status-Badge: für jeden Status
+  let statusBadge;
+  if(isOverdue){
+    statusBadge = '<span style="font-size:11px;padding:3px 9px;border-radius:999px;background:#FCEBEB;color:#791F1F;flex-shrink:0;font-weight:500;">Überfällig</span>';
+  } else if(isInArbeit){
+    statusBadge = '<span style="font-size:11px;padding:3px 9px;border-radius:999px;background:#FAEEDA;color:#633806;flex-shrink:0;font-weight:500;">In Arbeit</span>';
+  } else if(isOk){
+    statusBadge = '<span style="font-size:11px;padding:3px 9px;border-radius:999px;background:#EAF3DE;color:#27500A;flex-shrink:0;font-weight:500;">Erledigt</span>';
+  } else {
+    statusBadge = '<span style="font-size:11px;padding:3px 9px;border-radius:999px;background:var(--bg3);color:var(--text2);flex-shrink:0;font-weight:500;">Offen</span>';
+  }
+
+  // Status-Icon rechts (klickbar zum Cyclen)
+  const statusIcon = isOk
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="#639922" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12" stroke="#fff" stroke-width="2.5" fill="none"/></svg>'
+    : isInArbeit
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2 a10 10 0 0 1 0 20 z" fill="#BA7517"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+
+  // Personen + Bereich Meta
+  const assigned = (it.assignedTo||[]).map(id=>S.persons.find(p=>p.id===id)).filter(Boolean);
+  const assignedText = assigned.map(p=>(p.vorname||'')+(p.nachname?' '+p.nachname.charAt(0)+'.':'')).join(', ');
+  const metaParts = [];
+  if(assignedText) metaParts.push(escHtml(assignedText));
+  if(showBereichBadge && bereich) metaParts.push(escHtml(bereich.name));
+  const metaLine = metaParts.length
+    ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;">'+metaParts.join(' · ')+'</div>'
+    : '';
+
+  // Click-Handler – Status-Hitbox umfasst Badge + Icon
+  const editStyle = canWrite('todos') ? 'cursor:pointer;' : '';
+  const onclickRow = canWrite('todos') ? 'onclick="openTodoItemModal('+bereich.id+','+it.id+')"' : '';
+  const statusInner = statusBadge + '<span style="display:flex;align-items:center;">'+statusIcon+'</span>';
+  const statusHitbox = canWrite('todos')
+    ? '<button onclick="event.stopPropagation();cycleTodoItemStatus('+bereich.id+','+it.id+')" title="Status ändern" style="background:transparent;border:none;padding:6px 8px;margin:0;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:8px;flex-shrink:0;" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'transparent\'">'+statusInner+'</button>'
+    : '<span style="padding:6px 8px;display:flex;align-items:center;gap:8px;flex-shrink:0;">'+statusInner+'</span>';
+
+  let row = '<div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:0.5px solid var(--border);'+editStyle+'" '+onclickRow+'>';
+  row += dateChip;
+  row += '<div style="flex:1;min-width:0;">';
+  row += '<div style="font-size:13px;">'+escHtml(it.text)+'</div>';
+  row += metaLine;
+  row += '</div>';
+  row += statusHitbox;
+  row += '</div>';
+  return row;
+}
+
+// Status-Cycle: offen -> in_arbeit -> ok -> offen
+function cycleTodoItemStatus(bereichId, itemId){
   if(!guardWrite('todos')) return;
-  const cl=S.checklists.find(x=>x.id===clId);
-  const it=cl.items.find(x=>x.id===itId);
-  it.sub=(it.sub||[]).filter(x=>x.id!==sId);
-  save();renderTodos();
+  const b = S.bereiche.find(x=>x.id===bereichId);
+  if(!b) return;
+  const it = (b.checkItems||[]).find(x=>x.id===itemId);
+  if(!it) return;
+  it.status = it.status==='offen' ? 'in_arbeit' : (it.status==='in_arbeit' ? 'ok' : 'offen');
+  save();
+  renderTodos();
+}
+
+// Aufgabe anlegen oder bearbeiten
+function openTodoItemModal(bereichId, itemId){
+  if(!canWrite('todos')) return;
+  const b = S.bereiche.find(x=>x.id===bereichId);
+  if(!b) return;
+  const it = itemId ? (b.checkItems||[]).find(x=>x.id===itemId) : null;
+  const isNew = !it;
+
+  // Personen-Chips: nur Betreuer (gleich wie bei Bereich-Verantwortlichen)
+  const betreuer = S.persons.filter(p=>{
+    const r = Array.isArray(p.rolle) ? p.rolle : (p.rolle ? [p.rolle] : []);
+    return r.some(x=>x.toLowerCase()==='betreuer');
+  });
+  const personChips = betreuer.length ? betreuer.map(p=>{
+    const sel = it && (it.assignedTo||[]).includes(p.id);
+    const name = (p.vorname||'')+(p.nachname?' '+p.nachname:'');
+    return '<span onclick="toggleModalChip(this)" data-pid="'+p.id+'" data-selected="'+(sel?'1':'0')+'" style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:14px;font-size:11px;margin:2px;cursor:pointer;'+(sel?'background:#1F3864;color:#fff;border:1px solid #1F3864;':'background:#fff;color:var(--text);border:1px solid #ddd;')+'">'+escHtml(name)+'</span>';
+  }).join('') : '<span style="font-size:11px;color:#888;font-style:italic;">Keine Betreuer in der Teilnehmerliste</span>';
+
+  openModal(
+    '<h2>'+(isNew?'➕ Neue Aufgabe':'✏️ Aufgabe bearbeiten')+'</h2>'+
+    '<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Bereich: <b>'+escHtml(b.name||'')+'</b></div>'+
+    '<div class="form-row"><label>Aufgabe *</label><input type="text" id="ti-text" value="'+escHtml(it?it.text||'':'')+'" placeholder="z.B. Material vorbereiten"></div>'+
+    '<div class="form-row-2">'+
+      '<div class="form-row"><label>Status</label><select id="ti-status">'+
+        '<option value="offen"'+(!it||it.status==='offen'?' selected':'')+'>⬜ Offen</option>'+
+        '<option value="in_arbeit"'+(it&&it.status==='in_arbeit'?' selected':'')+'>🟠 In Arbeit</option>'+
+        '<option value="ok"'+(it&&it.status==='ok'?' selected':'')+'>✅ Erledigt</option>'+
+      '</select></div>'+
+      '<div class="form-row"><label>Fälligkeit (optional)</label><input type="date" id="ti-due" value="'+escHtml(it&&it.dueDate||'')+'"></div>'+
+    '</div>'+
+    '<div class="form-row"><label>Verantwortliche (mehrere möglich)</label>'+
+      '<div style="border:1px solid var(--input-border);border-radius:6px;padding:5px;min-height:36px;background:#fff;" id="ti-chips">'+personChips+'</div></div>'+
+    '<div style="display:flex;gap:8px;justify-content:'+(isNew?'flex-end':'space-between')+';margin-top:14px;">'+
+      (isNew?'':'<button class="btn btn-sm btn-danger" onclick="deleteTodoItem('+bereichId+','+itemId+')">🗑️ Löschen</button>')+
+      '<div style="display:flex;gap:8px;">'+
+        '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+        '<button class="btn btn-primary" onclick="saveTodoItem('+bereichId+','+(itemId||'null')+')">Speichern</button>'+
+      '</div>'+
+    '</div>'
+  );
+}
+
+function saveTodoItem(bereichId, itemId){
+  if(!guardWrite('todos')) return;
+  const b = S.bereiche.find(x=>x.id===bereichId);
+  if(!b) return;
+  const text = document.getElementById('ti-text').value.trim();
+  if(!text){ alert('Bitte einen Aufgabentext angeben.'); return; }
+  const status = document.getElementById('ti-status').value;
+  const due = document.getElementById('ti-due').value;
+  const assignedTo = [...document.querySelectorAll('#ti-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean);
+
+  if(!b.checkItems) b.checkItems = [];
+  if(itemId){
+    const it = b.checkItems.find(x=>x.id===itemId);
+    if(!it) return;
+    it.text = text;
+    it.status = status;
+    it.dueDate = due || null;
+    it.assignedTo = assignedTo;
+  } else {
+    b.checkItems.push({
+      id: uid(),
+      text: text,
+      status: status,
+      dueDate: due || null,
+      assignedTo: assignedTo
+    });
+  }
+  save();
+  closeModal(true);
+  renderTodos();
+}
+
+function deleteTodoItem(bereichId, itemId){
+  if(!guardWrite('todos')) return;
+  confirmModal('Diese Aufgabe wirklich löschen?', function(){
+    const b = S.bereiche.find(x=>x.id===bereichId);
+    if(!b) return;
+    b.checkItems = (b.checkItems||[]).filter(x=>x.id!==itemId);
+    save();
+    closeModal(true);
+    renderTodos();
+  });
 }
 
 function buildTurnusModal(t, veh){
@@ -4908,7 +5025,6 @@ function printSection(section){
     dienstplan:'page-dienstplan',
     teilnehmer:'page-teilnehmer',
     todos:'page-todos',
-    bereiche:'page-bereiche',
     freizeit:'page-freizeit',
     rud:'page-rud',
     all:null
@@ -6228,87 +6344,103 @@ function exportRudPDF(mode){
       yy = addSectionTitle('PATIENTEN', yy, ORANGE);
 
       patients.forEach((p)=>{
-        // Card-Höhe je nach Inhalt berechnen
-        let cardH = 32;
-        if(p.verletzung) cardH += 6;
-        if(p.unfallhergang) cardH += 6;
+        // Daten vorbereiten
+        const e = p.einsatz || {};
+        const schminker = (p.persons||[]).map(getPersonName).join(', ');
+        const schminkOrt = p.schminkplatz || '';
+        const schminkZeit = (p.schminkStart||'') && (p.schminkEnd||'') ? p.schminkStart+'-'+p.schminkEnd : '';
+        const schminkOrtFull = schminkOrt + (schminkZeit?(schminkOrt?' · ':'')+schminkZeit:'');
+        const transferZeit = p.transferStart && p.transferEnd ? p.transferStart+'-'+p.transferEnd : '';
+        const transferZiel = p.transferNach || e.ort || '';
+        const transferFull = transferZeit + (transferZiel?' -> '+transferZiel:'');
+
+        // Meta-Zeilen aufbauen (analog zum Tool)
+        const metaRows = [];
+        metaRows.push(['Schminker:', schminker || '-']);
+        if(p.ankunft) metaRows.push(['Ankunft:', p.ankunft]);
+        metaRows.push(['Schmink-Ort:', schminkOrtFull || '-']);
+        if(transferFull) metaRows.push(['Transfer:', transferFull]);
+        if(e.asp) metaRows.push(['ASP:', e.asp]);
+
+        // Höhe berechnen: Header (10) + Einsatz-Zeile (5) + Meta-Zeilen (4mm/Zeile) + Verl./Unfall (5mm/Zeile)
+        const metaH = metaRows.length * 4.5;
+        let injuryH = 0;
+        const colW = CW - 8; // Innenbreite der Card
+        let verlLines = [], unfallLines = [];
+        if(p.verletzung){
+          verlLines = doc.splitTextToSize(safeText(p.verletzung), colW - 32);
+          injuryH += 4 + verlLines.length * 3.5;
+        }
+        if(p.unfallhergang){
+          unfallLines = doc.splitTextToSize(safeText(p.unfallhergang), colW - 32);
+          injuryH += 4 + unfallLines.length * 3.5;
+        }
+        const cardH = 14 + metaH + (injuryH ? injuryH + 2 : 0);
         yy = checkPageBreak(yy, cardH+5);
 
-        // Card background
-      doc.setFillColor(255,248,240);doc.setDrawColor(...ORANGE);doc.setLineWidth(0.3);
-      doc.roundedRect(ML, yy, CW, cardH, 2, 2, 'FD');
+        // Card background (heller, wie im Tool)
+        const artColor = e.art==='Trauma' ? RED : (e.art==='Internistisch' ? BLUE : GREY);
+        doc.setFillColor(250,250,250);doc.setDrawColor(220,220,220);doc.setLineWidth(0.3);
+        doc.roundedRect(ML, yy, CW, cardH, 2, 2, 'FD');
+        // Linker farbiger Akzent-Streifen
+        doc.setFillColor(...artColor);
+        doc.rect(ML, yy, 1.5, cardH, 'F');
 
-      // Patient name
-      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
-      doc.text(safeText(p.name||'-'), ML+4, yy+7);
+        // Patient name + Einsatz-Art-Badge
+        doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+        doc.text(safeText(p.name||'-'), ML+5, yy+7);
+        // Art-Label rechts
+        if(e.art){
+          doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...artColor);
+          doc.text(safeText(e.art).toUpperCase(), ML+CW-4, yy+7, {align:'right'});
+        }
 
-      // Einsatz reference
-      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
-      const einsRef = vehListSafe(p.einsatz) + (p.einsatz.ort?' - '+p.einsatz.ort:'') + (p.einsatz.start?' ('+p.einsatz.start+')':'');
-      doc.text('Einsatz: '+safeText(einsRef, 70), ML+4, yy+12);
-      doc.setTextColor(0,0,0);
+        // Einsatz-Referenz (Fahrzeug, Ort, Zeit)
+        doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...GREY);
+        const einsRef = vehListSafe(e) + (e.ort?' - '+e.ort:'') + (e.start?' ('+e.start+')':'');
+        doc.text(safeText('Einsatz: '+einsRef, 90), ML+5, yy+12);
+        doc.setTextColor(0,0,0);
 
-      // Three phase boxes
-      const bw = (CW-12)/3;
-      const bx1 = ML+4, bx2 = bx1+bw+2, bx3 = bx2+bw+2;
-      const phaseY = yy+15;
-      const phaseH = 13;
+        // Meta-Zeilen (Schminker / Ankunft / Schmink-Ort / Transfer / ASP)
+        let metaY = yy + 17;
+        const labelX = ML+5;
+        const valueX = ML+30;
+        metaRows.forEach(([label, value])=>{
+          doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+          doc.text(label, labelX, metaY);
+          doc.setFont('helvetica','normal');
+          doc.text(safeText(value, 80), valueX, metaY);
+          metaY += 4.5;
+        });
 
-      // ANKUNFT (gelb)
-      doc.setFillColor(255,248,230);doc.setDrawColor(240,208,128);
-      doc.roundedRect(bx1, phaseY, bw, phaseH, 1, 1, 'FD');
-      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...YELLOW);
-      doc.text('VORBEREITUNG', bx1+2, phaseY+4);
-      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text(safeText(p.ankunft||'-'), bx1+2, phaseY+9);
-      if(p.schminkplatz){
-        doc.setFontSize(6.5);doc.setTextColor(...GREY);
-        doc.text('Ort: '+safeText(p.schminkplatz, 18), bx1+2, phaseY+12);
-      }
+        // Verletzungsmuster + Unfallhergang (unter den Meta-Zeilen, getrennt durch Linie)
+        if(verlLines.length || unfallLines.length){
+          // Trennlinie
+          doc.setDrawColor(220,220,220);doc.setLineWidth(0.2);
+          doc.line(ML+5, metaY-1, ML+CW-5, metaY-1);
+          metaY += 2;
+          if(verlLines.length){
+            doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+            doc.text('Verletzungsmuster:', labelX, metaY);
+            doc.setFont('helvetica','normal');
+            verlLines.forEach((line, i)=>{
+              doc.text(line, valueX+8, metaY + i*3.5);
+            });
+            metaY += verlLines.length * 3.5 + 1;
+          }
+          if(unfallLines.length){
+            doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+            doc.text('Unfallhergang:', labelX, metaY);
+            doc.setFont('helvetica','normal');
+            unfallLines.forEach((line, i)=>{
+              doc.text(line, valueX+8, metaY + i*3.5);
+            });
+          }
+        }
 
-      // SCHMINKEN (orange)
-      doc.setFillColor(255,240,230);doc.setDrawColor(240,160,112);
-      doc.roundedRect(bx2, phaseY, bw, phaseH, 1, 1, 'FD');
-      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...ORANGE);
-      doc.text('SCHMINKEN ('+(p.schminkdauer||40)+' min)', bx2+2, phaseY+4);
-      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text(safeText((p.schminkStart||'-')+' - '+(p.schminkEnd||'-')), bx2+2, phaseY+9);
-
-      // TRANSFER (rot)
-      doc.setFillColor(252,235,235);doc.setDrawColor(240,149,149);
-      doc.roundedRect(bx3, phaseY, bw, phaseH, 1, 1, 'FD');
-      doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
-      doc.text('TRANSFER', bx3+2, phaseY+4);
-      doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);doc.setFontSize(8);
-      doc.text(safeText((p.transferStart||'-')+' - '+(p.transferEnd||'-')), bx3+2, phaseY+9);
-      const targetOrt = p.transferNach||p.einsatz.ort||'';
-      if(targetOrt){
-        doc.setFontSize(6.5);doc.setTextColor(...GREY);
-        doc.text('-> '+safeText(targetOrt, 18), bx3+2, phaseY+12);
-      }
-      doc.setTextColor(0,0,0);
-
-      // Verletzungsmuster + Unfallhergang unter den Boxen
-      let textY = phaseY + phaseH + 3;
-      if(p.verletzung){
-        doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
-        doc.text('Verletzungsmuster:', ML+4, textY);
-        doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
-        const lines = doc.splitTextToSize(safeText(p.verletzung), CW-42);
-        doc.text(lines.slice(0,2).join(' '), ML+38, textY);
-        textY += 5;
-      }
-      if(p.unfallhergang){
-        doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
-        doc.text('Unfallhergang:', ML+4, textY);
-        doc.setFont('helvetica','normal');doc.setTextColor(0,0,0);
-        const lines = doc.splitTextToSize(safeText(p.unfallhergang), CW-42);
-        doc.text(lines.slice(0,2).join(' '), ML+38, textY);
-      }
-
-      yy += cardH + 5;
+        yy += cardH + 4;
+      });
     });
-  });
   } // end if(showSchminker)
 
   // Footer auf jeder Seite
@@ -6330,135 +6462,12 @@ function exportRudPDF(mode){
   doc.save('RUD-'+modeStr+'_'+slug+'_'+today+'.pdf');
 }
 
-/* ══ ZUSTÄNDIGKEITSBEREICHE ══ */
-function renderBereiche(){
-  const grid=document.getElementById('bereiche-grid');
-  const empty=document.getElementById('bereiche-empty');
-  if(!grid) return;
-  grid.innerHTML='';
-  if(!S.bereiche||S.bereiche.length===0){
-    if(empty) empty.style.display='block';
-    return;
-  }
-  if(empty) empty.style.display='none';
-  S.bereiche.forEach(b=>{
-    const veh=(b.fahrzeuge||[]).map(v=>'<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500;background:'+clOf(v)+';color:'+cOf(v)+';margin:2px;">'+escHtml(v)+'</span>').join('');
-    const verantwPersonen=(Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])).map(id=>S.persons.find(p=>p.id===id)).filter(Boolean);
-    const personenHtml=verantwPersonen.length
-      ? verantwPersonen.map(p=>'<span style="font-size:13px;color:var(--text);">'+escHtml((p.vorname||'')+(p.nachname?' '+p.nachname:''))+'</span>').join('<span style="color:var(--text2);margin:0 4px;">·</span>')
-      : '<span style="color:var(--text2);">Nicht zugewiesen</span>';
-
-    // Checklist items
-    const checkItems=(b.checkItems||[]);
-    const doneCount=checkItems.filter(i=>i.status==='ok').length;
-    const checkHtml=checkItems.length
-      ? checkItems.map(item=>{
-          const isOk=item.status==='ok';
-          const isInProgress=item.status==='in_arbeit';
-          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">'+
-            '<span style="flex:1;font-size:13px;cursor:text;border-radius:4px;padding:2px 4px;" '+
-              'onclick="editBereichItemText(this,'+b.id+','+item.id+')" '+
-              'title="Klicken zum Bearbeiten">'+escHtml(item.text)+'</span>'+
-            '<select onchange="setBereichItemStatus('+b.id+','+item.id+',this.value)" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--input-border);background:'+(isOk?'#EAF3DE':isInProgress?'#FFF4E5':'var(--input-bg)')+';color:'+(isOk?'#27500A':isInProgress?'#7a4800':'var(--text)')+';cursor:pointer;outline:none;width:auto;flex-shrink:0;">'+
-              '<option value="offen"'+(item.status==='offen'?' selected':'')+'>⬜ Offen</option>'+
-              '<option value="in_arbeit"'+(isInProgress?' selected':'')+'>🟠 In Arbeit</option>'+
-              '<option value="ok"'+(isOk?' selected':'')+'>✅ OK</option>'+
-            '</select>'+
-            '<button onclick="deleteBereichItem('+b.id+','+item.id+')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;padding:0 2px;" title="Löschen">✕</button>'+
-          '</div>';
-        }).join('')
-      : '';
-
-    const card=document.createElement('div');
-    card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;';
-    card.innerHTML=
-      '<div style="background:#1F3864;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">'+
-        '<div style="display:flex;align-items:center;gap:8px;">'+
-          '<span style="font-weight:500;font-size:14px;color:#fff;">'+escHtml(b.name||'Ohne Name')+'</span>'+
-          (checkItems.length?'<span style="font-size:11px;background:rgba(255,255,255,0.18);color:#fff;padding:1px 8px;border-radius:20px;">'+doneCount+'/'+checkItems.length+'</span>':'')+
-        '</div>'+
-        '<div style="display:flex;gap:6px;">'+
-          '<button class="btn btn-sm" onclick="editBereich('+b.id+')" style="padding:2px 8px;font-size:11px;color:#fff;border-color:rgba(255,255,255,0.3);">Bearbeiten</button>'+
-          '<button class="btn btn-sm btn-danger" onclick="deleteBereich('+b.id+')" style="padding:2px 8px;font-size:11px;">x</button>'+
-        '</div>'+
-      '</div>'+
-      '<div style="padding:12px 14px;">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+
-          '<span>'+personenHtml+'</span>'+
-        '</div>'+
-        (b.beschreibung?'<div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5;">'+escHtml(b.beschreibung)+'</div>':'')+
-        (veh?'<div style="margin-top:6px;margin-bottom:10px;">'+veh+'</div>':'')+
-        '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px;">'+
-          '<div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">Checkliste</div>'+
-          (checkHtml||'<div style="font-size:12px;color:var(--text2);font-style:italic;padding:4px 0;">Keine Punkte vorhanden</div>')+
-          '<div style="display:flex;gap:6px;margin-top:8px;">'+
-            '<input type="text" id="new-item-'+b.id+'" placeholder="Neuer Punkt..." style="flex:1;font-size:12px;padding:5px 8px;" onkeydown="if(event.key===\'Enter\')addBereichItem('+b.id+')">'+
-            '<button class="btn btn-sm btn-primary" onclick="addBereichItem('+b.id+')">+</button>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
-    grid.appendChild(card);
-  });
-}
-
-function editBereichItemText(span, bereichId, itemId){
-  if(!guardWrite('bereiche')) return;
-  const current=span.textContent;
-  const inp=document.createElement('input');
-  inp.type='text';
-  inp.value=current;
-  inp.style.cssText='flex:1;font-size:13px;padding:2px 4px;border:1px solid var(--input-border);border-radius:4px;background:var(--input-bg);color:var(--text);font-family:inherit;width:100%;';
-  span.replaceWith(inp);
-  inp.focus();
-  inp.select();
-  function save(){
-    const val=inp.value.trim();
-    if(val&&val!==current){
-      const b=S.bereiche.find(x=>x.id===bereichId);
-      const item=b&&(b.checkItems||[]).find(x=>x.id===itemId);
-      if(item){item.text=val;save();renderBereiche();}
-    } else {
-      renderBereiche();
-    }
-  }
-  inp.addEventListener('blur',save);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){inp.blur();}if(e.key==='Escape'){renderBereiche();}});
-}
-
-function addBereichItem(bereichId){
-  if(!guardWrite('bereiche')) return;
-  const inp=document.getElementById('new-item-'+bereichId);
-  if(!inp)return;
-  const text=inp.value.trim();
-  if(!text)return;
-  const b=S.bereiche.find(x=>x.id===bereichId);
-  if(!b)return;
-  if(!b.checkItems)b.checkItems=[];
-  b.checkItems.push({id:uid(),text,status:'offen'});
-  inp.value='';
-  save();renderBereiche();
-}
-
-function setBereichItemStatus(bereichId,itemId,status){
-  const b=S.bereiche.find(x=>x.id===bereichId);
-  if(!b)return;
-  const item=(b.checkItems||[]).find(x=>x.id===itemId);
-  if(item){item.status=status;save();renderBereiche();}
-}
-
-function deleteBereichItem(bereichId,itemId){
-  const b=S.bereiche.find(x=>x.id===bereichId);
-  if(!b)return;
-  b.checkItems=(b.checkItems||[]).filter(x=>x.id!==itemId);
-  save();renderBereiche();
-}
-
+/* ══ BEREICHE CRUD (Modal-Verwaltung) ══ */
 function addBereich(){ openBereichModal(null); }
 function editBereich(id){ openBereichModal(S.bereiche.find(x=>x.id===id)); }
 
 function openBereichModal(b){
-  if(!guardWrite('bereiche')) return;
+  if(!guardWrite('todos')) return;
   const selectedIds=b?(Array.isArray(b.personen)?b.personen:(b.person?[b.person]:[])):[];
   const betreuer=S.persons.filter(p=>{const r=Array.isArray(p.rolle)?p.rolle:(p.rolle?[p.rolle]:[]);return r.some(x=>x.toLowerCase()==='betreuer');});
   const personChips=betreuer.length
@@ -6485,7 +6494,7 @@ function openBereichModal(b){
 }
 
 function saveBereich(id){
-  if(!guardWrite('bereiche')) return;
+  if(!guardWrite('todos')) return;
   const name=document.getElementById('m-bname').value.trim();
   const personen=[...document.querySelectorAll('#m-bperson-chips span[data-selected="1"]')].map(el=>parseInt(el.dataset.pid)).filter(Boolean);
   const beschreibung=document.getElementById('m-bdesc').value.trim();
@@ -6497,14 +6506,14 @@ function saveBereich(id){
   } else {
     S.bereiche.push({id:uid(),name,personen,beschreibung,fahrzeuge});
   }
-  closeModal(true); save(); renderBereiche();
+  closeModal(true); save(); renderTodos();
 }
 
 function deleteBereich(id){
-  if(!guardWrite('bereiche')) return;
+  if(!guardWrite('todos')) return;
   confirmModal('Dieser Bereich wird unwiderruflich gelöscht.',function(){
     S.bereiche=S.bereiche.filter(x=>x.id!==id);
-    save(); renderBereiche();
+    save(); renderTodos();
   });
 }
 
