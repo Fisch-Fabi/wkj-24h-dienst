@@ -256,6 +256,12 @@ th{font-weight:500;color:var(--text2);background:var(--bg3);}
   .rud-pat-injury{font-size:9pt!important;color:#000!important;border-top:1px solid #ccc!important;}
   .rud-pat-injury b{color:#000!important;}
   .turnus-card{break-inside:avoid;}
+  /* Dienstplan – Druckmodi */
+  .dp-veh-section{break-inside:avoid;}
+  body.dp-print-per-vehicle .dp-veh-section{page-break-before:always;}
+  body.dp-print-per-vehicle .dp-veh-section:first-of-type{page-break-before:auto;}
+  body.dp-print-single .dp-veh-section:not(.dp-veh-active){display:none!important;}
+  body.dp-print-single #conflict-warnings{display:none!important;}
   /* Page Margins */
   @page{margin:1.5cm 1.2cm;}
 }
@@ -887,7 +893,7 @@ body:not(.is-admin) .admin-only{display:none!important;}
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
           <div class="print-tile" onclick="printSection('einsaetze')"><div style="font-size:22px;margin-bottom:5px;">📋</div><div style="font-weight:500;font-size:13px;">Einsatzliste</div><div style="font-size:11px;color:var(--text2);">Alle Einsätze & Timeline</div></div>
           <div class="print-tile" onclick="openRudPdfChoice()"><div style="font-size:22px;margin-bottom:5px;">🎭</div><div style="font-weight:500;font-size:13px;">RUD</div><div style="font-size:11px;color:var(--text2);">Patientenplanung – PDF Export</div></div>
-          <div class="print-tile" onclick="printSection('dienstplan')"><div style="font-size:22px;margin-bottom:5px;">👥</div><div style="font-weight:500;font-size:13px;">Dienstplan</div><div style="font-size:11px;color:var(--text2);">Dienstpläne & Zuteilungen</div></div>
+          <div class="print-tile" onclick="openDienstplanPrintChoice()"><div style="font-size:22px;margin-bottom:5px;">👥</div><div style="font-weight:500;font-size:13px;">Dienstplan</div><div style="font-size:11px;color:var(--text2);">Dienstpläne & Zuteilungen</div></div>
           <div class="print-tile" onclick="printSection('teilnehmer')"><div style="font-size:22px;margin-bottom:5px;">🙋</div><div style="font-weight:500;font-size:13px;">Teilnehmerliste</div><div style="font-size:11px;color:var(--text2);">Alle Personen & Rollen</div></div>
         </div>
 
@@ -1236,7 +1242,11 @@ function initAuth(){
 }
 
 async function pbFetchUsersForLogin(){
-  // Feste Defaults – können über Einstellungen überschrieben werden
+  // Feste Defaults – können über Einstellungen überschrieben werden.
+  // ACHTUNG: Reader-Account hat per PocketBase-API-Rules NUR Read-Zugriff (Whitelist).
+  // Diese Defaults sind absichtlich öffentlich (GitHub-Pages-Source) – sie ermöglichen jedem Gerät
+  // anonym die Event-Daten zu lesen. Keine personenbezogenen Daten in S.persons speichern, die nicht
+  // für alle Teilnehmer sichtbar sein dürfen. Schreibzugriff braucht weiterhin Superuser-Login.
   const DEFAULT_PB_URL = 'https://wkj-24h-dienst.duckdns.org';
   const DEFAULT_READER_EMAIL = 'reader@wkj.local';
   const DEFAULT_READER_PASS = 'WKJ-reader-2025!';
@@ -1765,7 +1775,7 @@ function saveOwnPassword(){
 
 let selectedEinsatzId = null;
 const CURRENT_VERSION = 5; // Datenmigrations-Version – nur erhöhen wenn sich S-Schema ändert
-const APP_VERSION = '3.9.1'; // App-Version – bei jeder Änderungsrunde erhöhen
+const APP_VERSION = '3.9.4'; // App-Version – bei jeder Änderungsrunde erhöhen
 
 /* ═══════════════════════════════════════════════════════════════
    📋 TO-DOs FÜR NÄCHSTE SESSION
@@ -1848,7 +1858,7 @@ function migrate(data){
       if(!e.alarm_c) e.alarm_c='';
       if(!e.alarm_r) e.alarm_r='';
     });
-    data.turnusse.forEach(t=>{
+    (data.turnusse||[]).forEach(t=>{
       if(!t.assignments) t.assignments={};
     });
     data.persons.forEach(p=>{
@@ -1993,32 +2003,36 @@ function repairOrphanedRud(data){
     survivingMap[r.einsatzId] = r;
   });
 
+  // Heuristik bewusst konservativ: nur kleiner ID-Abstand (typischerweise Merge der direkt vorhergehenden Einsätze).
+  // Kein Fallback auf "ersten Einsatz" mehr – falscher Einsatz ist schlimmer als gar keine Zuordnung.
+  // Verwaiste Patienten ohne plausibles Target bleiben mit Original-einsatzId erhalten (Datenrettung
+  // via Export/Import möglich), erscheinen aber nicht in der UI.
+  const REPAIR_RANGE = 5;
+  const unmatchedOrphans = [];
+  let reattachedCount = 0;
   orphans.forEach(orphan=>{
-    // Heuristik: finde Einsatz dessen ID == orphan.einsatzId-1, ...-2 etc.
-    // (typischerweise wurde beim Merge die niedrigste ID behalten)
     let target = null;
-    for(let delta=1; delta<=20; delta++){
+    for(let delta=1; delta<=REPAIR_RANGE; delta++){
       const candId = orphan.einsatzId - delta;
       if(validIds.has(candId)){ target = candId; break; }
     }
     if(target === null){
-      // Fallback: ersten Einsatz nehmen
-      target = data.einsaetze[0]?.id;
+      unmatchedOrphans.push(orphan);
+      return;
     }
-    if(target === null || target === undefined) return;
-
     if(!survivingMap[target]){
       survivingMap[target] = {einsatzId:target, patients:[]};
     }
     (orphan.patients||[]).forEach(p=>{
       const exists = survivingMap[target].patients.some(x=>(x.name||'')===(p.name||'') && (x.schminkStart||'')===(p.schminkStart||''));
-      if(!exists) survivingMap[target].patients.push(p);
+      if(!exists){ survivingMap[target].patients.push(p); reattachedCount++; }
     });
   });
 
-  // rudEinsaetze neu zusammensetzen: nur überlebende + reparierte
-  data.rudEinsaetze = Object.values(survivingMap);
-  console.log('[Repair] '+orphans.length+' verwaiste rudEinsaetze reattached');
+  // rudEinsaetze neu zusammensetzen: überlebende + reparierte + unzuordbare (verbleiben verwaist)
+  data.rudEinsaetze = Object.values(survivingMap).concat(unmatchedOrphans);
+  if(reattachedCount > 0) console.log('[Repair] '+reattachedCount+' Patienten reattached');
+  if(unmatchedOrphans.length > 0) console.warn('[Repair] '+unmatchedOrphans.length+' verwaiste rudEinsaetze ohne plausibles Target – beibehalten für Export/Recovery');
 }
 
 async function pbFetchEventData(){
@@ -2100,7 +2114,6 @@ function load(){
     document.getElementById('sidebar').classList.add('collapsed');
   }
   updateClock();
-  setInterval(updateClock, 30000);
   renderAll();
   // Daten IMMER zuerst via Reader-Token laden (funktioniert auf jedem Gerät, jeder Rolle)
   // Danach: Admin versucht zusätzlich Superuser-Verbindung für Schreibzugriff
@@ -2275,9 +2288,8 @@ async function pbConnect(){
       localStorage.setItem('pb-record-id', _pbRecordId);
       const serverData = typeof list.items[0].data==='string'?JSON.parse(list.items[0].data||'{}'):list.items[0].data||{};
       if(serverData.vehicles){
-        S = serverData;
+        S = (!serverData.version || serverData.version < CURRENT_VERSION) ? migrate(serverData) : serverData;
         localStorage.setItem('eventmgr', JSON.stringify(S));
-        if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
         renderAll();
       }
     } else {
@@ -2301,9 +2313,12 @@ async function pbConnect(){
   }
 }
 
+let _pbSavePending = false;
 async function pbSave(){
   if(!_pbUrl || !_pbRecordId) return;
-  if(_pbSyncing) return;
+  // Falls bereits ein Save läuft: Nicht droppen, sondern als Pending markieren
+  // damit am Ende ein Tail-Save die zwischenzeitlichen Änderungen mitnimmt.
+  if(_pbSyncing){ _pbSavePending = true; return; }
   _pbSyncing = true;
   try{
     const res = await fetch(_pbUrl+'/api/collections/eventmgr/records/'+_pbRecordId,{
@@ -2320,6 +2335,7 @@ async function pbSave(){
       localStorage.removeItem('pb-record-id');
       pbSetStatus('error','⚠️ Sitzung abgelaufen – bitte neu verbinden!');
       console.warn('PocketBase: Token abgelaufen');
+      _pbSavePending = false; // kein Tail-Save mehr sinnvoll
     } else if(!res.ok){
       pbSetStatus('error','Speicherfehler: '+res.status);
     }
@@ -2328,6 +2344,11 @@ async function pbSave(){
     console.error('PocketBase save error:',err);
   }
   finally{ _pbSyncing = false; }
+  // Tail-Save: wenn während des Requests weitere save()-Aufrufe kamen, jetzt nachholen
+  if(_pbSavePending && _pbUrl && _pbRecordId){
+    _pbSavePending = false;
+    pbSave();
+  }
 }
 
 let _pbHeartbeatTimer = null;
@@ -2381,9 +2402,9 @@ function pbSubscribe(){
         if(msg.record && msg.record.data){
           const incoming = typeof msg.record.data==='string'?JSON.parse(msg.record.data):msg.record.data;
           if(incoming.vehicles && !_pbSyncing){
-            S = incoming;
+            // Migration absichern: ältere Daten von anderen Geräten dürfen nicht ungewandelt übernommen werden
+            S = (!incoming.version || incoming.version < CURRENT_VERSION) ? migrate(incoming) : incoming;
             localStorage.setItem('eventmgr', JSON.stringify(S));
-            if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
             renderAll();
           }
         }
@@ -2444,9 +2465,8 @@ function pbAutoConnect(){
         if(rec.data){
           const serverData = typeof rec.data==='string'?JSON.parse(rec.data):rec.data||{};
           if(serverData.vehicles){
-            S = serverData;
+            S = (!serverData.version || serverData.version < CURRENT_VERSION) ? migrate(serverData) : serverData;
             localStorage.setItem('eventmgr', JSON.stringify(S));
-            if(S.users && S.users.length) localStorage.setItem('wkj-users', JSON.stringify(S.users));
             renderAll();
           }
         }
@@ -5041,6 +5061,8 @@ function renderDienstplan(){
     const color=cOf(v);
 
     const section=document.createElement('div');
+    section.className='dp-veh-section';
+    section.dataset.veh=v;
     section.style.cssText='margin-bottom:12px;border-radius:12px;overflow:hidden;border:2px solid '+color+';';
 
     const chevron=collapsed
@@ -5373,6 +5395,103 @@ function printSection(section){
     window.print();
     printHeader.remove();
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+  }, 150);
+}
+
+/* ══ DIENSTPLAN-DRUCK ══ */
+function openDienstplanPrintChoice(){
+  if(!canPrint('dienstplan')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
+  if(!S.vehicles || !S.vehicles.length){ alert('Keine Fahrzeuge angelegt.'); return; }
+  const allPlans = Object.values(S.dienstplaene||{}).flat();
+  if(!allPlans.length){ alert('Noch keine Dienstpläne angelegt.'); return; }
+  openModal(
+    '<h2>📄 Dienstplan drucken</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Welchen Bereich möchtest du drucken?</p>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;">'+
+      '<button class="btn btn-primary" onclick="closeModal(true);_doPrintDienstplan(\'all\');" style="text-align:left;padding:12px 14px;">'+
+        '<div style="font-weight:600;font-size:14px;">📋 Gesamt – 1 Fahrzeug pro Blatt</div>'+
+        '<div style="font-size:12px;opacity:0.85;margin-top:2px;">Alle Fahrzeuge auf separaten Seiten</div>'+
+      '</button>'+
+      '<button class="btn" onclick="openDienstplanVehicleChoice()" style="text-align:left;padding:12px 14px;">'+
+        '<div style="font-weight:600;font-size:14px;">🚐 Einzelnes Fahrzeug</div>'+
+        '<div style="font-size:12px;color:var(--text2);margin-top:2px;">Fahrzeug auswählen und nur dieses drucken</div>'+
+      '</button>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-top:14px;">'+
+      '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '</div>'
+  );
+}
+
+function openDienstplanVehicleChoice(){
+  const vehsWithPlans = (S.vehicles||[]).filter(v=>((S.dienstplaene||{})[v]||[]).length>0);
+  if(!vehsWithPlans.length){ closeModal(true); alert('Keine Fahrzeuge mit Dienstplänen.'); return; }
+  const btns = vehsWithPlans.map(v=>{
+    const typ = vTyp(v);
+    const typLabel = typ==='transport' ? '🚐 Transport' : '🚑 KTW';
+    const planCount = (S.dienstplaene[v]||[]).length;
+    return '<button class="btn" onclick="closeModal(true);_doPrintDienstplan(\'single\',\''+escHtml(v)+'\')" style="text-align:left;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">'+
+      '<span style="font-weight:600;">'+escHtml(v)+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);">'+typLabel+' · '+planCount+' Plan'+(planCount!==1?'s':'')+'</span>'+
+    '</button>';
+  }).join('');
+  openModal(
+    '<h2>🚐 Fahrzeug wählen</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Welches Fahrzeug soll gedruckt werden?</p>'+
+    '<div style="display:flex;flex-direction:column;gap:6px;">'+btns+'</div>'+
+    '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">'+
+      '<button class="btn" onclick="closeModal(true);openDienstplanPrintChoice()">← Zurück</button>'+
+      '<button class="btn" onclick="closeModal(true)">Abbrechen</button>'+
+    '</div>'
+  );
+}
+
+function _doPrintDienstplan(mode, vehicleName){
+  if(!canPrint('dienstplan')){ alert('Du hast keine Berechtigung diesen Bereich zu drucken.'); return; }
+  // Snapshot Collapse-State + alles expandieren damit alle Sektionen im DOM sind
+  const prevCollapse = Object.assign({}, window._vehCollapsed||{});
+  window._vehCollapsed = {};
+  renderDienstplan();
+
+  // Print-Modus-Klassen an body
+  document.body.classList.remove('dp-print-per-vehicle','dp-print-single');
+  if(mode==='all'){
+    document.body.classList.add('dp-print-per-vehicle');
+  } else if(mode==='single'){
+    document.body.classList.add('dp-print-single');
+    document.querySelectorAll('.dp-veh-section').forEach(el=>{
+      el.classList.toggle('dp-veh-active', el.dataset.veh === vehicleName);
+    });
+  }
+
+  // Page-Active + Print-Header wie in printSection()
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+  const pageEl = document.getElementById('page-dienstplan');
+  if(pageEl) pageEl.classList.add('print-active');
+
+  const existing = document.getElementById('print-header');
+  if(existing) existing.remove();
+  const info = S.infos||{};
+  const printHeader = document.createElement('div');
+  printHeader.id = 'print-header';
+  const subTitle = mode==='single' ? ('Dienstplan – '+vehicleName) : 'Dienstplan';
+  printHeader.innerHTML =
+    '<h1 style="font-size:18px;font-weight:600;margin-bottom:4px;">'+escHtml(info.name||'Event-Bericht')+' – '+escHtml(subTitle)+'</h1>'+
+    '<p style="font-size:12px;color:#666;margin:0;">'+
+      [info.datum, info.ort?'Ort: '+info.ort:'', info.verantwortlich?'Verantwortlich: '+info.verantwortlich:''].filter(Boolean).map(escHtml).join(' &nbsp;|&nbsp; ')+
+    '</p>'+
+    '<hr style="margin:10px 0 0;">';
+  document.body.prepend(printHeader);
+
+  setTimeout(()=>{
+    window.print();
+    // Cleanup
+    if(printHeader.parentElement) printHeader.remove();
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('print-active'));
+    document.body.classList.remove('dp-print-per-vehicle','dp-print-single');
+    document.querySelectorAll('.dp-veh-section.dp-veh-active').forEach(el=>el.classList.remove('dp-veh-active'));
+    window._vehCollapsed = prevCollapse;
+    renderDienstplan();
   }, 150);
 }
 
@@ -6541,13 +6660,33 @@ function exportRudPDF(mode){
     return vehs.join(' + ');
   }
 
-  // Patientenliste vorab sammeln (für beide Modi)
-  const allPatients=[];
-  einsaetze.forEach(e=>{
+  // Helper: Zeit-String "HH:MM" → Minuten (für Sortierung)
+  function timeToMin(t){
+    if(!t || typeof t !== 'string') return 99999;
+    const m = t.match(/^(\d{1,2}):(\d{2})/);
+    if(!m) return 99999;
+    return parseInt(m[1])*60 + parseInt(m[2]);
+  }
+
+  // Patientenliste vorab sammeln + gruppiert pro Einsatz (sortiert nach Tag, Einsatz-Start)
+  const einsaetzeSorted = [...einsaetze].sort((a,b)=>{
+    const dA = typeof a.day==='number'?a.day:0;
+    const dB = typeof b.day==='number'?b.day:0;
+    if(dA !== dB) return dA - dB;
+    return timeToMin(a.start) - timeToMin(b.start);
+  });
+  const groups = [];
+  let totalPatientCount = 0;
+  einsaetzeSorted.forEach(e=>{
     const rudEntry = (S.rudEinsaetze||[]).find(r=>r.einsatzId===e.id);
     if(!rudEntry || !(rudEntry.patients||[]).length) return;
-    rudEntry.patients.forEach(p=>allPatients.push({...p, einsatz:e}));
+    const patients = [...rudEntry.patients].sort((a,b)=>timeToMin(a.ankunft)-timeToMin(b.ankunft));
+    groups.push({einsatz:e, patients});
+    totalPatientCount += patients.length;
   });
+  // Flache Liste für Schminker-Modus
+  const allPatients=[];
+  groups.forEach(g=>g.patients.forEach(p=>allPatients.push({...p, einsatz:g.einsatz})));
 
   const showOverview = (mode === 'all' || mode === 'both');
   const showSchminker = (mode === 'schminker' || mode === 'both');
@@ -6557,60 +6696,134 @@ function exportRudPDF(mode){
     let y = addHeader('RUD - Gesamtübersicht', 'Patienten & Schminker');
     y = addEventInfo(y);
 
-    if(!allPatients.length){
+    if(!totalPatientCount){
       doc.setFontSize(11);doc.setTextColor(...GREY);
       doc.text('Keine Patienten erfasst.', ML, y+10);
     } else {
-      // ── Übersichtstabelle ──
-      y = addSectionTitle('PATIENTENLISTE ('+allPatients.length+')', y);
-      // Tabellen-Header
+      // ── Übersichtstabelle (jeder Einsatz als eigene Box, sortiert nach Tag/Ankunft) ──
+      y = addSectionTitle('PATIENTENLISTE ('+totalPatientCount+')', y);
+
+      // Globale Spaltenpositionen (gelten in jeder Box gleich)
+      const COL = {
+        patient: ML+5,
+        ankunft: ML+40,
+        schmink: ML+58,
+        transfer:ML+84,
+        ort:     ML+110,
+        ziel:    ML+138,
+        schmink2:ML+160,
+      };
+      // Spalten-Überschrift einmal ganz oben
       doc.setFillColor(...LIGHTGREY);doc.rect(ML, y, CW, 5.5, 'F');
       doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(50,50,50);
-      const cols = [
-        {x:ML+2,  w:32, label:'Patient'},
-        {x:ML+34, w:34, label:'Einsatz'},
-        {x:ML+68, w:18, label:'Ankunft'},
-        {x:ML+86, w:24, label:'Schminken'},
-        {x:ML+110,w:24, label:'Transfer'},
-        {x:ML+134,w:25, label:'Ort/Ziel'},
-        {x:ML+159,w:25, label:'Schminker'},
-      ];
-      cols.forEach(c=>doc.text(c.label, c.x, y+3.8));
-      y += 6;
-      doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+      doc.text('Patient',     COL.patient,  y+3.8);
+      doc.text('Ankunft',     COL.ankunft,  y+3.8);
+      doc.text('Schminken',   COL.schmink,  y+3.8);
+      doc.text('Transfer',    COL.transfer, y+3.8);
+      doc.text('Schmink-Ort', COL.ort,      y+3.8);
+      doc.text('Ziel',        COL.ziel,     y+3.8);
+      doc.text('Schminker',   COL.schmink2, y+3.8);
+      y += 7;
 
-      allPatients.forEach((p,i)=>{
-        y = checkPageBreak(y, 10);
-        // Zebra-Streifen
-        if(i%2===0){doc.setFillColor(248,248,248);doc.rect(ML, y-0.5, CW, 5.5, 'F');}
-        doc.setTextColor(0,0,0);
-        doc.text(safeText(p.name||'-', 18), ML+2, y+3.5);
-        const einsLabel = (vehListSafe(p.einsatz) + (p.einsatz.ort?' / '+p.einsatz.ort:'')) || '-';
-        doc.text(safeText(einsLabel, 20), ML+34, y+3.5);
-        doc.text(safeText(p.ankunft||'-'), ML+68, y+3.5);
-        doc.text(safeText((p.schminkStart||'-')+'-'+(p.schminkEnd||'-')), ML+86, y+3.5);
-        doc.text(safeText((p.transferStart||'-')+'-'+(p.transferEnd||'-')), ML+110, y+3.5);
-        doc.text(safeText(p.transferNach||p.einsatz.ort||'-', 14), ML+134, y+3.5);
-        const schminker = (p.persons||[]).map(getPersonName).join(', ');
-        doc.text(safeText(schminker||'-', 14), ML+159, y+3.5);
-        y += 5.5;
+      const HEADER_H = 7;
+      groups.forEach((g)=>{
+        const e = g.einsatz;
+        const artColor = e.art==='Trauma' ? RED : (e.art==='Internistisch' ? BLUE : (e.art==='Transport' ? GREEN : GREY));
 
-        // Verletzungsmuster + Unfallhergang als Sub-Zeile (wenn vorhanden)
-        if(p.verletzung || p.unfallhergang){
-          doc.setTextColor(...GREY);doc.setFontSize(7);
+        // Höhe der Gruppe schätzen
+        let estBodyH = 0;
+        g.patients.forEach(p=>{
+          estBodyH += 5.5;
           if(p.verletzung){
-            y = checkPageBreak(y, 4);
-            const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-4);
-            txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+            const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-12);
+            estBodyH += txt.length * 3.5;
           }
           if(p.unfallhergang){
-            y = checkPageBreak(y, 4);
-            const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-4);
-            txt.forEach(line=>{ doc.text(line, ML+4, y+3); y+=3.5; });
+            const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-12);
+            estBodyH += txt.length * 3.5;
           }
-          doc.setTextColor(0,0,0);doc.setFontSize(7.5);
-          y += 1;
+          if(p.verletzung || p.unfallhergang) estBodyH += 1.5;
+        });
+        const groupH = HEADER_H + estBodyH + 1;
+
+        // Page-Break wenn Box nicht passt (und Box klein genug für eine Seite ist)
+        if(y + groupH > PH-15 && groupH < PH - 2*MT){
+          doc.addPage();
+          y = MT;
         }
+
+        let yStart = y;
+
+        // Header-Hintergrund über volle Breite
+        doc.setFillColor(238,238,243);
+        doc.rect(ML, y, CW, HEADER_H, 'F');
+
+        // Header-Text
+        doc.setFontSize(8.5);doc.setFont('helvetica','bold');doc.setTextColor(40,40,55);
+        const vehs = vehListSafe(e);
+        const timeLabel = (e.start||'') + (e.end?'-'+e.end:'');
+        const headerParts = [vehs, timeLabel, e.ort, e.art].filter(Boolean);
+        doc.text(safeText(headerParts.join(' · '), 100), ML+6, y+4.7);
+        // Anzahl + Art-Label rechts
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...GREY);
+        doc.text(g.patients.length+' Pat.', ML+CW-3, y+4.7, {align:'right'});
+        doc.setTextColor(0,0,0);
+        y += HEADER_H;
+
+        // Patient-Zeilen (Zebra pro Einsatz neu)
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+        let rowIdx = 0;
+        g.patients.forEach(p=>{
+          // Notfall-Pagebreak (Gruppe zu groß für Seite)
+          if(y + 6 > PH-15){
+            // Border + Stripe für bisherigen Teil
+            doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);
+            doc.rect(ML, yStart, CW, y - yStart, 'S');
+            doc.setFillColor(...artColor);
+            doc.rect(ML, yStart, 2, y - yStart, 'F');
+            doc.addPage(); y = MT; yStart = y;
+          }
+          // Zebra
+          if(rowIdx%2===1){doc.setFillColor(249,249,251);doc.rect(ML, y, CW, 5.5, 'F');}
+          doc.setTextColor(0,0,0);
+          doc.text(safeText(p.name||'-', 18), COL.patient,  y+3.7);
+          doc.text(safeText(p.ankunft||'-'),  COL.ankunft,  y+3.7);
+          doc.text(safeText((p.schminkStart||'-')+'-'+(p.schminkEnd||'-')), COL.schmink,  y+3.7);
+          doc.text(safeText((p.transferStart||'-')+'-'+(p.transferEnd||'-')), COL.transfer, y+3.7);
+          doc.text(safeText(p.schminkplatz||'-', 15), COL.ort,  y+3.7);
+          doc.text(safeText(p.transferNach||e.ort||'-', 13), COL.ziel, y+3.7);
+          const schminker = (p.persons||[]).map(getPersonName).join(', ');
+          doc.text(safeText(schminker||'-', 14), COL.schmink2, y+3.7);
+          y += 5.5;
+          rowIdx++;
+
+          // Verletzungsmuster + Unfallhergang
+          if(p.verletzung || p.unfallhergang){
+            doc.setTextColor(...GREY);doc.setFontSize(7);
+            if(p.verletzung){
+              const txt = doc.splitTextToSize('Verletzung: '+safeText(p.verletzung), CW-12);
+              txt.forEach(line=>{ doc.text(line, ML+7, y+3); y+=3.5; });
+            }
+            if(p.unfallhergang){
+              const txt = doc.splitTextToSize('Unfallhergang: '+safeText(p.unfallhergang), CW-12);
+              txt.forEach(line=>{ doc.text(line, ML+7, y+3); y+=3.5; });
+            }
+            doc.setTextColor(0,0,0);doc.setFontSize(7.5);
+            y += 1.5;
+          }
+        });
+
+        // Box-Border + Akzent-Streifen links + Trennlinie unter Header
+        const boxH = y - yStart;
+        doc.setDrawColor(170,170,175);doc.setLineWidth(0.4);
+        doc.rect(ML, yStart, CW, boxH, 'S');
+        doc.setFillColor(...artColor);
+        doc.rect(ML, yStart, 2, boxH, 'F');
+        doc.setDrawColor(210,210,215);doc.setLineWidth(0.2);
+        doc.line(ML, yStart + HEADER_H, ML+CW, yStart + HEADER_H);
+        doc.setDrawColor(0,0,0);doc.setLineWidth(0.2);
+
+        y += 3; // Abstand zur nächsten Box
       });
     }
   }
